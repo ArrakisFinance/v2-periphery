@@ -4,12 +4,12 @@ pragma solidity 0.8.4;
 
 import {
     IGauge,
-    IArrakisV1RouterStaking,
+    IArrakisV1Router,
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
     SwapData
-} from "./interfaces/IArrakisV1RouterStaking.sol";
+} from "./interfaces/IArrakisV1Router.sol";
 import {IArrakisVaultV1} from "./interfaces/IArrakisVaultV1.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {
@@ -26,13 +26,17 @@ import {
 import {
     OwnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
 
-contract ArrakisV1RouterStaking is
-    IArrakisV1RouterStaking,
+contract ArrakisV1Router is
+    IArrakisV1Router,
     Initializable,
     PausableUpgradeable,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     using Address for address payable;
     using SafeERC20 for IERC20;
@@ -55,6 +59,7 @@ contract ArrakisV1RouterStaking is
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
+        __ReentrancyGuard_init();
     }
 
     function pause() external onlyOwner {
@@ -83,6 +88,7 @@ contract ArrakisV1RouterStaking is
         override
         whenNotPaused
         onlyRouterWrapper
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -129,7 +135,9 @@ contract ArrakisV1RouterStaking is
     )
         external
         override
+        whenNotPaused
         onlyRouterWrapper
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -182,6 +190,7 @@ contract ArrakisV1RouterStaking is
         override
         whenNotPaused
         onlyRouterWrapper
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -351,28 +360,16 @@ contract ArrakisV1RouterStaking is
                 _swapData.amountInSwap
             );
         }
-
         (bool success, bytes memory returnsData) =
             _swapData.swapRouter.call(_swapData.swapPayload);
         if (!success) GelatoBytes.revertWithError(returnsData, "swap: ");
 
         // setting allowance to 0
+        IERC20(_pool.token0()).safeApprove(_swapData.swapRouter, 0);
         if (_swapData.zeroForOne) {
-            IERC20(_pool.token0()).safeDecreaseAllowance(
-                _swapData.swapRouter,
-                IERC20(_pool.token0()).allowance(
-                    address(this),
-                    _swapData.swapRouter
-                )
-            );
+            IERC20(_pool.token0()).safeApprove(_swapData.swapRouter, 0);
         } else {
-            IERC20(_pool.token1()).safeDecreaseAllowance(
-                _swapData.swapRouter,
-                IERC20(_pool.token1()).allowance(
-                    address(this),
-                    _swapData.swapRouter
-                )
-            );
+            IERC20(_pool.token1()).safeApprove(_swapData.swapRouter, 0);
         }
 
         uint256 balance0 = _pool.token0().balanceOf(address(this));
@@ -381,23 +378,17 @@ contract ArrakisV1RouterStaking is
             amount0Diff = balance0Before - balance0;
             amount1Diff = balance1 - balance1Before;
             require(
-                balance0Before > balance0 && balance1 > balance1Before,
+                (amount0Diff == _swapData.amountInSwap) &&
+                    (amount1Diff >= _swapData.amountOutSwap),
                 "Token0 swap failed!"
-            );
-            require(
-                _swapData.amountOutSwap < amount1Diff,
-                "Minimum amount of token1 not retrieved on swap!"
             );
         } else {
             amount0Diff = balance0 - balance0Before;
             amount1Diff = balance1Before - balance1;
             require(
-                balance0 > balance0Before && balance1Before > balance1,
+                (amount0Diff >= _swapData.amountOutSwap) &&
+                    (amount1Diff == _swapData.amountInSwap),
                 "Token1 swap failed!"
-            );
-            require(
-                _swapData.amountOutSwap < amount0Diff,
-                "Minimum amount of token1 not retrieved on swap!"
             );
         }
 

@@ -59,7 +59,7 @@ struct SwapData {
     bytes swapPayload;
 }
 
-interface IArrakisV1RouterStaking {
+interface IArrakisV1Router {
     function addLiquidity(
         IArrakisVaultV1 pool,
         AddLiquidityData memory _addData,

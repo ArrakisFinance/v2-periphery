@@ -8,7 +8,7 @@ import {
     MintData,
     RemoveLiquidityData,
     SwapData
-} from "./IArrakisV1RouterStaking.sol";
+} from "./IArrakisV1Router.sol";
 
 interface IArrakisV1RouterWrapper {
     function addLiquidity(

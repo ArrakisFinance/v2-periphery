@@ -10,7 +10,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV1RouterStaking to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV1Router to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -23,7 +23,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     "ArrakisV1RouterWrapper"
   );
 
-  await deploy("ArrakisV1RouterStaking", {
+  await deploy("ArrakisV1Router", {
     from: deployer,
     proxy: {
       proxyContract: "EIP173ProxyWithReceive",
@@ -50,7 +50,7 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
   return shouldSkip ? true : false;
 };
 
-func.tags = ["ArrakisV1RouterStaking"];
+func.tags = ["ArrakisV1Router"];
 
 func.dependencies = ["ArrakisV1RouterWrapper"];
 

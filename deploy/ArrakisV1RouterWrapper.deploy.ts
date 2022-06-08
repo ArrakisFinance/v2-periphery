@@ -19,9 +19,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  const arrakisSwappersWhitelist = await deployments.get(
-    "ArrakisSwappersWhitelist"
-  );
+  // const arrakisSwappersWhitelist = await deployments.get(
+  //   "ArrakisSwappersWhitelist"
+  // );
 
   await deploy("ArrakisV1RouterWrapper", {
     from: deployer,
@@ -35,9 +35,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         },
       },
     },
-    args: [addresses.WETH, arrakisSwappersWhitelist.address],
+    args: [addresses.WETH],
     log: hre.network.name !== "hardhat",
-    gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });
 };
 
@@ -52,6 +52,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 
 func.tags = ["ArrakisV1RouterWrapper"];
 
-func.dependencies = ["ArrakisSwappersWhitelist"];
+// func.dependencies = ["ArrakisSwappersWhitelist"];
 
 export default func;

@@ -4,12 +4,12 @@ pragma solidity 0.8.4;
 
 import {
     IGauge,
-    IArrakisV1RouterStaking,
+    IArrakisV1Router,
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
     SwapData
-} from "./interfaces/IArrakisV1RouterStaking.sol";
+} from "./interfaces/IArrakisV1Router.sol";
 import {IArrakisVaultV1} from "./interfaces/IArrakisVaultV1.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {
@@ -27,8 +27,8 @@ import {
     OwnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {
-    IArrakisSwappersWhitelist
-} from "./interfaces/IArrakisSwappersWhitelist.sol";
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {
     IArrakisV1RouterWrapper
 } from "./interfaces/IArrakisV1RouterWrapper.sol";
@@ -37,23 +37,23 @@ contract ArrakisV1RouterWrapper is
     IArrakisV1RouterWrapper,
     Initializable,
     PausableUpgradeable,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    IArrakisSwappersWhitelist public immutable whitelist;
-    IArrakisV1RouterStaking public router;
+    IArrakisV1Router public router;
 
-    constructor(IWETH _weth, IArrakisSwappersWhitelist _whitelist) {
+    constructor(IWETH _weth) {
         weth = _weth;
-        whitelist = _whitelist;
     }
 
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
+        __ReentrancyGuard_init();
     }
 
     function pause() external onlyOwner {
@@ -79,12 +79,17 @@ contract ArrakisV1RouterWrapper is
         payable
         override
         whenNotPaused
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
             uint256 mintAmount
         )
     {
+        require(
+            _addData.amount0Max > 0 || _addData.amount1Max > 0,
+            "Empty max amounts"
+        );
         (uint256 amount0In, uint256 amount1In, uint256 _mintAmount) =
             pool.getMintAmounts(_addData.amount0Max, _addData.amount1Max);
         require(
@@ -157,6 +162,7 @@ contract ArrakisV1RouterWrapper is
         external
         override
         whenNotPaused
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -214,6 +220,7 @@ contract ArrakisV1RouterWrapper is
         payable
         override
         whenNotPaused
+        nonReentrant
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -223,8 +230,8 @@ contract ArrakisV1RouterWrapper is
         )
     {
         require(
-            whitelist.verify(_swapData.swapRouter),
-            "Swap router address not whitelisted!"
+            _addData.amount0Max > 0 || _addData.amount1Max > 0,
+            "Empty max amounts"
         );
         if (_addData.gaugeAddress != address(0)) {
             require(
@@ -243,8 +250,7 @@ contract ArrakisV1RouterWrapper is
 
         if (
             _addData.amount0Max > 0 &&
-            (!_addData.useETH ||
-                (_addData.useETH && _swapData.zeroForOne && !isToken0Weth))
+            (!_addData.useETH || (_addData.useETH && !isToken0Weth))
         ) {
             IERC20(pool.token0()).safeTransferFrom(
                 msg.sender,
@@ -254,8 +260,7 @@ contract ArrakisV1RouterWrapper is
         }
         if (
             _addData.amount1Max > 0 &&
-            (!_addData.useETH ||
-                (_addData.useETH && !_swapData.zeroForOne && isToken0Weth))
+            (!_addData.useETH || (_addData.useETH && isToken0Weth))
         ) {
             IERC20(pool.token1()).safeTransferFrom(
                 msg.sender,
@@ -273,7 +278,9 @@ contract ArrakisV1RouterWrapper is
         );
     }
 
-    function updateRouter(IArrakisV1RouterStaking _router) external onlyOwner {
+    /// @notice updates address of ArrakisV1Router used by this wrapper
+    /// @param _router the router address
+    function updateRouter(IArrakisV1Router _router) external onlyOwner {
         router = _router;
     }
 

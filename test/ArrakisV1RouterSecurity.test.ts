@@ -3,18 +3,17 @@ import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import { Addresses, getAddresses } from "../src/addresses";
 import { EIP173ProxyWithReceive } from "../typechain/EIP173ProxyWithReceive";
-import { ArrakisV1RouterStaking } from "../typechain/ArrakisV1RouterStaking";
-// import { AddLiquidityData } from "../typechain/IArrakisV1RouterStaking";
+import { ArrakisV1Router } from "../typechain/ArrakisV1Router";
 import { IArrakisVaultV1 } from "../typechain/IArrakisVaultV1";
 
 let addresses: Addresses;
 let wallet: SignerWithAddress;
 let walletAddress: string;
 
-describe("ArrakisV1 Router (with Staking): Security Tests", function () {
+describe("ArrakisV1Router Security Tests", function () {
   this.timeout(0);
   let vault: IArrakisVaultV1;
-  let vaultRouter: ArrakisV1RouterStaking;
+  let vaultRouter: ArrakisV1Router;
   let proxy: EIP173ProxyWithReceive;
   before(async function () {
     await deployments.fixture();
@@ -38,13 +37,13 @@ describe("ArrakisV1 Router (with Staking): Security Tests", function () {
       poolAddress
     )) as IArrakisVaultV1;
 
-    const vaultRouterAddress = (await deployments.get("ArrakisV1RouterStaking"))
+    const vaultRouterAddress = (await deployments.get("ArrakisV1Router"))
       .address;
 
     vaultRouter = (await ethers.getContractAt(
-      "ArrakisV1RouterStaking",
+      "ArrakisV1Router",
       vaultRouterAddress
-    )) as ArrakisV1RouterStaking;
+    )) as ArrakisV1Router;
 
     proxy = (await ethers.getContractAt(
       "EIP173ProxyWithReceive",
