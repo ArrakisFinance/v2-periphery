@@ -144,10 +144,7 @@ contract ArrakisV2Router is
         whenNotPaused
         onlyRouterWrapper
         nonReentrant
-        returns (
-            uint256 amount0,
-            uint256 amount1
-        )
+        returns (uint256 amount0, uint256 amount1)
     {
         if (_removeData.receiveETH) {
             (amount0, amount1) = pool.burn(

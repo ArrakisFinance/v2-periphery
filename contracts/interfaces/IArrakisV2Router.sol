@@ -79,12 +79,7 @@ interface IArrakisV2Router {
     function removeLiquidity(
         IVaultV2 pool,
         RemoveLiquidityData memory _removeData
-    )
-        external
-        returns (
-            uint256 amount0,
-            uint256 amount1
-        );
+    ) external returns (uint256 amount0, uint256 amount1);
 
     function swapAndAddLiquidity(
         IVaultV2 pool,

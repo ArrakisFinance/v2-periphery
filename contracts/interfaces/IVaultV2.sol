@@ -14,11 +14,11 @@ interface IVaultV2 {
         string calldata symbol_,
         InitializeParams calldata params_
     ) external;
-    
+
     function mint(uint256 mintAmount_, address receiver_)
         external
         returns (uint256 amount0, uint256 amount1);
-    
+
     function burn(
         Burn[] calldata burns,
         uint256 burnAmount_,
