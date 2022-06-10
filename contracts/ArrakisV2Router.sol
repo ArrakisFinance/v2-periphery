@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.13;
 
 import {
     IGauge,
-    IArrakisV1Router,
+    IArrakisV2Router,
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
     SwapData
-} from "./interfaces/IArrakisV1Router.sol";
-import {IArrakisVaultV1} from "./interfaces/IArrakisVaultV1.sol";
+} from "./interfaces/IArrakisV2Router.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {
     IERC20,
@@ -30,9 +30,10 @@ import {
     ReentrancyGuardUpgradeable
 } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
+import {IVaultV2Resolver} from "./interfaces/IVaultV2Resolver.sol";
 
-contract ArrakisV1Router is
-    IArrakisV1Router,
+contract ArrakisV2Router is
+    IArrakisV2Router,
     Initializable,
     PausableUpgradeable,
     OwnableUpgradeable,
@@ -42,6 +43,7 @@ contract ArrakisV1Router is
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
+    IVaultV2Resolver public immutable resolver;
     address public immutable routerWrapperAddress;
 
     event Swapped(bool zeroForOne, uint256 amount0Diff, uint256 amount1Diff);
@@ -51,9 +53,14 @@ contract ArrakisV1Router is
         _;
     }
 
-    constructor(IWETH _weth, address _routerWrapperAddress) {
+    constructor(
+        IWETH _weth,
+        address _routerWrapperAddress,
+        IVaultV2Resolver _resolver
+    ) {
         weth = _weth;
         routerWrapperAddress = _routerWrapperAddress;
+        resolver = _resolver;
     }
 
     function initialize() external initializer {
@@ -79,7 +86,7 @@ contract ArrakisV1Router is
     /// @return mintAmount amount of ArrakisVaultV1 tokens minted and transferred to `receiver`
     // solhint-disable-next-line code-complexity, function-max-lines
     function addLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData,
         MintData memory _mintData
     )
@@ -127,10 +134,9 @@ contract ArrakisV1Router is
     /// @param _removeData RemoveLiquidityData struct containing data for removing liquidity
     /// @return amount0 amount of token0 received when burning `burnAmount`
     /// @return amount1 amount of token1 received when burning `burnAmount`
-    /// @return liquidityBurned liquidityBurned
     // solhint-disable-next-line function-max-lines
     function removeLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         RemoveLiquidityData memory _removeData
     )
         external
@@ -140,17 +146,18 @@ contract ArrakisV1Router is
         nonReentrant
         returns (
             uint256 amount0,
-            uint256 amount1,
-            uint128 liquidityBurned
+            uint256 amount1
         )
     {
         if (_removeData.receiveETH) {
-            (amount0, amount1, liquidityBurned) = pool.burn(
+            (amount0, amount1) = pool.burn(
+                _removeData.burns,
                 _removeData.burnAmount,
                 address(this)
             );
         } else {
-            (amount0, amount1, liquidityBurned) = pool.burn(
+            (amount0, amount1) = pool.burn(
+                _removeData.burns,
                 _removeData.burnAmount,
                 _removeData.receiver
             );
@@ -180,7 +187,7 @@ contract ArrakisV1Router is
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
     function swapAndAddLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData,
         SwapData memory _swapData,
         address payable userToRefund
@@ -211,7 +218,8 @@ contract ArrakisV1Router is
                 ? _addData.amount1Max + amount1Diff
                 : _addData.amount1Max - amount1Diff;
 
-        (amount0, amount1, _mintAmount) = pool.getMintAmounts(
+        (amount0, amount1, _mintAmount) = resolver.getMintAmounts(
+            pool,
             amount0Use,
             amount1Use
         );
@@ -284,7 +292,7 @@ contract ArrakisV1Router is
     }
 
     function _deposit(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         uint256 amount0In,
         uint256 amount1In,
         uint256 _mintAmount,
@@ -304,7 +312,7 @@ contract ArrakisV1Router is
             pool.token1().safeIncreaseAllowance(address(pool), amount1In);
         }
 
-        (amount0, amount1, ) = pool.mint(_mintAmount, receiver);
+        (amount0, amount1) = pool.mint(_mintAmount, receiver);
         require(
             amount0 == amount0In && amount1 == amount1In,
             "unexpected amounts deposited"
@@ -314,7 +322,7 @@ contract ArrakisV1Router is
 
     // solhint-disable-next-line code-complexity
     function _receiveETH(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         uint256 amount0,
         uint256 amount1,
         address payable receiver
@@ -342,7 +350,7 @@ contract ArrakisV1Router is
     }
 
     // solhint-disable-next-line function-max-lines
-    function _swap(IArrakisVaultV1 _pool, SwapData memory _swapData)
+    function _swap(IVaultV2 _pool, SwapData memory _swapData)
         internal
         returns (uint256 amount0Diff, uint256 amount1Diff)
     {

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.13;
 
-import {IArrakisVaultV1} from "./IArrakisVaultV1.sol";
+import {IVaultV2} from "./IVaultV2.sol";
 import {IGauge} from "./IGauge.sol";
+import {Burn} from "../structs/SVaultV2.sol";
 
 struct AddLiquidityData {
     // maximum amount of token0 to forward on mint
@@ -32,6 +33,8 @@ struct MintData {
 }
 
 struct RemoveLiquidityData {
+    // struct containing liquidity to be burned per range
+    Burn[] burns;
     // amount of LP tokens to burn
     uint256 burnAmount;
     // minimum amount of token0 to receive
@@ -59,9 +62,9 @@ struct SwapData {
     bytes swapPayload;
 }
 
-interface IArrakisV1Router {
+interface IArrakisV2Router {
     function addLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData,
         MintData memory _mintData
     )
@@ -74,18 +77,17 @@ interface IArrakisV1Router {
         );
 
     function removeLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         RemoveLiquidityData memory _removeData
     )
         external
         returns (
             uint256 amount0,
-            uint256 amount1,
-            uint128 liquidityBurned
+            uint256 amount1
         );
 
     function swapAndAddLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData,
         SwapData memory _swapData,
         address payable userToRefund
