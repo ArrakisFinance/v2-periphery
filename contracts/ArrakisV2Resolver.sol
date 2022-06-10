@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.13;
 
-import {IArrakisV1Resolver} from "./interfaces/IArrakisV1Resolver.sol";
-import {IArrakisVaultV1} from "./interfaces/IArrakisVaultV1.sol";
+import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import {IUniswapV3Pool} from "./interfaces/IUniswapV3Pool.sol";
 import {
     IERC20Metadata
@@ -13,20 +13,29 @@ import {
     LiquidityAmounts
 } from "./vendor/uniswap/LiquidityAmounts.sol";
 import {TickMath} from "./vendor/uniswap/TickMath.sol";
+import {IVaultV2Resolver} from "./interfaces/IVaultV2Resolver.sol";
 
-contract ArrakisV1Resolver is IArrakisV1Resolver {
+// should we merge this contract with the new resolver IVaultV2Resolver?
+contract ArrakisV2Resolver is IArrakisV2Resolver {
     using TickMath for int24;
+
+    IVaultV2Resolver public immutable resolver;
+
+    constructor(IVaultV2Resolver _resolver) {
+        resolver = _resolver;
+    }
 
     // solhint-disable-next-line function-max-lines
     function getRebalanceParams(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals
     ) external view override returns (bool zeroForOne, uint256 swapAmount) {
         uint256 amount0Left;
         uint256 amount1Left;
-        try pool.getMintAmounts(amount0In, amount1In) returns (
+        
+        try resolver.getMintAmounts(pool, amount0In, amount1In) returns (
             uint256 amount0,
             uint256 amount1,
             uint256
@@ -71,23 +80,26 @@ contract ArrakisV1Resolver is IArrakisV1Resolver {
         }
     }
 
-    function _getUnderlyingOrLiquidity(IArrakisVaultV1 pool)
+    function _getUnderlyingOrLiquidity(IVaultV2 pool)
         internal
         view
         returns (uint256 gross0, uint256 gross1)
     {
+        // TODO: getUnderlyingBalances doesn't exist in VaultV2 atm
         (gross0, gross1) = pool.getUnderlyingBalances();
-        if (gross0 == 0 && gross1 == 0) {
-            IUniswapV3Pool uniPool = pool.pool();
-            (uint160 sqrtPriceX96, , , , , , ) = uniPool.slot0();
-            uint160 lowerSqrtPrice = pool.lowerTick().getSqrtRatioAtTick();
-            uint160 upperSqrtPrice = pool.upperTick().getSqrtRatioAtTick();
-            (gross0, gross1) = LiquidityAmounts.getAmountsForLiquidity(
-                sqrtPriceX96,
-                lowerSqrtPrice,
-                upperSqrtPrice,
-                1 ether
-            );
-        }
+        // TODO: double check how to do logic below as pool.pool() doesn't exist on V2
+        // because there could be multiple pools below
+        // if (gross0 == 0 && gross1 == 0) {
+        //     IUniswapV3Pool uniPool = pool.pool();
+        //     (uint160 sqrtPriceX96, , , , , , ) = uniPool.slot0();
+        //     uint160 lowerSqrtPrice = pool.lowerTick().getSqrtRatioAtTick();
+        //     uint160 upperSqrtPrice = pool.upperTick().getSqrtRatioAtTick();
+        //     (gross0, gross1) = LiquidityAmounts.getAmountsForLiquidity(
+        //         sqrtPriceX96,
+        //         lowerSqrtPrice,
+        //         upperSqrtPrice,
+        //         1 ether
+        //     );
+        // }
     }
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.13;
 
-import {IArrakisVaultV1} from "./IArrakisVaultV1.sol";
+import {IVaultV2} from "./IVaultV2.sol";
 
-interface IArrakisV1Resolver {
+interface IArrakisV2Resolver {
     function getRebalanceParams(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals

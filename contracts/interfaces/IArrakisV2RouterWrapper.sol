@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.13;
 
-import {IArrakisVaultV1} from "./IArrakisVaultV1.sol";
+import {IVaultV2} from "./IVaultV2.sol";
 import {
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
     SwapData
-} from "./IArrakisV1Router.sol";
+} from "./IArrakisV2Router.sol";
 
-interface IArrakisV1RouterWrapper {
+interface IArrakisV2RouterWrapper {
     function addLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData
     )
         external
@@ -24,18 +24,17 @@ interface IArrakisV1RouterWrapper {
         );
 
     function removeLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         RemoveLiquidityData memory _removeData
     )
         external
         returns (
             uint256 amount0,
-            uint256 amount1,
-            uint128 liquidityBurned
+            uint256 amount1
         );
 
     function swapAndAddLiquidity(
-        IArrakisVaultV1 pool,
+        IVaultV2 pool,
         AddLiquidityData memory _addData,
         SwapData memory _swapData
     )
