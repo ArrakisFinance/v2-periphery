@@ -74,10 +74,7 @@ contract ArrakisV2RouterWrapper is
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
     /// @return mintAmount amount of ArrakisVaultV1 tokens minted and transferred to `receiver`
     // solhint-disable-next-line code-complexity, function-max-lines
-    function addLiquidity(
-        IVaultV2 pool,
-        AddLiquidityData memory _addData
-    )
+    function addLiquidity(IVaultV2 pool, AddLiquidityData memory _addData)
         external
         payable
         override
@@ -169,10 +166,7 @@ contract ArrakisV2RouterWrapper is
         override
         whenNotPaused
         nonReentrant
-        returns (
-            uint256 amount0,
-            uint256 amount1
-        )
+        returns (uint256 amount0, uint256 amount1)
     {
         require(_removeData.burnAmount > 0, "nothing to burn");
         if (_removeData.gaugeAddress != address(0)) {
@@ -200,10 +194,7 @@ contract ArrakisV2RouterWrapper is
                 _removeData.burnAmount
             );
         }
-        (amount0, amount1) = router.removeLiquidity(
-            pool,
-            _removeData
-        );
+        (amount0, amount1) = router.removeLiquidity(pool, _removeData);
     }
 
     /// @notice swapAndAddLiquidity transfer tokens to and calls ArrakisV1Router

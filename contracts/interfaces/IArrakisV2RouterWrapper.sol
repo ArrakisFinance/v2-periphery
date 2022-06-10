@@ -11,10 +11,7 @@ import {
 } from "./IArrakisV2Router.sol";
 
 interface IArrakisV2RouterWrapper {
-    function addLiquidity(
-        IVaultV2 pool,
-        AddLiquidityData memory _addData
-    )
+    function addLiquidity(IVaultV2 pool, AddLiquidityData memory _addData)
         external
         payable
         returns (
@@ -26,12 +23,7 @@ interface IArrakisV2RouterWrapper {
     function removeLiquidity(
         IVaultV2 pool,
         RemoveLiquidityData memory _removeData
-    )
-        external
-        returns (
-            uint256 amount0,
-            uint256 amount1
-        );
+    ) external returns (uint256 amount0, uint256 amount1);
 
     function swapAndAddLiquidity(
         IVaultV2 pool,

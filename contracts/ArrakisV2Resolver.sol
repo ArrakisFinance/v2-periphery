@@ -34,7 +34,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
     ) external view override returns (bool zeroForOne, uint256 swapAmount) {
         uint256 amount0Left;
         uint256 amount1Left;
-        
+
         try resolver.getMintAmounts(pool, amount0In, amount1In) returns (
             uint256 amount0,
             uint256 amount1,
