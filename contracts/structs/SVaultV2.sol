@@ -8,17 +8,17 @@ import {
     IUniswapV3Factory
 } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 
-struct Position {
+struct PositionLiquidity {
     uint128 liquidity;
     Range range;
 }
 
-struct Burn {
+struct BurnLiquidity {
     uint128 liquidity;
     Range range;
 }
 
-struct SwapData {
+struct SwapPayload {
     bytes payload;
     address router;
     uint256 amountIn;
@@ -32,10 +32,10 @@ struct Range {
     uint24 feeTier;
 }
 
-struct RebalanceParams {
-    Position[] removes;
-    Position[] deposits;
-    SwapData swap;
+struct Rebalance {
+    PositionLiquidity[] removes;
+    PositionLiquidity[] deposits;
+    SwapPayload swap;
 }
 
 struct RangeWeight {
@@ -43,7 +43,7 @@ struct RangeWeight {
     uint256 weight; // should be between 0 and 100%
 }
 
-struct InitializeParams {
+struct InitializePayload {
     uint24[] feeTiers;
     address token0;
     address token1;
@@ -56,10 +56,11 @@ struct InitializeParams {
     uint16 managerFeeBPS;
     int24 maxTwapDeviation;
     uint24 twapDuration;
-    uint24 burnSlippage;
 }
 
-struct Underlying {
+// #region internal Structs
+
+struct UnderlyingOutput {
     uint256 amount0;
     uint256 amount1;
     uint256 fee0;
@@ -68,9 +69,7 @@ struct Underlying {
     uint256 leftOver1;
 }
 
-// #region internal Structs
-
-struct ComputeFeesEarned {
+struct FeesEarnedPayload {
     uint256 feeGrowthInsideLast;
     uint256 liquidity;
     int24 tick;

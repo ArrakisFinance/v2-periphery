@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
+import {IVaultV2Helper} from "./interfaces/IVaultV2Helper.sol";
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import {IUniswapV3Pool} from "./interfaces/IUniswapV3Pool.sol";
 import {
@@ -21,13 +22,16 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
 
     IVaultV2Resolver public immutable resolver;
 
-    constructor(IVaultV2Resolver _resolver) {
+    IVaultV2Helper public immutable helper;
+
+    constructor(IVaultV2Resolver _resolver, IVaultV2Helper _helper) {
         resolver = _resolver;
+        helper = _helper;
     }
 
     // solhint-disable-next-line function-max-lines
     function getRebalanceParams(
-        IVaultV2 pool,
+        IVaultV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals
@@ -35,7 +39,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         uint256 amount0Left;
         uint256 amount1Left;
 
-        try resolver.getMintAmounts(pool, amount0In, amount1In) returns (
+        try resolver.getMintAmounts(vault, amount0In, amount1In) returns (
             uint256 amount0,
             uint256 amount1,
             uint256
@@ -47,7 +51,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
             amount1Left = amount1In;
         }
 
-        (uint256 gross0, uint256 gross1) = _getUnderlyingOrLiquidity(pool);
+        (uint256 gross0, uint256 gross1) = _getUnderlyingOrLiquidity(vault);
 
         if (gross1 == 0) {
             return (false, amount1Left);
@@ -58,9 +62,9 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         }
 
         uint256 factor0 =
-            10**(18 - IERC20Metadata(address(pool.token0())).decimals());
+            10**(18 - IERC20Metadata(address(vault.token0())).decimals());
         uint256 factor1 =
-            10**(18 - IERC20Metadata(address(pool.token1())).decimals());
+            10**(18 - IERC20Metadata(address(vault.token1())).decimals());
         uint256 weightX18 =
             FullMath.mulDiv(gross0 * factor0, 1 ether, gross1 * factor1);
         uint256 proportionX18 =
@@ -80,13 +84,12 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         }
     }
 
-    function _getUnderlyingOrLiquidity(IVaultV2 pool)
+    function _getUnderlyingOrLiquidity(IVaultV2 vault)
         internal
         view
         returns (uint256 gross0, uint256 gross1)
     {
-        // TODO: getUnderlyingBalances doesn't exist in VaultV2 atm
-        (gross0, gross1) = pool.getUnderlyingBalances();
+        (gross0, gross1) = helper.totalUnderlying(vault);
         // TODO: double check how to do logic below as pool.pool() doesn't exist on V2
         // because there could be multiple pools below
         // if (gross0 == 0 && gross1 == 0) {

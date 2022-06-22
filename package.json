@@ -40,6 +40,7 @@
     "ethers": "5.5.2",
     "hardhat": "2.6.0",
     "hardhat-deploy": "0.9.14",
+    "hardhat-gas-reporter": "^1.0.8",
     "husky": "6.0.0",
     "lint-staged": "11.0.0",
     "node-fetch": "2.6.1",

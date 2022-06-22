@@ -7,11 +7,11 @@ import {
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
-    SwapData
+    AddAndSwapData
 } from "./IArrakisV2Router.sol";
 
 interface IArrakisV2RouterWrapper {
-    function addLiquidity(IVaultV2 pool, AddLiquidityData memory _addData)
+    function addLiquidity(AddLiquidityData memory _addData)
         external
         payable
         returns (
@@ -20,16 +20,11 @@ interface IArrakisV2RouterWrapper {
             uint256 mintAmount
         );
 
-    function removeLiquidity(
-        IVaultV2 pool,
-        RemoveLiquidityData memory _removeData
-    ) external returns (uint256 amount0, uint256 amount1);
+    function removeLiquidity(RemoveLiquidityData memory _removeData)
+        external
+        returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(
-        IVaultV2 pool,
-        AddLiquidityData memory _addData,
-        SwapData memory _swapData
-    )
+    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
         external
         payable
         returns (

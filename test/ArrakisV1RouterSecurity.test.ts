@@ -3,7 +3,7 @@
 // import { deployments, ethers, network } from "hardhat";
 // import { Addresses, getAddresses } from "../src/addresses";
 // import { EIP173ProxyWithReceive } from "../typechain/EIP173ProxyWithReceive";
-// import { ArrakisV1Router } from "../typechain/ArrakisV1Router";
+// import { ArrakisV1RouterWrapper } from "../typechain/ArrakisV1RouterWrapper";
 // import { IArrakisVaultV1 } from "../typechain/IArrakisVaultV1";
 
 // let addresses: Addresses;
@@ -13,7 +13,7 @@
 // describe("ArrakisV1Router Security Tests", function () {
 //   this.timeout(0);
 //   let vault: IArrakisVaultV1;
-//   let vaultRouter: ArrakisV1Router;
+//   let vaultRouterWrapper: ArrakisV1RouterWrapper;
 //   let proxy: EIP173ProxyWithReceive;
 //   before(async function () {
 //     await deployments.fixture();
@@ -37,17 +37,18 @@
 //       poolAddress
 //     )) as IArrakisVaultV1;
 
-//     const vaultRouterAddress = (await deployments.get("ArrakisV1Router"))
-//       .address;
+//     const vaultRouterWrapperAddress = (
+//       await deployments.get("ArrakisV1RouterWrapper")
+//     ).address;
 
-//     vaultRouter = (await ethers.getContractAt(
-//       "ArrakisV1Router",
-//       vaultRouterAddress
-//     )) as ArrakisV1Router;
+//     vaultRouterWrapper = (await ethers.getContractAt(
+//       "ArrakisV1RouterWrapper",
+//       vaultRouterWrapperAddress
+//     )) as ArrakisV1RouterWrapper;
 
 //     proxy = (await ethers.getContractAt(
 //       "EIP173ProxyWithReceive",
-//       vaultRouterAddress
+//       vaultRouterWrapperAddress
 //     )) as EIP173ProxyWithReceive;
 
 //     await network.provider.send("hardhat_setBalance", [
@@ -65,9 +66,10 @@
 //     it("Pause, Revocation, Ownership, Upgradeability", async function () {
 //       const proxyOwner = await proxy.proxyAdmin();
 
-//       await vaultRouter.pause();
+//       await vaultRouterWrapper.pause();
 
 //       const addLiquidityData = {
+//         vault: vault.address,
 //         amount0Max: 0,
 //         amount1Max: 0,
 //         amount0Min: 0,
@@ -76,16 +78,12 @@
 //         useETH: false,
 //         gaugeAddress: "0x0000000000000000000000000000000000000000",
 //       };
-//       const mintData = {
-//         amount0In: 0,
-//         amount1In: 0,
-//         mintAmount: 0,
-//       };
+
 //       await expect(
-//         vaultRouter.addLiquidity(vault.address, addLiquidityData, mintData)
+//         vaultRouterWrapper.addLiquidity(addLiquidityData)
 //       ).to.be.revertedWith("Pausable: paused");
-//       await vaultRouter.transferOwnership(proxyOwner);
-//       const owner = await vaultRouter.owner();
+//       await vaultRouterWrapper.transferOwnership(proxyOwner);
+//       const owner = await vaultRouterWrapper.owner();
 //       expect(owner).to.be.eq(proxyOwner);
 //       await network.provider.request({
 //         method: "hardhat_impersonateAccount",
