@@ -4,9 +4,11 @@ pragma solidity 0.8.13;
 
 import {IVaultV2} from "./IVaultV2.sol";
 import {IGauge} from "./IGauge.sol";
-import {Burn} from "../structs/SVaultV2.sol";
+import {BurnLiquidity} from "../structs/SVaultV2.sol";
 
 struct AddLiquidityData {
+    // address of ArrakisV2 vault
+    IVaultV2 vault;
     // maximum amount of token0 to forward on mint
     uint256 amount0Max;
     // maximum amount of token1 to forward on mint
@@ -24,17 +26,25 @@ struct AddLiquidityData {
 }
 
 struct MintData {
+    // address of ArrakisV2 vault
+    IVaultV2 vault;
     // amount of token0 to deposit
     uint256 amount0In;
     // amount of token1 to deposit
     uint256 amount1In;
     // amount of LP tokens to mint
     uint256 mintAmount;
+    // account to receive minted tokens
+    address receiver;
+    // address of gauge to stake tokens in
+    address gaugeAddress;
 }
 
 struct RemoveLiquidityData {
-    // struct containing liquidity to be burned per range
-    Burn[] burns;
+    // address of ArrakisV2 vault
+    IVaultV2 vault;
+    // array of BurnLiquidity
+    BurnLiquidity[] burns;
     // amount of LP tokens to burn
     uint256 burnAmount;
     // minimum amount of token0 to receive
@@ -49,7 +59,23 @@ struct RemoveLiquidityData {
     address gaugeAddress;
 }
 
-struct SwapData {
+struct AddAndSwapData {
+    // address of ArrakisV2 vault
+    IVaultV2 vault;
+    // maximum amount of token0 to forward on mint
+    uint256 amount0Max;
+    // maximum amount of token1 to forward on mint
+    uint256 amount1Max;
+    // the minimum amount of token0 actually deposited (slippage protection)
+    uint256 amount0Min;
+    // the minimum amount of token1 actually deposited (slippage protection)
+    uint256 amount1Min;
+    // account to receive minted tokens
+    address receiver;
+    // bool indicating to use native ETH
+    bool useETH;
+    // address of gauge to stake tokens in
+    address gaugeAddress;
     // max amount being swapped
     uint256 amountInSwap;
     // min amount received on swap
@@ -60,14 +86,12 @@ struct SwapData {
     address swapRouter;
     // payload for swap call
     bytes swapPayload;
+    // address of the user to be refunded
+    address payable userToRefund;
 }
 
 interface IArrakisV2Router {
-    function addLiquidity(
-        IVaultV2 pool,
-        AddLiquidityData memory _addData,
-        MintData memory _mintData
-    )
+    function addLiquidity(MintData memory _mintData)
         external
         payable
         returns (
@@ -76,17 +100,11 @@ interface IArrakisV2Router {
             uint256 mintAmount
         );
 
-    function removeLiquidity(
-        IVaultV2 pool,
-        RemoveLiquidityData memory _removeData
-    ) external returns (uint256 amount0, uint256 amount1);
+    function removeLiquidity(RemoveLiquidityData memory _removeData)
+        external
+        returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(
-        IVaultV2 pool,
-        AddLiquidityData memory _addData,
-        SwapData memory _swapData,
-        address payable userToRefund
-    )
+    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
         external
         payable
         returns (
