@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IMockVaultV2} from "./interfaces/IMockVaultV2.sol";
 
-contract VaultV2Helper {
-    function totalUnderlying(IVaultV2 vault_)
+contract MockVaultV2Helper {
+    function totalUnderlying(IMockVaultV2 vault_)
         external
         view
         returns (uint256 amount0, uint256 amount1)

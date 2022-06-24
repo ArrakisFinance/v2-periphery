@@ -1,7 +1,6 @@
 import { deployments, getNamedAccounts, ethers } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import Underlying from "../../src/v2-core/libraries/Underlying.json";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
@@ -11,11 +10,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deploy("Underlying", {
     from: deployer,
-    contract: {
-      abi: Underlying.abi,
-      bytecode: Underlying.bytecode,
-      deployedBytecode: Underlying.deployedBytecode,
-    },
     libraries: {
       Position: (await ethers.getContract("Position")).address,
       UniswapV3Amounts: (await ethers.getContract("UniswapV3Amounts")).address,

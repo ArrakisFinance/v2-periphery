@@ -28,8 +28,8 @@ contract ArrakisV2Router is IArrakisV2Router {
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    IArrakisV2Resolver public immutable resolver;
     address public immutable routerWrapperAddress;
+    IArrakisV2Resolver public immutable resolver;
 
     event Swapped(
         bool zeroForOne,

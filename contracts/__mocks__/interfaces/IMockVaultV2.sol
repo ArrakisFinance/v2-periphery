@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BurnLiquidity } from "../../structs/SVaultV2.sol";
 
-interface IVaultV2 {
+interface IMockVaultV2 {
     function mint(uint256 mintAmount_, address receiver_)
         external
         returns (uint256 amount0, uint256 amount1);

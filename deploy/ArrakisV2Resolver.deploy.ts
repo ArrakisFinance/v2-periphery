@@ -1,6 +1,7 @@
-import { deployments, getNamedAccounts } from "hardhat";
+import { deployments, getNamedAccounts, ethers } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import { Addresses, getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -16,13 +17,19 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  const addresses: Addresses = getAddresses(hre.network.name);
 
   // TODO: add correct addresses here
   await deploy("ArrakisV2Resolver", {
     from: deployer,
+    libraries: {
+      Position: (await ethers.getContract("Position")).address,
+      Underlying: (await ethers.getContract("Underlying")).address,
+      UniswapV3Amounts: (await ethers.getContract("UniswapV3Amounts")).address,
+    },
     args: [
-      "0x0000000000000000000000000000000000000000",
-      "0x0000000000000000000000000000000000000000",
+      addresses.UniswapV3Factory,
+      (await ethers.getContract("MockVaultV2Helper")).address,
     ],
   });
 };
@@ -37,5 +44,12 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ["ArrakisV2Resolver"];
+
+func.dependencies = [
+  "Underlying",
+  "UniswapV3Amounts",
+  "Position",
+  "MockVaultV2Helper",
+];
 
 export default func;

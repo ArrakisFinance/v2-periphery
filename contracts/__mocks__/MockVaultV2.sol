@@ -14,10 +14,10 @@ import {
 } from "../structs/SVaultV2.sol";
 
 import {
-    ERC20Upgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+    ERC20
+} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract VaultV2 is ERC20Upgradeable {
+contract MockVaultV2 is ERC20 {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -48,15 +48,13 @@ contract VaultV2 is ERC20Upgradeable {
         uint256 totalSupply_,
         address token0_,
         address token1_
-    ) {
-        __ERC20_init("Rakis", "RAKIS");
-
+    ) ERC20("Rakis", "RAKIS") {
+        token0 = IERC20(token0_);
+        token1 = IERC20(token1_);
+        
         reserves0 = reserves0_;
         reserves1 = reserves1_;
         _mint(msg.sender, totalSupply_);
-
-        token0 = IERC20(token0_);
-        token1 = IERC20(token1_);
     }
 
     function mint(uint256 mintAmount_, address receiver_)
@@ -93,7 +91,7 @@ contract VaultV2 is ERC20Upgradeable {
         uint256 totalSupply = totalSupply();
         require(totalSupply > 0, "total supply");
         require(burns.length == 0, "burns[] should be empty on mock contract");
-        
+
         amount0 = FullMath.mulDiv(
             reserves0,
             burnAmount_,
