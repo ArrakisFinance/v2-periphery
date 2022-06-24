@@ -3,48 +3,48 @@
 // import { deployments, ethers, network } from "hardhat";
 // import { Addresses, getAddresses } from "../src/addresses";
 // import { EIP173ProxyWithReceive } from "../typechain/EIP173ProxyWithReceive";
-// import { ArrakisV1RouterWrapper } from "../typechain/ArrakisV1RouterWrapper";
-// import { IArrakisVaultV1 } from "../typechain/IArrakisVaultV1";
+// import { ArrakisV2RouterWrapper } from "../typechain/ArrakisV2RouterWrapper";
+// import { IVaultV2 } from "../typechain/IVaultV2";
 
-// let addresses: Addresses;
+// // let addresses: Addresses;
 // let wallet: SignerWithAddress;
 // let walletAddress: string;
 
 // describe("ArrakisV1Router Security Tests", function () {
 //   this.timeout(0);
-//   let vault: IArrakisVaultV1;
-//   let vaultRouterWrapper: ArrakisV1RouterWrapper;
+//   let vault: IVaultV2;
+//   let vaultRouterWrapper: ArrakisV2RouterWrapper;
 //   let proxy: EIP173ProxyWithReceive;
 //   before(async function () {
 //     await deployments.fixture();
-//     addresses = getAddresses(network.name);
+//     // addresses = getAddresses(network.name);
 
 //     [wallet] = await ethers.getSigners();
 //     walletAddress = await wallet.getAddress();
 
-//     const arrakisFactory = await ethers.getContractAt(
-//       [
-//         "function getDeployers() external view returns(address[] memory)",
-//         "function getPools(address) external view returns(address[] memory)",
-//       ],
-//       addresses.ArrakisV1Factory
-//     );
-//     const deployers = await arrakisFactory.getDeployers();
-//     const pools = await arrakisFactory.getPools(deployers[0]);
-//     const poolAddress = pools[0];
-//     vault = (await ethers.getContractAt(
-//       "IArrakisVaultV1",
-//       poolAddress
-//     )) as IArrakisVaultV1;
+//     // const arrakisFactory = await ethers.getContractAt(
+//     //   [
+//     //     "function getDeployers() external view returns(address[] memory)",
+//     //     "function getPools(address) external view returns(address[] memory)",
+//     //   ],
+//     //   addresses.ArrakisV1Factory
+//     // );
+//     // const deployers = await arrakisFactory.getDeployers();
+//     // const pools = await arrakisFactory.getPools(deployers[0]);
+//     // const poolAddress = pools[0];
+//     // vault = (await ethers.getContractAt(
+//     //   "IArrakisVaultV1",
+//     //   poolAddress
+//     // )) as IArrakisVaultV1;
 
 //     const vaultRouterWrapperAddress = (
-//       await deployments.get("ArrakisV1RouterWrapper")
+//       await deployments.get("ArrakisV2RouterWrapper")
 //     ).address;
 
 //     vaultRouterWrapper = (await ethers.getContractAt(
-//       "ArrakisV1RouterWrapper",
+//       "ArrakisV2RouterWrapper",
 //       vaultRouterWrapperAddress
-//     )) as ArrakisV1RouterWrapper;
+//     )) as ArrakisV2RouterWrapper;
 
 //     proxy = (await ethers.getContractAt(
 //       "EIP173ProxyWithReceive",
@@ -69,7 +69,7 @@
 //       await vaultRouterWrapper.pause();
 
 //       const addLiquidityData = {
-//         vault: vault.address,
+//         vault: "0x0000000000000000000000000000000000000000",
 //         amount0Max: 0,
 //         amount1Max: 0,
 //         amount0Min: 0,

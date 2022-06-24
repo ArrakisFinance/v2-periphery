@@ -1,7 +1,6 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -10,48 +9,33 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV1Router to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2Resolver to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const addresses = getAddresses(hre.network.name);
 
-  const arrakisV1RouterWrapper = await deployments.get(
-    "ArrakisV1RouterWrapper"
-  );
-
-  await deploy("ArrakisV1Router", {
+  // TODO: add correct addresses here
+  await deploy("ArrakisV2Resolver", {
     from: deployer,
-    proxy: {
-      proxyContract: "EIP173ProxyWithReceive",
-      owner: addresses.ArrakisDevMultiSig,
-      execute: {
-        init: {
-          methodName: "initialize",
-          args: [],
-        },
-      },
-    },
-    args: [addresses.WETH, arrakisV1RouterWrapper.address],
-    log: hre.network.name !== "hardhat",
-    gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    args: [
+      "0x0000000000000000000000000000000000000000",
+      "0x0000000000000000000000000000000000000000",
+    ],
   });
 };
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
-    //hre.network.name === "polygon" ||
+    hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "goerli";
   return shouldSkip ? true : false;
 };
 
-func.tags = ["ArrakisV1Router"];
-
-func.dependencies = ["ArrakisV1RouterWrapper"];
+func.tags = ["ArrakisV2Resolver"];
 
 export default func;

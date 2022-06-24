@@ -32,7 +32,7 @@ import {
 import {
     IArrakisV2RouterWrapper
 } from "./interfaces/IArrakisV2RouterWrapper.sol";
-import {IVaultV2Resolver} from "./interfaces/IVaultV2Resolver.sol";
+import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
 
 contract ArrakisV2RouterWrapper is
     IArrakisV2RouterWrapper,
@@ -45,10 +45,10 @@ contract ArrakisV2RouterWrapper is
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    IVaultV2Resolver public immutable resolver;
+    IArrakisV2Resolver public immutable resolver;
     IArrakisV2Router public router;
 
-    constructor(IWETH _weth, IVaultV2Resolver _resolver) {
+    constructor(IWETH _weth, IArrakisV2Resolver _resolver) {
         weth = _weth;
         resolver = _resolver;
     }

@@ -11,7 +11,7 @@ import {
     AddAndSwapData
 } from "./interfaces/IArrakisV2Router.sol";
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
-import {IVaultV2Resolver} from "./interfaces/IVaultV2Resolver.sol";
+import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 import {
@@ -28,7 +28,7 @@ contract ArrakisV2Router is IArrakisV2Router {
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    IVaultV2Resolver public immutable resolver;
+    IArrakisV2Resolver public immutable resolver;
     address public immutable routerWrapperAddress;
 
     event Swapped(
@@ -46,7 +46,7 @@ contract ArrakisV2Router is IArrakisV2Router {
     constructor(
         IWETH _weth,
         address _routerWrapperAddress,
-        IVaultV2Resolver _resolver
+        IArrakisV2Resolver _resolver
     ) {
         weth = _weth;
         routerWrapperAddress = _routerWrapperAddress;
