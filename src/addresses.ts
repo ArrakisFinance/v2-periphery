@@ -7,6 +7,7 @@ export interface Addresses {
   BlacklistedRouter: string;
   WETH: string;
   ArrakisDevMultiSig: string;
+  ArrakisFeeTreasury: string;
   ArrakisV1UsdcWethPool: string;
   ArrakisV1agEURWethPool: string;
   OneInchRouter: string;
@@ -25,6 +26,7 @@ export const getAddresses = (network: string): Addresses => {
         BlacklistedRouter: "0x14E6D67F824C3a7b4329d3228807f8654294e4bd",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         ArrakisV1UsdcWethPool: "0xa6c49FD13E50a30C65E6C8480aADA132011D0613",
         ArrakisV1agEURWethPool: "0x857E0B2eD0E82D5cDEB015E77ebB873C47F99575",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
@@ -40,6 +42,7 @@ export const getAddresses = (network: string): Addresses => {
         BlacklistedRouter: "0x14E6D67F824C3a7b4329d3228807f8654294e4bd",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
         ArrakisV1UsdcWethPool: "0xa6c49FD13E50a30C65E6C8480aADA132011D0613",
         ArrakisV1agEURWethPool: "0x857E0B2eD0E82D5cDEB015E77ebB873C47F99575",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
@@ -55,6 +58,7 @@ export const getAddresses = (network: string): Addresses => {
         BlacklistedRouter: "0x899F86617B8D92A10aD8Fee92a6666e1dF84c037",
         WETH: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
         ArrakisDevMultiSig: "0xAabB54394E8dd61Dd70897E9c80be8de7C64A895",
+        ArrakisFeeTreasury: "",
         ArrakisV1UsdcWethPool: "",
         ArrakisV1agEURWethPool: "",
         OneInchRouter: "",
@@ -70,6 +74,7 @@ export const getAddresses = (network: string): Addresses => {
         BlacklistedRouter: "",
         WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
         ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         ArrakisV1UsdcWethPool: "",
         ArrakisV1agEURWethPool: "",
         OneInchRouter: "",
@@ -85,6 +90,7 @@ export const getAddresses = (network: string): Addresses => {
         BlacklistedRouter: "",
         WETH: "0x4200000000000000000000000000000000000006",
         ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisFeeTreasury: "",
         ArrakisV1UsdcWethPool: "",
         ArrakisV1agEURWethPool: "",
         OneInchRouter: "",
