@@ -1,20 +1,28 @@
 import { deployments, getNamedAccounts, ethers } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import Underlying from "../../src/v2-core/libraries/Underlying.json";
+import Underlying from "../../deployJSON/Underlying.json";
+import { getLinkedByteCode } from "../../src/modifyByteCode";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const positionAddress = (await ethers.getContract("Position")).address;
-  console.log("positionAddress:", positionAddress);
+
+  const libraries = {
+    Position: (await ethers.getContract("Position")).address,
+    UniswapV3Amounts: (await ethers.getContract("UniswapV3Amounts")).address,
+  };
+  const byteCode = getLinkedByteCode(
+    Underlying.bytecode,
+    Underlying.linkReferences,
+    libraries
+  );
 
   await deploy("Underlying", {
     from: deployer,
     contract: {
       abi: Underlying.abi,
-      bytecode: Underlying.bytecode,
-      deployedBytecode: Underlying.deployedBytecode,
+      bytecode: byteCode,
     },
     libraries: {
       Position: (await ethers.getContract("Position")).address,
