@@ -11,7 +11,7 @@ interface IArrakisV2Resolver {
         uint256 amount1In,
         uint256 price18Decimals
     ) external view returns (bool zeroForOne, uint256 swapAmount);
-    
+
     function standardRebalance(
         RangeWeight[] memory rangeWeights_,
         IVaultV2 vaultV2_

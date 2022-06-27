@@ -107,7 +107,7 @@ type MockPayloadScenario = {
 type MockPayloads = {
   [vaultAddress: string]: MockPayloadScenario;
 };
-
+/* eslint-disable @typescript-eslint/naming-convention */
 const mockPayloads: MockPayloads = {
   "0xAbDDAfB225e10B90D798bB8A886238Fb835e2053": {
     // use A,B and swap A for B + use A,B and swap A for B and stake
@@ -142,7 +142,7 @@ const mockPayloads: MockPayloads = {
         "0x2e95b6c8000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000000000002c2b97e800000000000000000000000000000000000000000000002611d31f87f8f5b9350000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000180000000000000003b6d0340ae461ca67b15dc8dc81ce7615e0320da1a9ab8d5cfee7c08",
     },
   },
-  "0xa6c49FD13E50a30C65E6C8480aADA132011D0613": {
+  "USDC/WETH": {
     // use A,B and swap A for B + (... and stake) + (... with native ETH) + (... with native ETH and stake)
     scenario1: {
       swapIn: "9983580511",

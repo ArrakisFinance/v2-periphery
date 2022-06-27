@@ -29,7 +29,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     },
     args: [
       addresses.UniswapV3Factory,
-      (await ethers.getContract("MockVaultV2Helper")).address,
+      (await ethers.getContract("VaultV2Helper")).address,
     ],
   });
 };
@@ -49,7 +49,7 @@ func.dependencies = [
   "Underlying",
   "UniswapV3Amounts",
   "Position",
-  "MockVaultV2Helper",
+  "VaultV2Helper",
 ];
 
 export default func;

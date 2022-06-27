@@ -7,7 +7,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
 
   // values from USDC/WETH pool on 24/6/22
-  await deploy("MockVaultV2", {
+  await deploy("VaultV2", {
     from: deployer,
     args: [
       ethers.BigNumber.from("639282782"),
@@ -30,4 +30,4 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "optimism";
   return shouldSkip ? true : false;
 };
-func.tags = ["MockVaultV2"];
+func.tags = ["VaultV2"];

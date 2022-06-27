@@ -84,11 +84,11 @@ contract ArrakisV2Router is IArrakisV2Router {
 
             IERC20(address(_mintData.vault)).safeIncreaseAllowance(
                 _mintData.gaugeAddress,
-                mintAmount
+                _mintData.mintAmount
             );
 
             IGauge(_mintData.gaugeAddress).deposit(
-                mintAmount,
+                _mintData.mintAmount,
                 _mintData.receiver
             );
         } else {
@@ -266,6 +266,7 @@ contract ArrakisV2Router is IArrakisV2Router {
         }
 
         (uint256 amount0, uint256 amount1) = vault.mint(mintAmount, receiver);
+
         require(
             amount0 == amount0In && amount1 == amount1In,
             "unexpected amounts deposited"

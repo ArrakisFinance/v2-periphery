@@ -49,9 +49,8 @@ library UniswapV3Amounts {
                 feeGrowthAbove = feeGrowthGlobal - feeGrowthOutsideUpper;
             }
 
-            uint256 feeGrowthInside = feeGrowthGlobal -
-                feeGrowthBelow -
-                feeGrowthAbove;
+            uint256 feeGrowthInside =
+                feeGrowthGlobal - feeGrowthBelow - feeGrowthAbove;
             fee = FullMath.mulDiv(
                 computeFeesEarned_.liquidity,
                 feeGrowthInside - computeFeesEarned_.feeGrowthInsideLast,
@@ -96,16 +95,10 @@ library UniswapV3Amounts {
         } else if (current1_ == 0 && current0_ > 0) {
             mintAmount = FullMath.mulDiv(amount0Max_, totalSupply_, current0_);
         } else if (current0_ > 0 && current1_ > 0) {
-            uint256 amount0Mint = FullMath.mulDiv(
-                amount0Max_,
-                totalSupply_,
-                current0_
-            );
-            uint256 amount1Mint = FullMath.mulDiv(
-                amount1Max_,
-                totalSupply_,
-                current1_
-            );
+            uint256 amount0Mint =
+                FullMath.mulDiv(amount0Max_, totalSupply_, current0_);
+            uint256 amount1Mint =
+                FullMath.mulDiv(amount1Max_, totalSupply_, current1_);
             require(
                 amount0Mint > 0 && amount1Mint > 0,
                 "ArrakisVaultV2: mint 0"

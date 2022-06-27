@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {
+    IUniswapV3Pool
+} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LiquidityAmounts} from "../vendor/uniswap/LiquidityAmounts.sol";
 import {TickMath} from "../vendor/uniswap/TickMath.sol";
@@ -30,22 +32,24 @@ library Underlying {
     {
         for (uint256 i = 0; i < underlyingPayload_.ranges.length; i++) {
             {
-                IUniswapV3Pool pool = IUniswapV3Pool(
-                    underlyingPayload_.factory.getPool(
-                        underlyingPayload_.token0,
-                        underlyingPayload_.token1,
-                        underlyingPayload_.ranges[i].feeTier
-                    )
-                );
+                IUniswapV3Pool pool =
+                    IUniswapV3Pool(
+                        underlyingPayload_.factory.getPool(
+                            underlyingPayload_.token0,
+                            underlyingPayload_.token1,
+                            underlyingPayload_.ranges[i].feeTier
+                        )
+                    );
                 (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
-                (uint256 a0, uint256 a1, uint256 f0, uint256 f1) = underlying(
-                    RangeData({
-                        self: underlyingPayload_.self,
-                        range: underlyingPayload_.ranges[i],
-                        pool: pool
-                    }),
-                    sqrtPriceX96
-                );
+                (uint256 a0, uint256 a1, uint256 f0, uint256 f1) =
+                    underlying(
+                        RangeData({
+                            self: underlyingPayload_.self,
+                            range: underlyingPayload_.ranges[i],
+                            pool: pool
+                        }),
+                        sqrtPriceX96
+                    );
                 amount0 += a0 + f0;
                 amount1 += a1 + f1;
                 fee0 += f0;
@@ -76,19 +80,21 @@ library Underlying {
         uint256 f0;
         uint256 f1;
         (, int24 tick, , , , , ) = underlying_.pool.slot0();
-        bytes32 positionId = Position.getPositionId(
-            underlying_.self,
-            underlying_.range.lowerTick,
-            underlying_.range.upperTick
-        );
-        PositionUnderlying memory positionUnderlying = PositionUnderlying({
-            positionId: positionId,
-            sqrtPriceX96: sqrtPriceX96_,
-            tick: tick,
-            lowerTick: underlying_.range.lowerTick,
-            upperTick: underlying_.range.upperTick,
-            pool: underlying_.pool
-        });
+        bytes32 positionId =
+            Position.getPositionId(
+                underlying_.self,
+                underlying_.range.lowerTick,
+                underlying_.range.upperTick
+            );
+        PositionUnderlying memory positionUnderlying =
+            PositionUnderlying({
+                positionId: positionId,
+                sqrtPriceX96: sqrtPriceX96_,
+                tick: tick,
+                lowerTick: underlying_.range.lowerTick,
+                upperTick: underlying_.range.upperTick,
+                pool: underlying_.pool
+            });
         (a0, a1, f0, f1) = getUnderlyingBalances(positionUnderlying);
         amount0 += a0;
         amount1 += a1;
@@ -120,11 +126,11 @@ library Underlying {
         // compute current holdings from liquidity
         (amount0Current, amount1Current) = LiquidityAmounts
             .getAmountsForLiquidity(
-                positionUnderlying_.sqrtPriceX96,
-                TickMath.getSqrtRatioAtTick(positionUnderlying_.lowerTick),
-                TickMath.getSqrtRatioAtTick(positionUnderlying_.upperTick),
-                liquidity
-            );
+            positionUnderlying_.sqrtPriceX96,
+            TickMath.getSqrtRatioAtTick(positionUnderlying_.lowerTick),
+            TickMath.getSqrtRatioAtTick(positionUnderlying_.upperTick),
+            liquidity
+        );
 
         // compute current fees earned
         fee0 =

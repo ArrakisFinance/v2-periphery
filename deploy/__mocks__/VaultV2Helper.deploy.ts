@@ -5,7 +5,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  await deploy("MockVaultV2Helper", {
+  await deploy("VaultV2Helper", {
     from: deployer,
     log: hre.network.name != "hardhat" ? true : false,
   });
@@ -21,4 +21,4 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "optimism";
   return shouldSkip ? true : false;
 };
-func.tags = ["MockVaultV2Helper"];
+func.tags = ["VaultV2Helper"];

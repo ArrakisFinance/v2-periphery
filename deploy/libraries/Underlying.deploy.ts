@@ -5,8 +5,6 @@ import { DeployFunction } from "hardhat-deploy/types";
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const positionAddress = (await ethers.getContract("Position")).address;
-  console.log("positionAddress:", positionAddress);
 
   await deploy("Underlying", {
     from: deployer,

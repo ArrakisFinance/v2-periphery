@@ -2,8 +2,12 @@
 
 pragma solidity 0.8.13;
 
-import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {
+    IUniswapV3Factory
+} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import {
+    IUniswapV3Pool
+} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {
     IERC20Metadata
@@ -52,7 +56,8 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         uint256 amount0Left;
         uint256 amount1Left;
 
-        (uint256 amount0, uint256 amount1, ) = getMintAmounts(vault, amount0In, amount1In);
+        (uint256 amount0, uint256 amount1, ) =
+            getMintAmounts(vault, amount0In, amount1In);
         amount0Left = amount0In - amount0;
         amount1Left = amount1In - amount1;
 
@@ -105,9 +110,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
             token0Addr = address(vaultV2_.token0());
             token1Addr = address(vaultV2_.token1());
 
-            (amount0, amount1) = helper.totalUnderlying(
-                vaultV2_
-            );
+            (amount0, amount1) = helper.totalUnderlying(vaultV2_);
 
             for (uint256 i = 0; i < ranges.length; i++) {
                 uint128 liquidity;
@@ -118,13 +121,14 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
                             token1Addr,
                             ranges[i].feeTier
                         )
-                    ).positions(
-                            PositionHelper.getPositionId(
-                                address(vaultV2_),
-                                ranges[i].lowerTick,
-                                ranges[i].upperTick
-                            )
-                        );
+                    )
+                        .positions(
+                        PositionHelper.getPositionId(
+                            address(vaultV2_),
+                            ranges[i].lowerTick,
+                            ranges[i].upperTick
+                        )
+                    );
                 }
 
                 if (liquidity > 0)
@@ -139,25 +143,30 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
 
         _requireWeightUnder100(rangeWeights_);
 
-        rebalanceParams.deposits = new PositionLiquidity[](rangeWeights_.length);
+        rebalanceParams.deposits = new PositionLiquidity[](
+            rangeWeights_.length
+        );
 
         for (uint256 i = 0; i < rangeWeights_.length; i++) {
             RangeWeight memory rangeWeight = rangeWeights_[i];
-            (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(
-                vaultV2_.factory().getPool(
-                    token0Addr,
-                    token1Addr,
-                    rangeWeight.range.feeTier
+            (uint160 sqrtPriceX96, , , , , , ) =
+                IUniswapV3Pool(
+                    vaultV2_.factory().getPool(
+                        token0Addr,
+                        token1Addr,
+                        rangeWeight.range.feeTier
+                    )
                 )
-            ).slot0();
+                    .slot0();
 
-            uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
-                sqrtPriceX96,
-                TickMath.getSqrtRatioAtTick(rangeWeight.range.lowerTick),
-                TickMath.getSqrtRatioAtTick(rangeWeight.range.upperTick),
-                FullMath.mulDiv(amount0, rangeWeight.weight, 10000),
-                FullMath.mulDiv(amount1, rangeWeight.weight, 10000)
-            );
+            uint128 liquidity =
+                LiquidityAmounts.getLiquidityForAmounts(
+                    sqrtPriceX96,
+                    TickMath.getSqrtRatioAtTick(rangeWeight.range.lowerTick),
+                    TickMath.getSqrtRatioAtTick(rangeWeight.range.upperTick),
+                    FullMath.mulDiv(amount0, rangeWeight.weight, 10000),
+                    FullMath.mulDiv(amount1, rangeWeight.weight, 10000)
+                );
 
             rebalanceParams.deposits[i] = PositionLiquidity({
                 liquidity: liquidity,
@@ -193,12 +202,16 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
                     self: address(vaultV2_)
                 })
             );
-            underlying.leftOver0 = vaultV2_.token0().balanceOf(address(vaultV2_));
-            underlying.leftOver1 = vaultV2_.token1().balanceOf(address(vaultV2_));
+            underlying.leftOver0 = vaultV2_.token0().balanceOf(
+                address(vaultV2_)
+            );
+            underlying.leftOver1 = vaultV2_.token1().balanceOf(
+                address(vaultV2_)
+            );
 
             {
-                (uint256 fee0, uint256 fee1) = UniswapV3Amounts
-                    .subtractAdminFees(
+                (uint256 fee0, uint256 fee1) =
+                    UniswapV3Amounts.subtractAdminFees(
                         underlying.fee0,
                         underlying.fee1,
                         vaultV2_.managerFeeBPS(),
@@ -209,16 +222,18 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
             }
 
             {
-                uint256 amount0 = FullMath.mulDiv(
-                    underlying.amount0,
-                    amountToBurn_,
-                    totalSupply
-                );
-                uint256 amount1 = FullMath.mulDiv(
-                    underlying.amount1,
-                    amountToBurn_,
-                    totalSupply
-                );
+                uint256 amount0 =
+                    FullMath.mulDiv(
+                        underlying.amount0,
+                        amountToBurn_,
+                        totalSupply
+                    );
+                uint256 amount1 =
+                    FullMath.mulDiv(
+                        underlying.amount1,
+                        amountToBurn_,
+                        totalSupply
+                    );
 
                 if (
                     amount0 <= underlying.leftOver0 &&
@@ -239,13 +254,14 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
                         address(vaultV2_.token1()),
                         ranges[i].feeTier
                     )
-                ).positions(
-                        PositionHelper.getPositionId(
-                            address(vaultV2_),
-                            ranges[i].lowerTick,
-                            ranges[i].upperTick
-                        )
-                    );
+                )
+                    .positions(
+                    PositionHelper.getPositionId(
+                        address(vaultV2_),
+                        ranges[i].lowerTick,
+                        ranges[i].upperTick
+                    )
+                );
             }
 
             burns[i] = BurnLiquidity({
@@ -271,29 +287,28 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
             uint256 mintAmount
         )
     {
-        (uint256 current0, uint256 current1) = helper.totalUnderlying(
-            vaultV2_
-        );
+        (uint256 current0, uint256 current1) = helper.totalUnderlying(vaultV2_);
 
         uint256 totalSupply = vaultV2_.totalSupply();
         if (totalSupply > 0) {
             (amount0, amount1, mintAmount) = UniswapV3Amounts
                 .computeMintAmounts(
-                    current0,
-                    current1,
-                    totalSupply,
-                    amount0Max_,
-                    amount1Max_
-                );
-        } else
+                current0,
+                current1,
+                totalSupply,
+                amount0Max_,
+                amount1Max_
+            );
+        } else {
             (amount0, amount1, mintAmount) = UniswapV3Amounts
                 .computeMintAmounts(
-                    vaultV2_.init0(),
-                    vaultV2_.init1(),
-                    1 ether,
-                    amount0Max_,
-                    amount1Max_
-                );
+                vaultV2_.init0(),
+                vaultV2_.init1(),
+                1 ether,
+                amount0Max_,
+                amount1Max_
+            );
+        }
     }
 
     function getAmountsForLiquidity(

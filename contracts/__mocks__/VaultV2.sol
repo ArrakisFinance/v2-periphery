@@ -9,15 +9,12 @@ import {
     EnumerableSet
 } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {FullMath} from "../vendor/uniswap/LiquidityAmounts.sol";
-import {
-    BurnLiquidity
-} from "../structs/SVaultV2.sol";
+import {BurnLiquidity} from "../structs/SVaultV2.sol";
 
-import {
-    ERC20
-} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract MockVaultV2 is ERC20 {
+////@notice MOCK CONTRACT JUST FOR TESTS
+contract VaultV2 is ERC20 {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -26,6 +23,8 @@ contract MockVaultV2 is ERC20 {
 
     uint256 public reserves0;
     uint256 public reserves1;
+    uint256 public init0;
+    uint256 public init1;
 
     event Minted(
         address receiver,
@@ -51,32 +50,59 @@ contract MockVaultV2 is ERC20 {
     ) ERC20("Rakis", "RAKIS") {
         token0 = IERC20(token0_);
         token1 = IERC20(token1_);
-        
+
         reserves0 = reserves0_;
         reserves1 = reserves1_;
+
+        init0 = reserves0;
+        init1 = reserves1;
+
         _mint(msg.sender, totalSupply_);
     }
 
+    // solhint-disable-next-line function-max-lines
     function mint(uint256 mintAmount_, address receiver_)
         external
         returns (uint256 amount0, uint256 amount1)
     {
         require(mintAmount_ > 0, "mint amount");
         uint256 totalSupply = totalSupply();
+
         uint256 denominator = totalSupply > 0 ? totalSupply : 1 ether;
-        amount0 = FullMath.mulDivRoundingUp(mintAmount_, reserves0, denominator);
-        amount1 = FullMath.mulDivRoundingUp(mintAmount_, reserves1, denominator);
+        if (totalSupply > 0) {
+            amount0 = FullMath.mulDivRoundingUp(
+                mintAmount_,
+                reserves0,
+                denominator
+            );
+            amount1 = FullMath.mulDivRoundingUp(
+                mintAmount_,
+                reserves1,
+                denominator
+            );
+        } else {
+            amount0 = FullMath.mulDivRoundingUp(
+                mintAmount_,
+                init0,
+                denominator
+            );
+            amount1 = FullMath.mulDivRoundingUp(
+                mintAmount_,
+                init1,
+                denominator
+            );
+        }
 
         _mint(receiver_, mintAmount_);
 
         // transfer amounts owed to contract
         if (amount0 > 0) {
-            token0.safeTransferFrom(msg.sender, address(this), amount0);
             reserves0 += amount0;
+            token0.safeTransferFrom(msg.sender, address(this), amount0);
         }
         if (amount1 > 0) {
-            token1.safeTransferFrom(msg.sender, address(this), amount1);
             reserves1 += amount1;
+            token1.safeTransferFrom(msg.sender, address(this), amount1);
         }
 
         emit Minted(receiver_, mintAmount_, amount0, amount1);
@@ -92,29 +118,29 @@ contract MockVaultV2 is ERC20 {
         require(totalSupply > 0, "total supply");
         require(burns.length == 0, "burns[] should be empty on mock contract");
 
-        amount0 = FullMath.mulDiv(
-            reserves0,
-            burnAmount_,
-            totalSupply
-        );
-        amount1 = FullMath.mulDiv(
-            reserves1,
-            burnAmount_,
-            totalSupply
-        );
+        amount0 = FullMath.mulDiv(reserves0, burnAmount_, totalSupply);
+        amount1 = FullMath.mulDiv(reserves1, burnAmount_, totalSupply);
 
         _burn(msg.sender, burnAmount_);
-        
+
         if (amount0 > 0) {
-            token0.safeTransfer(receiver_, amount0);
             reserves0 -= amount0;
+            token0.safeTransfer(receiver_, amount0);
         }
 
         if (amount1 > 0) {
-            token1.safeTransfer(receiver_, amount1);
             reserves1 -= amount1;
+            token1.safeTransfer(receiver_, amount1);
         }
 
         emit Burned(receiver_, burnAmount_, amount0, amount1);
     }
+
+    // function init0() external view returns (uint256) {
+    //     return reserves0;
+    // }
+
+    // function init1() external view returns (uint256) {
+    //     return reserves1;
+    // }
 }
