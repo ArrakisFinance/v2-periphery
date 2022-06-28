@@ -6,7 +6,6 @@ import {
   ArrakisV2Resolver,
   ERC20,
   IVaultV2,
-  // IVaultV2Helper,
   IVaultV2Factory,
   IUniswapV3Pool,
   IUniswapV3Factory,
@@ -51,7 +50,6 @@ describe("ArrakisV2Router tests", function () {
 
   let vaultV2Factory: IVaultV2Factory;
   let vault: IVaultV2;
-  // let helper: IVaultV2Helper;
 
   let gauge: Contract;
   let routerBalanceEth: BigNumber | undefined;
@@ -108,11 +106,6 @@ describe("ArrakisV2Router tests", function () {
     // console.log("balance0Before: ", balance0Before?.toString());
     // console.log("balance1Before: ", balance1Before?.toString());
     // console.log("balanceEthBefore: ", balanceEthBefore?.toString());
-
-    // get current underlying amounts pre-deposit
-    // let [amount0Current, amount1Current] = await helper.totalUnderlying(vault);
-    // console.log("amount0Current: ", amount0Current?.toString());
-    // console.log("amount1Current: ", amount1Current?.toString());
 
     // we store working payloads from 1inch API for the swaps needed for tests and block number tests are pinned to
     let swapParams: OneInchDataType;
@@ -529,36 +522,6 @@ describe("ArrakisV2Router tests", function () {
       );
       expect(wrapperBalanceStRakis).to.equal(ethers.constants.Zero);
     }
-
-    // const [amount0Current, amount1Current] = await helper.totalUnderlying(
-    //   vault
-    // );
-    // if (amount0Current.gt(0) && amount1Current.gt(0)) {
-    //   // validates nothing can be minted with current amounts refunded
-    //   await expect(
-    //     resolver.getMintAmounts(vault, refund0.toString(), refund1.toString())
-    //   ).to.be.revertedWith("mint 0");
-    // }
-    // else {
-    //   const mintAmountsEnd = await vault.getMintAmounts(
-    //     refund0.toString(),
-    //     refund1.toString()
-    //   );
-    //   // console.log(
-    //   //   "mintAmountsEnd.amount0.toString() ",
-    //   //   mintAmountsEnd.amount0.toString()
-    //   // );
-    //   // console.log(
-    //   //   "mintAmountsEnd.amount1.toString() ",
-    //   //   mintAmountsEnd.amount1.toString()
-    //   // );
-    //   // console.log(
-    //   //   "mintAmountsEnd.mintAmount.toString() ",
-    //   //   mintAmountsEnd.mintAmount.toString()
-    //   // );
-    //   // for some reason check below fails on test "use only B"
-    //   // expect(mintAmountsEnd.mintAmount).to.equal(ethers.constants.Zero);
-    // }
   };
 
   before(async function () {
@@ -613,13 +576,6 @@ describe("ArrakisV2Router tests", function () {
 
     // initializing factory
     await vaultV2Factory.initialize(vaultImplementationAddress, walletAddress);
-
-    // getting helper
-    // const helperAddress = (await deployments.get("VaultV2Helper")).address;
-    // helper = (await ethers.getContractAt(
-    //   "IVaultV2Helper",
-    //   helperAddress
-    // )) as IVaultV2Helper;
 
     // getting uniswap factory
     const uniswapV3Factory = (await ethers.getContractAt(
@@ -1291,65 +1247,67 @@ describe("ArrakisV2Router tests", function () {
   });
 
   describe("Swap and add liquidity tests", function () {
-    it("should test USDC/ETH vault", async function () {
-      expect(await vault.token1()).to.equal(addresses.WETH);
+    it("should use A,B and swap A for B", async function () {
+      await swapAndAddTest(
+        vault,
+        token0,
+        token1,
+        rakisToken,
+        ethers.BigNumber.from("10000"),
+        ethers.BigNumber.from("1"),
+        true,
+        5,
+        false,
+        "scenario1"
+      );
+    });
+    it("should use A,B and swap A for B and stake", async function () {
+      await swapAndAddTest(
+        vault,
+        token0,
+        token1,
+        rakisToken,
+        ethers.BigNumber.from("10000"),
+        ethers.BigNumber.from("1"),
+        true,
+        5,
+        false,
+        "scenario1",
+        stRakisToken
+      );
+    });
+    it("should use A,B and swap A for B using nativeETH", async function () {
+      await swapAndAddTest(
+        vault,
+        token0,
+        token1,
+        rakisToken,
+        ethers.BigNumber.from("10000"),
+        ethers.BigNumber.from("1"),
+        true,
+        5,
+        true,
+        "scenario1"
+      );
+    });
+    it("should use A,B and swap A for B and stake using nativeETH", async function () {
+      await swapAndAddTest(
+        vault,
+        token0,
+        token1,
+        rakisToken,
+        ethers.BigNumber.from("10000"),
+        ethers.BigNumber.from("1"),
+        true,
+        5,
+        true,
+        "scenario1",
+        stRakisToken
+      );
+    });
 
-      console.log("\n use A,B and swap A for B");
-      await swapAndAddTest(
-        vault,
-        token0,
-        token1,
-        rakisToken,
-        ethers.BigNumber.from("10000"),
-        ethers.BigNumber.from("1"),
-        true,
-        5,
-        false,
-        "scenario1"
-      );
-      console.log("> same test with stake...");
-      await swapAndAddTest(
-        vault,
-        token0,
-        token1,
-        rakisToken,
-        ethers.BigNumber.from("10000"),
-        ethers.BigNumber.from("1"),
-        true,
-        5,
-        false,
-        "scenario1",
-        stRakisToken
-      );
-      console.log(">> same test with native ETH...");
-      await swapAndAddTest(
-        vault,
-        token0,
-        token1,
-        rakisToken,
-        ethers.BigNumber.from("10000"),
-        ethers.BigNumber.from("1"),
-        true,
-        5,
-        true,
-        "scenario1"
-      );
-      console.log(">>> same test with native ETH and stake...");
-      await swapAndAddTest(
-        vault,
-        token0,
-        token1,
-        rakisToken,
-        ethers.BigNumber.from("10000"),
-        ethers.BigNumber.from("1"),
-        true,
-        5,
-        true,
-        "scenario1",
-        stRakisToken
-      );
+    it("should use only A and swap A for B", async function () {
       // single side
-      console.log("\n use only A, swap A for B");
       await swapAndAddTest(
         vault,
         token0,
@@ -1362,7 +1320,8 @@ describe("ArrakisV2Router tests", function () {
         false,
         "scenario2"
       );
-      console.log("> same test with stake...");
+    });
+    it("should use only A and swap A for B and stake", async function () {
       await swapAndAddTest(
         vault,
         token0,
@@ -1376,7 +1335,8 @@ describe("ArrakisV2Router tests", function () {
         "scenario2",
         stRakisToken
       );
-      console.log(">> same test with native ETH...");
+    });
+    it("should use only A and swap A for B using native ETH", async function () {
       await swapAndAddTest(
         vault,
         token0,
@@ -1389,7 +1349,8 @@ describe("ArrakisV2Router tests", function () {
         true,
         "scenario2"
       );
-      console.log(">>> same test with native ETH and stake...");
+    });
+    it("should use only A and swap A for B and stake using nativeETH", async function () {
       await swapAndAddTest(
         vault,
         token0,
@@ -1403,9 +1364,8 @@ describe("ArrakisV2Router tests", function () {
         "scenario2",
         stRakisToken
       );
-      console.log(
-        ">>>> same test with native ETH and a different msg.value..."
-      );
+    });
+    it("should use only A and swap A for B with different msg.value and nativeETH", async function () {
       await swapAndAddTest(
         vault,
         token0,
@@ -1419,6 +1379,22 @@ describe("ArrakisV2Router tests", function () {
         "scenario2",
         stRakisToken,
         ethers.BigNumber.from("100000")
+      );
+    });
+    it("should use A and B and revert with empty msg.value", async function () {
+      await swapAndAddTest(
+        vault,
+        token0,
+        token1,
+        rakisToken,
+        ethers.BigNumber.from("10000"),
+        ethers.BigNumber.from("10"),
+        true,
+        5,
+        false,
+        "scenario2",
+        stRakisToken,
+        ethers.BigNumber.from("0")
       );
     });
   });
