@@ -1,7 +1,7 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import Pool from "../../src/v2-core/libraries/Pool.json";
+import Pool from "../../deployJSON/libraries/Pool.json";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
@@ -11,7 +11,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     contract: {
       abi: Pool.abi,
       bytecode: Pool.bytecode,
-      deployedBytecode: Pool.deployedBytecode,
     },
     log: hre.network.name != "hardhat" ? true : false,
   });

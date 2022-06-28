@@ -1,7 +1,7 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import Twap from "../../src/v2-core/libraries/Twap.json";
+import Twap from "../../deployJSON/libraries/Twap.json";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
@@ -11,7 +11,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     contract: {
       abi: Twap.abi,
       bytecode: Twap.bytecode,
-      deployedBytecode: Twap.deployedBytecode,
     },
     log: hre.network.name != "hardhat" ? true : false,
   });

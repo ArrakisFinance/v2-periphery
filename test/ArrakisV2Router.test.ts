@@ -5,9 +5,12 @@ import {
   ArrakisV2RouterWrapper,
   ArrakisV2Resolver,
   ERC20,
+  IVaultV2,
+  // IVaultV2Helper,
+  IVaultV2Factory,
+  IUniswapV3Pool,
+  IUniswapV3Factory,
 } from "../typechain";
-import { VaultV2 } from "../typechain/contracts/__mocks__/VaultV2";
-// import { VaultV2Helper } from "../typechain/contracts/__mocks__/VaultV2Helper";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
 import {
@@ -17,6 +20,8 @@ import {
   OneInchDataType,
 } from "../src/oneInchApiIntegration";
 import Gauge from "../src/LiquidityGaugeV4.json";
+import VaultV2 from "../deployJSON/VaultV2.json";
+import VaultV2Factory from "../deployJSON/VaultV2Factory.json";
 import { BigNumber, Contract, ContractTransaction } from "ethers";
 
 let addresses: Addresses;
@@ -33,20 +38,26 @@ const shouldUseMockPayloads = true;
 describe("ArrakisV2Router tests", function () {
   this.timeout(0);
   let wallet: SignerWithAddress;
+  let walletAddress: string;
+
   let token0: ERC20;
   let token1: ERC20;
   let rakisToken: ERC20;
   let stRakisToken: ERC20;
-  // let helper: VaultV2Helper;
-  let vault: VaultV2;
+
+  let resolver: ArrakisV2Resolver;
   let vaultRouterWrapper: ArrakisV2RouterWrapper;
   let vaultRouter: ArrakisV2Router;
-  let resolver: ArrakisV2Resolver;
+
+  let vaultV2Factory: IVaultV2Factory;
+  let vault: IVaultV2;
+  // let helper: IVaultV2Helper;
+
   let gauge: Contract;
   let routerBalanceEth: BigNumber | undefined;
 
   const swapAndAddTest = async (
-    vault: VaultV2,
+    vault: IVaultV2,
     token0: ERC20,
     token1: ERC20,
     rakisToken: ERC20,
@@ -59,8 +70,6 @@ describe("ArrakisV2Router tests", function () {
     stRakisToken?: ERC20,
     transactionEthValue?: BigNumber
   ) => {
-    const walletAddress = await wallet.getAddress();
-
     // formatting amounts
     const decimalsToken0 = await token0.decimals();
     const decimalsToken1 = await token1.decimals();
@@ -557,22 +566,124 @@ describe("ArrakisV2Router tests", function () {
 
     addresses = getAddresses(network.name);
     [wallet] = await ethers.getSigners();
+    walletAddress = await wallet.getAddress();
 
-    const faucet = "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7";
+    // start loading periphery stuff
+    // getting resolver contract
+    const resolverAddress = (await deployments.get("ArrakisV2Resolver"))
+      .address;
+    resolver = (await ethers.getContractAt(
+      "ArrakisV2Resolver",
+      resolverAddress
+    )) as ArrakisV2Resolver;
 
-    await network.provider.send("hardhat_setBalance", [
-      faucet,
-      "0x313030303030303030303030303030303030303030",
-    ]);
+    // getting router contract
+    const vaultRouterAddress = (await deployments.get("ArrakisV2Router"))
+      .address;
+    vaultRouter = (await ethers.getContractAt(
+      "ArrakisV2Router",
+      vaultRouterAddress
+    )) as ArrakisV2Router;
 
+    // getting wrapper contract
+    const vaultRouterWrapperAddress = (
+      await deployments.get("ArrakisV2RouterWrapper")
+    ).address;
+    vaultRouterWrapper = (await ethers.getContractAt(
+      "ArrakisV2RouterWrapper",
+      vaultRouterWrapperAddress
+    )) as ArrakisV2RouterWrapper;
+
+    // updating wrapper's router
+    await vaultRouterWrapper.updateRouter(vaultRouter.address);
+    // finished loading periphery stuff
+
+    // start loading v2-core stuff
+    // get vault implementation address
+    const vaultImplementationAddress = (await deployments.get("VaultV2"))
+      .address;
+
+    // getting vault factory
+    const vaultFactoryAddress = (await deployments.get("VaultV2Factory"))
+      .address;
+    vaultV2Factory = (await ethers.getContractAt(
+      VaultV2Factory.abi,
+      vaultFactoryAddress
+    )) as IVaultV2Factory;
+
+    // initializing factory
+    await vaultV2Factory.initialize(vaultImplementationAddress, walletAddress);
+
+    // getting helper
     // const helperAddress = (await deployments.get("VaultV2Helper")).address;
     // helper = (await ethers.getContractAt(
-    //   "VaultV2Helper",
+    //   "IVaultV2Helper",
     //   helperAddress
-    // )) as VaultV2Helper;
+    // )) as IVaultV2Helper;
 
-    const vaultAddress = (await deployments.get("VaultV2")).address;
-    vault = (await ethers.getContractAt("VaultV2", vaultAddress)) as VaultV2;
+    // getting uniswap factory
+    const uniswapV3Factory = (await ethers.getContractAt(
+      "IUniswapV3Factory",
+      addresses.UniswapV3Factory,
+      wallet
+    )) as IUniswapV3Factory;
+
+    // getting uniswap pool
+    const uniswapV3Pool = (await ethers.getContractAt(
+      "IUniswapV3Pool",
+      await uniswapV3Factory.getPool(addresses.USDC, addresses.WETH, 500),
+      wallet
+    )) as IUniswapV3Pool;
+
+    // getting pool data
+    const slot0 = await uniswapV3Pool.slot0();
+    const tickSpacing = await uniswapV3Pool.tickSpacing();
+    const lowerTick = slot0.tick - (slot0.tick % tickSpacing) - tickSpacing;
+    const upperTick = slot0.tick - (slot0.tick % tickSpacing) + 2 * tickSpacing;
+
+    // get initial amounts
+    const res = await resolver.getAmountsForLiquidity(
+      slot0.tick,
+      lowerTick,
+      upperTick,
+      ethers.utils.parseUnits("1", 18)
+    );
+
+    // deploying vault
+    const tx = await vaultV2Factory.deployVault({
+      feeTiers: [500],
+      token0: addresses.USDC,
+      token1: addresses.WETH,
+      owner: walletAddress,
+      operators: [walletAddress],
+      ranges: [
+        {
+          lowerTick: lowerTick,
+          upperTick: upperTick,
+          feeTier: 500,
+        },
+      ],
+      init0: res.amount0,
+      init1: res.amount1,
+      managerTreasury: walletAddress,
+      managerFeeBPS: 100,
+      maxTwapDeviation: 100,
+      twapDuration: 2000,
+    });
+
+    const rc = await tx.wait();
+    const event = rc?.events?.find((event) => event.event === "VaultCreated");
+    // eslint-disable-next-line no-unsafe-optional-chaining
+    const result = event?.args;
+
+    // getting vault
+    vault = (await ethers.getContractAt(
+      VaultV2.abi,
+      result?.vault,
+      wallet
+    )) as IVaultV2;
+    // finished loading v2-core stuff
+
     token0 = (await ethers.getContractAt(
       "ERC20",
       await vault.token0()
@@ -581,59 +692,24 @@ describe("ArrakisV2Router tests", function () {
       "ERC20",
       await vault.token1()
     )) as ERC20;
-    rakisToken = (await ethers.getContractAt("ERC20", vaultAddress)) as ERC20;
+    rakisToken = (await ethers.getContractAt("ERC20", vault.address)) as ERC20;
 
-    const vaultRouterAddress = (await deployments.get("ArrakisV2Router"))
-      .address;
-
-    vaultRouter = (await ethers.getContractAt(
-      "ArrakisV2Router",
-      vaultRouterAddress
-    )) as ArrakisV2Router;
-
-    const vaultRouterWrapperAddress = (
-      await deployments.get("ArrakisV2RouterWrapper")
-    ).address;
-
-    vaultRouterWrapper = (await ethers.getContractAt(
-      "ArrakisV2RouterWrapper",
-      vaultRouterWrapperAddress
-    )) as ArrakisV2RouterWrapper;
-
-    await vaultRouterWrapper.updateRouter(vaultRouter.address);
-
-    const resolverAddress = (await deployments.get("ArrakisV2Resolver"))
-      .address;
-    resolver = (await ethers.getContractAt(
-      "ArrakisV2Resolver",
-      resolverAddress
-    )) as ArrakisV2Resolver;
-
+    // getting funds from faucet
+    const faucetUsdc = "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7";
+    await network.provider.send("hardhat_setBalance", [
+      faucetUsdc,
+      "0x313030303030303030303030303030303030303030",
+    ]);
     await network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [faucet],
+      params: [faucetUsdc],
     });
-    const faucetSigner = await ethers.provider.getSigner(faucet);
-
-    // values used in deployment file
-    const token0VaultInitialBalance = ethers.BigNumber.from("639282782");
-    const token1VaultInitialBalance = ethers.BigNumber.from(
-      "242759266677049373758"
-    );
+    const faucetUsdcSigner = await ethers.provider.getSigner(faucetUsdc);
 
     await token0
-      .connect(faucetSigner)
-      .transfer(vaultAddress, token0VaultInitialBalance);
+      .connect(faucetUsdcSigner)
+      .transfer(walletAddress, await token0.balanceOf(faucetUsdc));
 
-    await token0
-      .connect(faucetSigner)
-      .transfer(await wallet.getAddress(), await token0.balanceOf(faucet));
-
-    // WETH faucet
-    const tokenW = (await ethers.getContractAt(
-      "ERC20",
-      addresses.WETH
-    )) as ERC20;
     const faucetWeth = "0x2f0b23f53734252bda2277357e97e1517d6b042a";
     await network.provider.send("hardhat_setBalance", [
       faucetWeth,
@@ -644,13 +720,9 @@ describe("ArrakisV2Router tests", function () {
       params: [faucetWeth],
     });
     const faucetWethSigner = await ethers.provider.getSigner(faucetWeth);
-    await tokenW
+    await token1
       .connect(faucetWethSigner)
-      .transfer(vaultAddress, token1VaultInitialBalance);
-
-    await tokenW
-      .connect(faucetWethSigner)
-      .transfer(await wallet.getAddress(), await tokenW.balanceOf(faucetWeth));
+      .transfer(walletAddress, await token1.balanceOf(faucetWeth));
 
     const gaugeImplFactory = ethers.ContractFactory.fromSolidity(Gauge);
     const gaugeImpl = await gaugeImplFactory
@@ -675,7 +747,6 @@ describe("ArrakisV2Router tests", function () {
     )) as ERC20;
 
     routerBalanceEth = await wallet.provider?.getBalance(vaultRouter.address);
-    // expect(routerBalanceEth).to.equal(1);
   });
 
   describe("deposits through ArrakisV2Router", function () {
@@ -691,30 +762,27 @@ describe("ArrakisV2Router tests", function () {
       await token1
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount1In);
-      const balance0Before = await token0.balanceOf(await wallet.getAddress());
-      const balance1Before = await token1.balanceOf(await wallet.getAddress());
-      const balanceArrakisV2Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
 
-      // const input0 = WAD.mul(ethers.BigNumber.from("100"));
-      // const input1 = "100000000";
+      const balance0Before = await token0.balanceOf(walletAddress);
+      const balance1Before = await token1.balanceOf(walletAddress);
+      const balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
+
       const addLiquidityData = {
         vault: vault.address,
         amount0Max: amount0In,
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: false,
-        gaugeAddress: "0x0000000000000000000000000000000000000000",
+        gaugeAddress: ethers.constants.AddressZero,
       };
+
       await vaultRouterWrapper.addLiquidity(addLiquidityData);
-      const balance0After = await token0.balanceOf(await wallet.getAddress());
-      const balance1After = await token1.balanceOf(await wallet.getAddress());
-      const balanceArrakisV2After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+
+      const balance0After = await token0.balanceOf(walletAddress);
+      const balance1After = await token1.balanceOf(walletAddress);
+      const balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
@@ -740,14 +808,10 @@ describe("ArrakisV2Router tests", function () {
       await token1
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount1In);
-      const balance0Before = await token0.balanceOf(await wallet.getAddress());
-      const balance1Before = await token1.balanceOf(await wallet.getAddress());
-      const balanceStakedBefore = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      const balanceArrakisV2Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balance0Before = await token0.balanceOf(walletAddress);
+      const balance1Before = await token1.balanceOf(walletAddress);
+      const balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
+      const balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
 
       await gauge
         .connect(wallet)
@@ -769,20 +833,16 @@ describe("ArrakisV2Router tests", function () {
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: false,
         gaugeAddress: gauge.address,
       };
 
       await vaultRouterWrapper.addLiquidity(addLiquidityData);
-      const balance0After = await token0.balanceOf(await wallet.getAddress());
-      const balance1After = await token1.balanceOf(await wallet.getAddress());
-      const balanceStakedAfter = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      const balanceArrakisV2After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balance0After = await token0.balanceOf(walletAddress);
+      const balance1After = await token1.balanceOf(walletAddress);
+      const balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
+      const balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
@@ -819,12 +879,11 @@ describe("ArrakisV2Router tests", function () {
 
   describe("withdrawal through ArrakisV2Router", function () {
     it("should withdraw funds with removeLiquidity", async function () {
-      const balanceArrakisV2Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
       expect(balanceArrakisV2Before).to.be.gt(ethers.constants.Zero);
-      const balance0Before = await token0.balanceOf(await wallet.getAddress());
-      const balance1Before = await token1.balanceOf(await wallet.getAddress());
+
+      const balance0Before = await token0.balanceOf(walletAddress);
+      const balance1Before = await token1.balanceOf(walletAddress);
       await rakisToken.approve(
         vaultRouterWrapper.address,
         balanceArrakisV2Before
@@ -835,28 +894,25 @@ describe("ArrakisV2Router tests", function () {
         burnAmount: balanceArrakisV2Before.div(2),
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         receiveETH: false,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
-      const balance0After = await token0.balanceOf(await wallet.getAddress());
-      const balance1After = await token1.balanceOf(await wallet.getAddress());
-      const balanceArrakisV2After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balance0After = await token0.balanceOf(walletAddress);
+      const balance1After = await token1.balanceOf(walletAddress);
+      const balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
       expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
     });
     it("should unstake and withdraw funds", async function () {
-      const balanceStakedBefore = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
       expect(balanceStakedBefore).to.be.gt(ethers.constants.Zero);
-      const balance0Before = await token0.balanceOf(await wallet.getAddress());
-      const balance1Before = await token1.balanceOf(await wallet.getAddress());
+
+      const balance0Before = await token0.balanceOf(walletAddress);
+      const balance1Before = await token1.balanceOf(walletAddress);
       await stRakisToken.approve(
         vaultRouterWrapper.address,
         balanceStakedBefore
@@ -867,16 +923,14 @@ describe("ArrakisV2Router tests", function () {
         burnAmount: balanceStakedBefore,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         receiveETH: false,
         gaugeAddress: gauge.address,
       };
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
-      const balance0After = await token0.balanceOf(await wallet.getAddress());
-      const balance1After = await token1.balanceOf(await wallet.getAddress());
-      const balanceStakedAfter = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      const balance0After = await token0.balanceOf(walletAddress);
+      const balance1After = await token1.balanceOf(walletAddress);
+      const balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
@@ -888,21 +942,22 @@ describe("ArrakisV2Router tests", function () {
   describe("Native ETH tests", function () {
     it("add and remove liquidity using native ETH", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
+
       const amount0In = ethers.BigNumber.from("10000").mul(
         ethers.BigNumber.from("10").pow("6")
       );
       const amount1In = ethers.utils.parseEther("10");
 
+      await token0
+        .connect(wallet)
+        .approve(vaultRouterWrapper.address, amount0In);
       await token1
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount1In);
-      let balance0Before = await token1.balanceOf(await wallet.getAddress());
-      let balance1Before = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+
+      let balance0Before = await token1.balanceOf(walletAddress);
+      let balance1Before = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
 
       const addLiquidityData = {
         vault: vault.address,
@@ -910,7 +965,7 @@ describe("ArrakisV2Router tests", function () {
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
@@ -919,13 +974,9 @@ describe("ArrakisV2Router tests", function () {
         value: amount1In,
       });
 
-      let balance0After = await token0.balanceOf(await wallet.getAddress());
-      let balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      let balance0After = await token0.balanceOf(walletAddress);
+      let balance1After = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
@@ -959,20 +1010,16 @@ describe("ArrakisV2Router tests", function () {
         burnAmount: balanceArrakisV1Before,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         receiveETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
 
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
 
-      balance0After = await token0.balanceOf(await wallet.getAddress());
-      balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      balance0After = await token0.balanceOf(walletAddress);
+      balance1After = await wallet.provider?.getBalance(walletAddress);
+      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
@@ -994,58 +1041,18 @@ describe("ArrakisV2Router tests", function () {
     it("add and remove liquidity using native ETH and staking", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
 
-      // const gaugeImplFactory = ethers.ContractFactory.fromSolidity(Gauge);
-      // const gaugeImpl = await gaugeImplFactory
-      //   .connect(wallet)
-      //   .deploy({ gasLimit: 6000000 });
-      // const encoded = gaugeImpl.interface.encodeFunctionData("initialize", [
-      //   vault.address,
-      //   await wallet.getAddress(),
-      //   ANGLE,
-      //   veANGLE,
-      //   veBoost,
-      //   await wallet.getAddress(),
-      // ]);
-      // const factory = await ethers.getContractFactory("EIP173Proxy");
-      // const contract = await factory
-      //   .connect(wallet)
-      //   .deploy(gaugeImpl.address, await wallet.getAddress(), encoded);
-      // gauge = await ethers.getContractAt(Gauge.abi, contract.address);
-      // const stRakisTokenW = (await ethers.getContractAt(
-      //   "ERC20",
-      //   gauge.address
-      // )) as ERC20;
-
-      // await gauge
-      //   .connect(wallet)
-      //   .add_reward(token0.address, await wallet.getAddress(), {
-      //     gasLimit: 6000000,
-      //   });
-      // await token0
-      //   .connect(wallet)
-      //   .approve(gauge.address, WAD.mul(ethers.BigNumber.from("100")));
-      // await gauge.deposit_reward_token(
-      //   token0.address,
-      //   WAD.mul(ethers.BigNumber.from("100")),
-      //   { gasLimit: 6000000 }
-      // );
       const amount0In = ethers.BigNumber.from("10000").mul(
         ethers.BigNumber.from("10").pow("6")
       );
       const amount1In = ethers.utils.parseEther("10");
+
       await token0
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount0In);
-      let balance0Before = await token0.balanceOf(await wallet.getAddress());
-      let balance1Before = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      let balanceStakedBefore = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      let balance0Before = await token0.balanceOf(walletAddress);
+      let balance1Before = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
+      let balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
 
       const addLiquidityData = {
         vault: vault.address,
@@ -1053,7 +1060,7 @@ describe("ArrakisV2Router tests", function () {
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: true,
         gaugeAddress: gauge.address,
       };
@@ -1061,16 +1068,10 @@ describe("ArrakisV2Router tests", function () {
         value: amount1In,
       });
 
-      let balance0After = await token0.balanceOf(await wallet.getAddress());
-      let balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      let balanceStakedAfter = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      let balance0After = await token0.balanceOf(walletAddress);
+      let balance1After = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      let balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
@@ -1095,9 +1096,7 @@ describe("ArrakisV2Router tests", function () {
       balance1Before = balance1After;
       balanceArrakisV1Before = balanceArrakisV1After;
       balanceStakedBefore = balanceStakedAfter;
-      const balanceRewardsBefore = await token0.balanceOf(
-        await wallet.getAddress()
-      );
+      const balanceRewardsBefore = await token0.balanceOf(walletAddress);
       const newStartTime1 = (await wallet.provider?.getBlock("latest"))
         ?.timestamp;
       const dayLater1 = Number(newStartTime1?.toString()) + 86400;
@@ -1107,7 +1106,7 @@ describe("ArrakisV2Router tests", function () {
       });
 
       const claimable = await gauge.claimable_reward(
-        await wallet.getAddress(),
+        walletAddress,
         token0.address
       );
       expect(claimable).to.be.gt(0);
@@ -1122,24 +1121,16 @@ describe("ArrakisV2Router tests", function () {
         burnAmount: balanceStakedBefore,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         receiveETH: true,
         gaugeAddress: gauge.address,
       };
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
-      balance0After = await token0.balanceOf(await wallet.getAddress());
-      balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      balanceStakedAfter = await stRakisToken.balanceOf(
-        await wallet.getAddress()
-      );
-      const balanceRewardsAfter = await token0.balanceOf(
-        await wallet.getAddress()
-      );
+      balance0After = await token0.balanceOf(walletAddress);
+      balance1After = await wallet.provider?.getBalance(walletAddress);
+      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
+      const balanceRewardsAfter = await token0.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
@@ -1163,10 +1154,12 @@ describe("ArrakisV2Router tests", function () {
     });
     it("tests adding liquidity using native ETH passing empty msg.value", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
+
       const amount0In = ethers.BigNumber.from("10000").mul(
         ethers.BigNumber.from("10").pow("6")
       );
       const amount1In = ethers.utils.parseEther("10");
+
       await token0
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount0In);
@@ -1179,7 +1172,7 @@ describe("ArrakisV2Router tests", function () {
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
@@ -1192,20 +1185,19 @@ describe("ArrakisV2Router tests", function () {
     });
     it("tests adding liquidity using native ETH passing double msg.value", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
+
       const amount0In = ethers.BigNumber.from("10000").mul(
         ethers.BigNumber.from("10").pow("6")
       );
       const amount1In = ethers.utils.parseEther("10");
+
       await token0
         .connect(wallet)
         .approve(vaultRouterWrapper.address, amount0In);
-      let balance0Before = await token0.balanceOf(await wallet.getAddress());
-      let balance1Before = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1Before = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+
+      let balance0Before = await token0.balanceOf(walletAddress);
+      let balance1Before = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
       let wrapperEthBalanceBefore = await wallet.provider?.getBalance(
         vaultRouterWrapper.address
       );
@@ -1217,7 +1209,7 @@ describe("ArrakisV2Router tests", function () {
         amount1Max: amount1In,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
@@ -1225,13 +1217,9 @@ describe("ArrakisV2Router tests", function () {
         value: transactionEthValue,
       });
 
-      let balance0After = await token0.balanceOf(await wallet.getAddress());
-      let balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      let balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      let balance0After = await token0.balanceOf(walletAddress);
+      let balance1After = await wallet.provider?.getBalance(walletAddress);
+      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
       let wrapperEthBalanceAfter = await wallet.provider?.getBalance(
         vaultRouterWrapper.address
       );
@@ -1270,18 +1258,14 @@ describe("ArrakisV2Router tests", function () {
         burnAmount: balanceArrakisV1Before,
         amount0Min: 0,
         amount1Min: 0,
-        receiver: await wallet.getAddress(),
+        receiver: walletAddress,
         receiveETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
       };
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
-      balance0After = await token0.balanceOf(await wallet.getAddress());
-      balance1After = await wallet.provider?.getBalance(
-        await wallet.getAddress()
-      );
-      balanceArrakisV1After = await rakisToken.balanceOf(
-        await wallet.getAddress()
-      );
+      balance0After = await token0.balanceOf(walletAddress);
+      balance1After = await wallet.provider?.getBalance(walletAddress);
+      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
