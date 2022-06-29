@@ -46,29 +46,31 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         helper = helper_;
     }
 
-    // solhint-disable-next-line function-max-lines
+    // solhint-disable-next-line function-max-lines, code-complexity
     function getRebalanceParams(
         IVaultV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals
     ) external view override returns (bool zeroForOne, uint256 swapAmount) {
-        uint256 amount0Left;
-        uint256 amount1Left;
-
-        (uint256 amount0, uint256 amount1, ) =
-            getMintAmounts(vault, amount0In, amount1In);
-        amount0Left = amount0In - amount0;
-        amount1Left = amount1In - amount1;
-
         (uint256 gross0, uint256 gross1) = _getUnderlyingOrLiquidity(vault);
-
         if (gross1 == 0) {
-            return (false, amount1Left);
+            return (false, amount1In);
+        }
+        if (gross0 == 0) {
+            return (true, amount0In);
         }
 
-        if (gross0 == 0) {
-            return (true, amount0Left);
+        uint256 amount0Left;
+        uint256 amount1Left;
+        if (amount0In > 0 && amount1In > 0) {
+            (uint256 amount0, uint256 amount1, ) =
+                getMintAmounts(vault, amount0In, amount1In);
+            amount0Left = amount0In - amount0;
+            amount1Left = amount1In - amount1;
+        } else {
+            amount0Left = amount0In;
+            amount1Left = amount1In;
         }
 
         uint256 factor0 =
@@ -333,20 +335,10 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         returns (uint256 gross0, uint256 gross1)
     {
         (gross0, gross1) = helper.totalUnderlying(vault);
-        // TODO: double check how to do logic below as pool.pool() doesn't exist on V2
-        // because there could be multiple pools below
-        // if (gross0 == 0 && gross1 == 0) {
-        //     IUniswapV3Pool uniPool = pool.pool();
-        //     (uint160 sqrtPriceX96, , , , , , ) = uniPool.slot0();
-        //     uint160 lowerSqrtPrice = pool.lowerTick().getSqrtRatioAtTick();
-        //     uint160 upperSqrtPrice = pool.upperTick().getSqrtRatioAtTick();
-        //     (gross0, gross1) = LiquidityAmounts.getAmountsForLiquidity(
-        //         sqrtPriceX96,
-        //         lowerSqrtPrice,
-        //         upperSqrtPrice,
-        //         1 ether
-        //     );
-        // }
+        if (gross0 == 0 && gross1 == 0) {
+            gross0 = vault.init0();
+            gross1 = vault.init1();
+        }
     }
 
     function _requireWeightUnder100(RangeWeight[] memory rangeWeights_)
