@@ -3,22 +3,23 @@
 pragma solidity >=0.8.13;
 
 import {
-    IGauge,
-    IArrakisV2Router,
-    AddLiquidityData,
-    MintData,
-    RemoveLiquidityData,
-    AddAndSwapData
-} from "./interfaces/IArrakisV2Router.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
-import {IVaultV2Resolver} from "./interfaces/IVaultV2Resolver.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
-
-import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
+import {
+    MintData,
+    RemoveLiquidityData,
+    AddAndSwapData
+} from "./structs/SArrakisV2Router.sol";
+
+import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
+import {IGauge} from "./interfaces/IGauge.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
+
 import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
 
 // @notice External functions of this contract can only be called by ArrakisV2RouterWrapper
@@ -28,8 +29,8 @@ contract ArrakisV2Router is IArrakisV2Router {
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    IVaultV2Resolver public immutable resolver;
     address public immutable routerWrapperAddress;
+    IArrakisV2Resolver public immutable resolver;
 
     event Swapped(
         bool zeroForOne,
@@ -46,7 +47,7 @@ contract ArrakisV2Router is IArrakisV2Router {
     constructor(
         IWETH _weth,
         address _routerWrapperAddress,
-        IVaultV2Resolver _resolver
+        IArrakisV2Resolver _resolver
     ) {
         weth = _weth;
         routerWrapperAddress = _routerWrapperAddress;
@@ -84,11 +85,11 @@ contract ArrakisV2Router is IArrakisV2Router {
 
             IERC20(address(_mintData.vault)).safeIncreaseAllowance(
                 _mintData.gaugeAddress,
-                mintAmount
+                _mintData.mintAmount
             );
 
             IGauge(_mintData.gaugeAddress).deposit(
-                mintAmount,
+                _mintData.mintAmount,
                 _mintData.receiver
             );
         } else {
@@ -266,6 +267,7 @@ contract ArrakisV2Router is IArrakisV2Router {
         }
 
         (uint256 amount0, uint256 amount1) = vault.mint(mintAmount, receiver);
+
         require(
             amount0 == amount0In && amount1 == amount1In,
             "unexpected amounts deposited"

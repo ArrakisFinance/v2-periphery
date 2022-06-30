@@ -1,7 +1,6 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -10,48 +9,33 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV1Router to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2AutoOperator to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const addresses = getAddresses(hre.network.name);
 
-  const arrakisV1RouterWrapper = await deployments.get(
-    "ArrakisV1RouterWrapper"
-  );
+  const resolver = await deployments.get("ArrakisV2Resolver");
 
-  await deploy("ArrakisV1Router", {
+  await deploy("ArrakisV2AutoOperator", {
     from: deployer,
-    proxy: {
-      proxyContract: "EIP173ProxyWithReceive",
-      owner: addresses.ArrakisDevMultiSig,
-      execute: {
-        init: {
-          methodName: "initialize",
-          args: [],
-        },
-      },
-    },
-    args: [addresses.WETH, arrakisV1RouterWrapper.address],
-    log: hre.network.name !== "hardhat",
-    gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    args: [resolver.address],
   });
 };
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
-    //hre.network.name === "polygon" ||
+    hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "goerli";
   return shouldSkip ? true : false;
 };
 
-func.tags = ["ArrakisV1Router"];
+func.tags = ["ArrakisV2AutoOperator"];
 
-func.dependencies = ["ArrakisV1RouterWrapper"];
+func.dependencies = ["ArrakisV2Resolver"];
 
 export default func;

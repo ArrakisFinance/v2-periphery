@@ -10,7 +10,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV1RouterWrapper to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2RouterWrapper to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -19,11 +19,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  // const arrakisSwappersWhitelist = await deployments.get(
-  //   "ArrakisSwappersWhitelist"
-  // );
+  const arrakisV2Resolver = await deployments.get("ArrakisV2Resolver");
+  const arrakisV2AutoOperator = await deployments.get("ArrakisV2AutoOperator");
 
-  await deploy("ArrakisV1RouterWrapper", {
+  // TODO: add correct addresses in args here
+  await deploy("ArrakisV2RouterWrapper", {
     from: deployer,
     proxy: {
       proxyContract: "EIP173ProxyWithReceive",
@@ -35,7 +35,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         },
       },
     },
-    args: [addresses.WETH],
+    args: [
+      addresses.WETH,
+      arrakisV2Resolver.address,
+      arrakisV2AutoOperator.address,
+    ],
     log: hre.network.name !== "hardhat",
     // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });
@@ -44,14 +48,14 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
-    //hre.network.name === "polygon" ||
+    hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "goerli";
   return shouldSkip;
 };
 
-func.tags = ["ArrakisV1RouterWrapper"];
+func.tags = ["ArrakisV2RouterWrapper"];
 
-// func.dependencies = ["ArrakisSwappersWhitelist"];
+func.dependencies = ["ArrakisV2Resolver", "ArrakisV2AutoOperator"];
 
 export default func;

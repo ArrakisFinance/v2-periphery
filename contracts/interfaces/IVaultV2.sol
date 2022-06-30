@@ -5,7 +5,12 @@ import {
     IUniswapV3Factory
 } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Range, BurnLiquidity, InitializePayload} from "../structs/SVaultV2.sol";
+import {
+    Range,
+    BurnLiquidity,
+    InitializePayload,
+    Rebalance
+} from "../structs/SVaultV2.sol";
 
 interface IVaultV2 {
     function initialize(
@@ -23,6 +28,10 @@ interface IVaultV2 {
         uint256 burnAmount_,
         address receiver_
     ) external returns (uint256 amount0, uint256 amount1);
+
+    function rebalance(Rebalance calldata rebalanceParams_) external;
+
+    function addOperators(address[] calldata operators_) external;
 
     function totalSupply() external view returns (uint256);
 

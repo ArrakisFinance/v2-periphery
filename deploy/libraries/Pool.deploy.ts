@@ -1,36 +1,29 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import Pool from "../../deployJSON/libraries/Pool.json";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  if (
-    hre.network.name === "mainnet" ||
-    hre.network.name === "optimism" ||
-    hre.network.name === "polygon"
-  ) {
-    console.log(
-      `!! Deploying ArrakisV1Resolver to ${hre.network.name}. Hit ctrl + c to abort`
-    );
-    await new Promise((r) => setTimeout(r, 20000));
-  }
-
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-
-  await deploy("ArrakisV1Resolver", {
+  await deploy("Pool", {
     from: deployer,
+    contract: {
+      abi: Pool.abi,
+      bytecode: Pool.bytecode,
+    },
+    log: hre.network.name != "hardhat" ? true : false,
   });
 };
+
+export default func;
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
     hre.network.name === "polygon" ||
-    hre.network.name === "optimism" ||
-    hre.network.name === "goerli";
+    hre.network.name === "goerli" ||
+    hre.network.name === "optimism";
   return shouldSkip ? true : false;
 };
-
-func.tags = ["ArrakisV1Resolver"];
-
-export default func;
+func.tags = ["Pool"];
