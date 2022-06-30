@@ -38,6 +38,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
 
   let gauge: Contract;
   let routerBalanceEth: BigNumber | undefined;
+  let wrapperBalanceEth: BigNumber | undefined;
 
   before(async function () {
     await deployments.fixture();
@@ -75,6 +76,9 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     [gauge, stRakisToken] = await createGauge(wallet, vault.address);
 
     routerBalanceEth = await wallet.provider?.getBalance(vaultRouter.address);
+    wrapperBalanceEth = await wallet.provider?.getBalance(
+      vaultRouterWrapper.address
+    );
   });
 
   describe("deposits through ArrakisV2Router", function () {
@@ -104,6 +108,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: false,
         gaugeAddress: ethers.constants.AddressZero,
+        rebalance: false,
       };
 
       await vaultRouterWrapper.addLiquidity(addLiquidityData);
@@ -116,13 +121,29 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balance1Before).to.be.gt(balance1After);
       expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
 
-      const contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      const contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      const contractBalanceG = await rakisToken.balanceOf(vaultRouter.address);
+      const routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      const routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      const routerBalanceRakis = await rakisToken.balanceOf(
+        vaultRouter.address
+      );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalanceG).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+
+      const wrapperBalance0 = await token0.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalance1 = await token1.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
     });
     it("should deposit funds and stake", async function () {
       const amount0In = ethers.BigNumber.from("10000").mul(
@@ -164,6 +185,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: false,
         gaugeAddress: gauge.address,
+        rebalance: false,
       };
 
       await vaultRouterWrapper.addLiquidity(addLiquidityData);
@@ -177,17 +199,37 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
       expect(balanceStakedBefore).to.be.lt(balanceStakedAfter);
 
-      const contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      const contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      const contractBalance2 = await rakisToken.balanceOf(vaultRouter.address);
-      const contractBalance3 = await stRakisToken.balanceOf(
+      const routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      const routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      const routerBalanceRakis = await rakisToken.balanceOf(
+        vaultRouter.address
+      );
+      const routerBalanceStRakis = await stRakisToken.balanceOf(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalance2).to.equal(ethers.constants.Zero);
-      expect(contractBalance3).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+
+      const wrapperBalance0 = await token0.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalance1 = await token1.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalanceStRakis = await stRakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceStRakis).to.equal(ethers.constants.Zero);
 
       const newStartTime1 = (await wallet.provider?.getBlock("latest"))
         ?.timestamp;
@@ -296,6 +338,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
+        rebalance: false,
       };
 
       await vaultRouterWrapper.addLiquidity(addLiquidityData, {
@@ -310,17 +353,31 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balance1Before).to.be.gt(balance1After);
       expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
 
-      let contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      let contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      let contractBalanceG = await rakisToken.balanceOf(vaultRouter.address);
+      let routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      let routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      let routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
       let routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalanceG).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
       expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+
+      let wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      let wrapperBalanceEthEnd = await wallet.provider?.getBalance(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceEth).to.equal(wrapperBalanceEthEnd);
 
       balance0Before = balance0After;
       balance1Before = balance1After;
@@ -354,17 +411,31 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
       expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
-      contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      contractBalanceG = await rakisToken.balanceOf(vaultRouter.address);
+      routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
       routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalanceG).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
       expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+
+      wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      wrapperBalanceEthEnd = await wallet.provider?.getBalance(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceEth).to.equal(routerBalanceEthEnd);
     });
     it("add and remove liquidity using native ETH and staking", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
@@ -391,6 +462,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: true,
         gaugeAddress: gauge.address,
+        rebalance: false,
       };
       await vaultRouterWrapper.addLiquidity(addLiquidityData, {
         value: amount1In,
@@ -406,19 +478,39 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
       expect(balanceStakedBefore).to.be.lt(balanceStakedAfter);
 
-      let contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      let contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      let contractBalance2 = await rakisToken.balanceOf(vaultRouter.address);
-      let contractBalance3 = await stRakisToken.balanceOf(vaultRouter.address);
+      let routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      let routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      let routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
+      let routerBalanceStRakis = await stRakisToken.balanceOf(
+        vaultRouter.address
+      );
       let routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalance2).to.equal(ethers.constants.Zero);
-      expect(contractBalance3).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
       expect(routerBalanceEthEnd).to.equal(routerBalanceEth);
+
+      let wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      let wrapperBalanceStRakis = await stRakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      let wrapperBalanceEthEnd = await wallet.provider?.getBalance(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceStRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceEthEnd).to.equal(routerBalanceEth);
 
       balance0Before = balance0After;
       balance1Before = balance1After;
@@ -466,19 +558,37 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
       expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
-      contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      contractBalance2 = await rakisToken.balanceOf(vaultRouter.address);
-      contractBalance3 = await stRakisToken.balanceOf(vaultRouter.address);
+      routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
+      routerBalanceStRakis = await stRakisToken.balanceOf(vaultRouter.address);
       routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalance2).to.equal(ethers.constants.Zero);
-      expect(contractBalance3).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
       expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+
+      wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      wrapperBalanceStRakis = await stRakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      wrapperBalanceEthEnd = await wallet.provider?.getBalance(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceStRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceEth).to.equal(routerBalanceEthEnd);
     });
     it("tests adding liquidity using native ETH passing empty msg.value", async function () {
       expect(await vault.token1()).to.equal(addresses.WETH);
@@ -503,6 +613,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
+        rebalance: false,
       };
 
       await expect(
@@ -540,6 +651,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
         receiver: walletAddress,
         useETH: true,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
+        rebalance: false,
       };
       await vaultRouterWrapper.addLiquidity(addLiquidityData, {
         value: transactionEthValue,
@@ -557,17 +669,31 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
       expect(wrapperEthBalanceBefore).to.be.eq(wrapperEthBalanceAfter);
 
-      let contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      let contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      let contractBalanceG = await rakisToken.balanceOf(vaultRouter.address);
+      let routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      let routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      let routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
       let routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
       );
 
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalanceG).to.equal(ethers.constants.Zero);
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
       expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+
+      let wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      let wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
+      );
+      const wrapperBalanceEthEnd = await wallet.provider?.getBalance(
+        vaultRouterWrapper.address
+      );
+
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceEth).to.equal(wrapperBalanceEthEnd);
 
       balance0Before = balance0After;
       balance1Before = balance1After;
@@ -600,20 +726,29 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
       expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
-      contractBalance0 = await token0.balanceOf(vaultRouter.address);
-      contractBalance1 = await token1.balanceOf(vaultRouter.address);
-      contractBalanceG = await rakisToken.balanceOf(vaultRouter.address);
+      routerBalance0 = await token0.balanceOf(vaultRouter.address);
+      routerBalance1 = await token1.balanceOf(vaultRouter.address);
+      routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
       routerBalanceEthEnd = await wallet.provider?.getBalance(
         vaultRouter.address
+      );
+
+      expect(routerBalance0).to.equal(ethers.constants.Zero);
+      expect(routerBalance1).to.equal(ethers.constants.Zero);
+      expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+      expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+
+      wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
+      wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
+      wrapperBalanceRakis = await rakisToken.balanceOf(
+        vaultRouterWrapper.address
       );
       wrapperEthBalanceAfter = await wallet.provider?.getBalance(
         vaultRouterWrapper.address
       );
-
-      expect(contractBalance0).to.equal(ethers.constants.Zero);
-      expect(contractBalance1).to.equal(ethers.constants.Zero);
-      expect(contractBalanceG).to.equal(ethers.constants.Zero);
-      expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+      expect(wrapperBalance0).to.equal(ethers.constants.Zero);
+      expect(wrapperBalance1).to.equal(ethers.constants.Zero);
+      expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
       expect(wrapperEthBalanceBefore).to.equal(wrapperEthBalanceAfter);
     });
   });

@@ -57,6 +57,7 @@ describe("ArrakisV2RouterWrapper Security Tests", function () {
         receiver: walletAddress,
         useETH: false,
         gaugeAddress: "0x0000000000000000000000000000000000000000",
+        rebalance: false,
       };
 
       await expect(

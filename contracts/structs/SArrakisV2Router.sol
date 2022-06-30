@@ -24,6 +24,8 @@ struct AddLiquidityData {
     bool useETH;
     // address of gauge to stake tokens in
     address gaugeAddress;
+    // bool indicating whether to call AutoOperator to rebalance
+    bool rebalance;
 }
 
 struct MintData {
@@ -89,4 +91,6 @@ struct AddAndSwapData {
     bytes swapPayload;
     // address of the user to be refunded
     address payable userToRefund;
+    // bool indicating whether to call AutoOperator to rebalance
+    bool rebalance;
 }

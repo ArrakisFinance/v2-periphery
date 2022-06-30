@@ -12,6 +12,11 @@ interface IArrakisV2Resolver {
         uint256 price18Decimals
     ) external view returns (bool zeroForOne, uint256 swapAmount);
 
+    function getEqualWeightsForRanges(IVaultV2 vault)
+        external
+        view
+        returns (RangeWeight[] memory rangeWeights);
+
     function standardRebalance(
         RangeWeight[] memory rangeWeights_,
         IVaultV2 vaultV2_

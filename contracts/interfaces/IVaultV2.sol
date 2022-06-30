@@ -31,6 +31,8 @@ interface IVaultV2 {
 
     function rebalance(Rebalance calldata rebalanceParams_) external;
 
+    function addOperators(address[] calldata operators_) external;
+
     function totalSupply() external view returns (uint256);
 
     function factory() external view returns (IUniswapV3Factory);

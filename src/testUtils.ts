@@ -4,6 +4,7 @@ import {
   ArrakisV2Router,
   ArrakisV2RouterWrapper,
   ArrakisV2Resolver,
+  ArrakisV2AutoOperator,
   ERC20,
   IVaultV2,
   IVaultV2Factory,
@@ -44,7 +45,8 @@ export const swapAndAddTest = async (
   useETH: boolean,
   mockPayloadScenario?: string,
   stRakisToken?: ERC20,
-  transactionEthValue?: BigNumber
+  transactionEthValue?: BigNumber,
+  rebalance?: boolean
 ) => {
   // flag for easily switching between live 1inch api and stored mock payloads
   const shouldUseMockPayloads = true;
@@ -206,8 +208,7 @@ export const swapAndAddTest = async (
 
     swapAmountIn = result2.swapAmount;
     swapAmountOut = ethers.BigNumber.from(quoteAmount3);
-    console.log("swapAmountIn: ", swapAmountIn.toString());
-    console.log("swapAmountOut: ", swapAmountOut.toString());
+
     swapParams = await swapTokenData(
       "1",
       zeroForOne ? token0.address : token1.address,
@@ -216,7 +217,6 @@ export const swapAndAddTest = async (
       vaultRouter.address,
       slippage.toString()
     );
-    console.log("swapParams.data: ", swapParams.data);
   }
 
   // now that we have swapData, calculate amounts used for getMintAmounts()
@@ -253,6 +253,10 @@ export const swapAndAddTest = async (
     .div(ethers.BigNumber.from((100).toString()));
   // console.log("amountOut.toString(): ", amountOut.toString());
 
+  if (!rebalance) {
+    rebalance = false;
+  }
+
   // preparing parameter structs for swapAndAddLiquidity()
   const swapData = {
     vault: vault.address,
@@ -274,6 +278,7 @@ export const swapAndAddTest = async (
     swapPayload: swapParams.data,
 
     userToRefund: "0x0000000000000000000000000000000000000000",
+    rebalance: rebalance,
   };
 
   // flag indicating if "Swapped" event fired
@@ -517,7 +522,12 @@ export const swapAndAddTest = async (
 };
 
 export const getPeripheryContracts = async (): Promise<
-  [ArrakisV2Resolver, ArrakisV2Router, ArrakisV2RouterWrapper]
+  [
+    ArrakisV2Resolver,
+    ArrakisV2Router,
+    ArrakisV2RouterWrapper,
+    ArrakisV2AutoOperator
+  ]
 > => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("ArrakisV2Resolver")).address;
@@ -542,10 +552,19 @@ export const getPeripheryContracts = async (): Promise<
     vaultRouterWrapperAddress
   )) as ArrakisV2RouterWrapper;
 
+  // getting auto operator contract
+  const autoOperatorContractAddress = (
+    await deployments.get("ArrakisV2AutoOperator")
+  ).address;
+  const autoOperator = (await ethers.getContractAt(
+    "ArrakisV2AutoOperator",
+    autoOperatorContractAddress
+  )) as ArrakisV2AutoOperator;
+
   // updating wrapper's router
   await vaultRouterWrapper.updateRouter(vaultRouter.address);
 
-  return [resolver, vaultRouter, vaultRouterWrapper];
+  return [resolver, vaultRouter, vaultRouterWrapper, autoOperator];
 };
 
 export const getVaultV2 = async (

@@ -96,6 +96,23 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         }
     }
 
+    function getEqualWeightsForRanges(IVaultV2 vault)
+        external
+        view
+        override
+        returns (RangeWeight[] memory)
+    {
+        Range[] memory ranges = IVaultV2(vault).rangesArray();
+        uint256 eachRangeWeight = 10000 / ranges.length;
+        RangeWeight[] memory rangeWeights = new RangeWeight[](ranges.length);
+        for (uint256 i = 0; i < ranges.length; i++) {
+            RangeWeight memory rangeWeight =
+                RangeWeight({range: ranges[i], weight: eachRangeWeight});
+            rangeWeights[i] = rangeWeight;
+        }
+        return rangeWeights;
+    }
+
     // no swapping. Standard rebalance.
     // solhint-disable-next-line function-max-lines
     function standardRebalance(

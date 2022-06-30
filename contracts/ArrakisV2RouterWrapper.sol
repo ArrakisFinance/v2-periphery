@@ -35,6 +35,7 @@ import {
     IArrakisV2RouterWrapper
 } from "./interfaces/IArrakisV2RouterWrapper.sol";
 import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
+import {IArrakisV2AutoOperator} from "./interfaces/IArrakisV2AutoOperator.sol";
 
 contract ArrakisV2RouterWrapper is
     IArrakisV2RouterWrapper,
@@ -48,11 +49,17 @@ contract ArrakisV2RouterWrapper is
 
     IWETH public immutable weth;
     IArrakisV2Resolver public immutable resolver;
+    IArrakisV2AutoOperator public immutable autoOperator;
     IArrakisV2Router public router;
 
-    constructor(IWETH _weth, IArrakisV2Resolver _resolver) {
+    constructor(
+        IWETH _weth,
+        IArrakisV2Resolver _resolver,
+        IArrakisV2AutoOperator _autoOperator
+    ) {
         weth = _weth;
         resolver = _resolver;
+        autoOperator = _autoOperator;
     }
 
     function initialize() external initializer {
@@ -159,6 +166,10 @@ contract ArrakisV2RouterWrapper is
             } else if (!isToken0Weth && msg.value > amount1) {
                 payable(msg.sender).sendValue(msg.value - amount1);
             }
+        }
+
+        if (_addData.rebalance) {
+            autoOperator.rebalance(_addData.vault);
         }
     }
 
@@ -270,6 +281,10 @@ contract ArrakisV2RouterWrapper is
         _swapData.userToRefund = payable(msg.sender);
         (amount0, amount1, mintAmount, amount0Diff, amount1Diff) = router
             .swapAndAddLiquidity(_swapData);
+
+        if (_swapData.rebalance) {
+            autoOperator.rebalance(_swapData.vault);
+        }
     }
 
     /// @notice updates address of ArrakisV2Router used by this wrapper
