@@ -13,14 +13,6 @@ import {
     IERC20Metadata
 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
-import {IVaultV2Helper} from "./interfaces/IVaultV2Helper.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
-
-import {FullMath} from "./vendor/uniswap/FullMath.sol";
-import {TickMath} from "./vendor/uniswap/TickMath.sol";
-import {LiquidityAmounts} from "./vendor/uniswap/LiquidityAmounts.sol";
-
 import {
     BurnLiquidity,
     PositionLiquidity,
@@ -30,6 +22,14 @@ import {
     RangeWeight,
     Rebalance
 } from "./structs/SVaultV2.sol";
+
+import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
+import {IVaultV2Helper} from "./interfaces/IVaultV2Helper.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
+
+import {FullMath} from "./vendor/uniswap/FullMath.sol";
+import {TickMath} from "./vendor/uniswap/TickMath.sol";
+import {LiquidityAmounts} from "./vendor/uniswap/LiquidityAmounts.sol";
 
 import {Underlying as UnderlyingHelper} from "./libraries/Underlying.sol";
 import {UniswapV3Amounts} from "./libraries/UniswapV3Amounts.sol";

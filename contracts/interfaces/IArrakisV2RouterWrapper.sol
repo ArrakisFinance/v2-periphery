@@ -3,12 +3,12 @@
 pragma solidity 0.8.13;
 
 import {IVaultV2} from "./IVaultV2.sol";
+
 import {
     AddLiquidityData,
-    MintData,
     RemoveLiquidityData,
     AddAndSwapData
-} from "./IArrakisV2Router.sol";
+} from "../structs/SArrakisV2Router.sol";
 
 interface IArrakisV2RouterWrapper {
     function addLiquidity(AddLiquidityData memory _addData)

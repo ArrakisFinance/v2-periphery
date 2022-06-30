@@ -3,16 +3,6 @@
 pragma solidity 0.8.13;
 
 import {
-    IGauge,
-    IArrakisV2Router,
-    AddLiquidityData,
-    MintData,
-    RemoveLiquidityData,
-    AddAndSwapData
-} from "./interfaces/IArrakisV2Router.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
-import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -29,6 +19,18 @@ import {
 import {
     ReentrancyGuardUpgradeable
 } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
+import {
+    AddLiquidityData,
+    MintData,
+    RemoveLiquidityData,
+    AddAndSwapData
+} from "./structs/SArrakisV2Router.sol";
+
+import {IGauge} from "./interfaces/IGauge.sol";
+import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 import {
     IArrakisV2RouterWrapper
 } from "./interfaces/IArrakisV2RouterWrapper.sol";
