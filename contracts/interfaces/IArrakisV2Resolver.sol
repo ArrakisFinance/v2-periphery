@@ -5,7 +5,7 @@ import {IVaultV2} from "./IVaultV2.sol";
 import {RangeWeight, Rebalance, BurnLiquidity} from "../structs/SVaultV2.sol";
 
 interface IArrakisV2Resolver {
-    function getRebalanceParams(
+    function calculateSwapAmount(
         IVaultV2 vault,
         uint256 amount0In,
         uint256 amount1In,

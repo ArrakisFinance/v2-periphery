@@ -6,7 +6,7 @@ import { EIP173ProxyWithReceive, ArrakisV2RouterWrapper } from "../typechain/";
 let wallet: SignerWithAddress;
 let walletAddress: string;
 
-describe("ArrakisV1Router Security Tests", function () {
+describe("ArrakisV2RouterWrapper Security Tests", function () {
   this.timeout(0);
 
   let vaultRouterWrapper: ArrakisV2RouterWrapper;

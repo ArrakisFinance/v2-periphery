@@ -277,7 +277,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       let balance0Before = await token0.balanceOf(walletAddress);
       let balance1Before = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
 
       const addLiquidityData = {
         vault: vault.address,
@@ -296,11 +296,11 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       let balance0After = await token0.balanceOf(walletAddress);
       let balance1After = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
-      expect(balanceArrakisV1Before).to.be.lt(balanceArrakisV1After);
+      expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
 
       let contractBalance0 = await token0.balanceOf(vaultRouter.address);
       let contractBalance1 = await token1.balanceOf(vaultRouter.address);
@@ -316,18 +316,18 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       balance0Before = balance0After;
       balance1Before = balance1After;
-      balanceArrakisV1Before = balanceArrakisV1After;
+      balanceArrakisV2Before = balanceArrakisV2After;
 
       // removeLiquidityETH
 
       await rakisToken.approve(
         vaultRouterWrapper.address,
-        balanceArrakisV1Before
+        balanceArrakisV2Before
       );
       const removeLiquidity = {
         burns: [],
         vault: vault.address,
-        burnAmount: balanceArrakisV1Before,
+        burnAmount: balanceArrakisV2Before,
         amount0Min: 0,
         amount1Min: 0,
         receiver: walletAddress,
@@ -339,12 +339,12 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       balance0After = await token0.balanceOf(walletAddress);
       balance1After = await wallet.provider?.getBalance(walletAddress);
-      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
-      expect(balanceArrakisV1Before).to.be.gt(balanceArrakisV1After);
-      expect(balanceArrakisV1After).to.equal(ethers.constants.Zero);
+      expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
+      expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
       contractBalance0 = await token0.balanceOf(vaultRouter.address);
       contractBalance1 = await token1.balanceOf(vaultRouter.address);
@@ -369,7 +369,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
         .approve(vaultRouterWrapper.address, amount0In);
       let balance0Before = await token0.balanceOf(walletAddress);
       let balance1Before = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
       let balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
 
       const addLiquidityData = {
@@ -388,12 +388,12 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       let balance0After = await token0.balanceOf(walletAddress);
       let balance1After = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
       let balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
-      expect(balanceArrakisV1Before).to.be.eq(balanceArrakisV1After);
+      expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
       expect(balanceStakedBefore).to.be.lt(balanceStakedAfter);
 
       let contractBalance0 = await token0.balanceOf(vaultRouter.address);
@@ -412,7 +412,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       balance0Before = balance0After;
       balance1Before = balance1After;
-      balanceArrakisV1Before = balanceArrakisV1After;
+      balanceArrakisV2Before = balanceArrakisV2After;
       balanceStakedBefore = balanceStakedAfter;
       const balanceRewardsBefore = await token0.balanceOf(walletAddress);
       const newStartTime1 = (await wallet.provider?.getBlock("latest"))
@@ -446,15 +446,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
       balance0After = await token0.balanceOf(walletAddress);
       balance1After = await wallet.provider?.getBalance(walletAddress);
-      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
       balanceStakedAfter = await stRakisToken.balanceOf(walletAddress);
       const balanceRewardsAfter = await token0.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
       expect(balanceRewardsAfter).to.be.gt(balanceRewardsBefore);
-      expect(balanceArrakisV1Before).to.be.eq(balanceArrakisV1After);
-      expect(balanceArrakisV1After).to.equal(ethers.constants.Zero);
+      expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
+      expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
       contractBalance0 = await token0.balanceOf(vaultRouter.address);
       contractBalance1 = await token1.balanceOf(vaultRouter.address);
@@ -511,7 +511,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       let balance0Before = await token0.balanceOf(walletAddress);
       let balance1Before = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1Before = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
       let wrapperEthBalanceBefore = await wallet.provider?.getBalance(
         vaultRouterWrapper.address
       );
@@ -533,14 +533,14 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       let balance0After = await token0.balanceOf(walletAddress);
       let balance1After = await wallet.provider?.getBalance(walletAddress);
-      let balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      let balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
       let wrapperEthBalanceAfter = await wallet.provider?.getBalance(
         vaultRouterWrapper.address
       );
 
       expect(balance0Before).to.be.gt(balance0After);
       expect(balance1Before).to.be.gt(balance1After);
-      expect(balanceArrakisV1Before).to.be.lt(balanceArrakisV1After);
+      expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
       expect(wrapperEthBalanceBefore).to.be.eq(wrapperEthBalanceAfter);
 
       let contractBalance0 = await token0.balanceOf(vaultRouter.address);
@@ -557,19 +557,19 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
       balance0Before = balance0After;
       balance1Before = balance1After;
-      balanceArrakisV1Before = balanceArrakisV1After;
+      balanceArrakisV2Before = balanceArrakisV2After;
       wrapperEthBalanceBefore = wrapperEthBalanceAfter;
 
       // removeLiquidityETH
 
       await rakisToken.approve(
         vaultRouterWrapper.address,
-        balanceArrakisV1Before
+        balanceArrakisV2Before
       );
       const removeLiquidity = {
         burns: [],
         vault: vault.address,
-        burnAmount: balanceArrakisV1Before,
+        burnAmount: balanceArrakisV2Before,
         amount0Min: 0,
         amount1Min: 0,
         receiver: walletAddress,
@@ -579,12 +579,12 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       await vaultRouterWrapper.removeLiquidity(removeLiquidity);
       balance0After = await token0.balanceOf(walletAddress);
       balance1After = await wallet.provider?.getBalance(walletAddress);
-      balanceArrakisV1After = await rakisToken.balanceOf(walletAddress);
+      balanceArrakisV2After = await rakisToken.balanceOf(walletAddress);
 
       expect(balance0After).to.be.gt(balance0Before);
       expect(balance1After).to.be.gt(balance1Before);
-      expect(balanceArrakisV1Before).to.be.gt(balanceArrakisV1After);
-      expect(balanceArrakisV1After).to.equal(ethers.constants.Zero);
+      expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
+      expect(balanceArrakisV2After).to.equal(ethers.constants.Zero);
 
       contractBalance0 = await token0.balanceOf(vaultRouter.address);
       contractBalance1 = await token1.balanceOf(vaultRouter.address);

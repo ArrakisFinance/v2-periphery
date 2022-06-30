@@ -47,7 +47,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
-    function getRebalanceParams(
+    function calculateSwapAmount(
         IVaultV2 vault,
         uint256 amount0In,
         uint256 amount1In,

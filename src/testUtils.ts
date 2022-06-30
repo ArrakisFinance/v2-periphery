@@ -145,17 +145,17 @@ export const swapAndAddTest = async (
 
     // given this price and the amounts the user is willing to spend
     // which token should be swapped and how much
-    const result = await resolver.getRebalanceParams(
+    const result = await resolver.calculateSwapAmount(
       vault.address,
       amount0Max,
       amount1Max,
       priceX18
     );
     // console.log(
-    //   "getRebalanceParams - result.swapAmount.toString(): ",
+    //   "calculateSwapAmount - result.swapAmount.toString(): ",
     //   result.swapAmount.toString()
     // );
-    // console.log("getRebalanceParams - result.zeroForOne: ", result.zeroForOne);
+    // console.log("calculateSwapAmount - result.zeroForOne: ", result.zeroForOne);
     expect(result.zeroForOne).to.be.equals(zeroForOne);
 
     // now that we know how much to swap, let's get a new quote
@@ -183,14 +183,14 @@ export const swapAndAddTest = async (
     // console.log("price2 check:", price2.toString());
 
     // given the new price, let's get a new swap amount
-    const result2 = await resolver.getRebalanceParams(
+    const result2 = await resolver.calculateSwapAmount(
       vault.address,
       amount0Max,
       amount1Max,
       price2
     );
     // console.log(
-    //   "getRebalanceParams - result2.swapAmount.toString():",
+    //   "calculateSwapAmount - result2.swapAmount.toString():",
     //   result2.swapAmount.toString()
     // );
     expect(result2.zeroForOne).to.be.equals(zeroForOne);
