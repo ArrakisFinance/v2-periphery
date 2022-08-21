@@ -12,6 +12,7 @@ export interface Addresses {
   OneInchRouter: string;
   DAI: string;
   USDC: string;
+  GasStation: string;
 }
 
 export const getAddresses = (network: string): Addresses => {
@@ -30,6 +31,7 @@ export const getAddresses = (network: string): Addresses => {
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        GasStation: "0xd148b64fE5704659006c3970487E2fe40C97a475",
       };
     case "mainnet":
       return {
@@ -45,6 +47,7 @@ export const getAddresses = (network: string): Addresses => {
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        GasStation: "",
       };
     case "goerli":
       return {
@@ -60,6 +63,7 @@ export const getAddresses = (network: string): Addresses => {
         OneInchRouter: "",
         DAI: "",
         USDC: "",
+        GasStation: "",
       };
     case "polygon":
       return {
@@ -75,6 +79,7 @@ export const getAddresses = (network: string): Addresses => {
         OneInchRouter: "",
         DAI: "",
         USDC: "",
+        GasStation: "0xd148b64fE5704659006c3970487E2fe40C97a475",
       };
     case "optimism":
       return {
@@ -90,6 +95,7 @@ export const getAddresses = (network: string): Addresses => {
         OneInchRouter: "",
         DAI: "",
         USDC: "",
+        GasStation: "",
       };
     default:
       throw new Error(`No addresses for Network: ${network}`);
