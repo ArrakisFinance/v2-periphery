@@ -21,11 +21,11 @@ import {
     Range,
     RangeWeight,
     Rebalance
-} from "./structs/SVaultV2.sol";
+} from "./structs/SArrakisV2.sol";
 
 import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
-import {IVaultV2Helper} from "./interfaces/IVaultV2Helper.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IArrakisV2Helper} from "./interfaces/IArrakisV2Helper.sol";
+import {IArrakisV2} from "./interfaces/IArrakisV2.sol";
 
 import {FullMath} from "./vendor/uniswap/FullMath.sol";
 import {TickMath} from "./vendor/uniswap/TickMath.sol";
@@ -39,16 +39,16 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
     using TickMath for int24;
 
     IUniswapV3Factory public immutable factory;
-    IVaultV2Helper public immutable helper;
+    IArrakisV2Helper public immutable helper;
 
-    constructor(IUniswapV3Factory factory_, IVaultV2Helper helper_) {
+    constructor(IUniswapV3Factory factory_, IArrakisV2Helper helper_) {
         factory = factory_;
         helper = helper_;
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
     function calculateSwapAmount(
-        IVaultV2 vault,
+        IArrakisV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals
@@ -96,13 +96,13 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
         }
     }
 
-    function getEqualWeightsForRanges(IVaultV2 vault)
+    function getEqualWeightsForRanges(IArrakisV2 vault)
         external
         view
         override
         returns (RangeWeight[] memory)
     {
-        Range[] memory ranges = IVaultV2(vault).rangesArray();
+        Range[] memory ranges = IArrakisV2(vault).rangesArray();
         uint256 eachRangeWeight = 10000 / ranges.length;
         RangeWeight[] memory rangeWeights = new RangeWeight[](ranges.length);
         for (uint256 i = 0; i < ranges.length; i++) {
@@ -117,7 +117,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
     // solhint-disable-next-line function-max-lines
     function standardRebalance(
         RangeWeight[] memory rangeWeights_,
-        IVaultV2 vaultV2_
+        IArrakisV2 vaultV2_
     ) external view returns (Rebalance memory rebalanceParams) {
         uint256 amount0;
         uint256 amount1;
@@ -178,24 +178,21 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
                 )
                     .slot0();
 
-            uint128 liquidity =
-                LiquidityAmounts.getLiquidityForAmounts(
+            rebalanceParams.deposits[i] = PositionLiquidity({
+                liquidity: LiquidityAmounts.getLiquidityForAmounts(
                     sqrtPriceX96,
                     TickMath.getSqrtRatioAtTick(rangeWeight.range.lowerTick),
                     TickMath.getSqrtRatioAtTick(rangeWeight.range.upperTick),
                     FullMath.mulDiv(amount0, rangeWeight.weight, 10000),
                     FullMath.mulDiv(amount1, rangeWeight.weight, 10000)
-                );
-
-            rebalanceParams.deposits[i] = PositionLiquidity({
-                liquidity: liquidity,
+                ),
                 range: rangeWeight.range
             });
         }
     }
 
     // solhint-disable-next-line function-max-lines
-    function standardBurnParams(uint256 amountToBurn_, IVaultV2 vaultV2_)
+    function standardBurnParams(uint256 amountToBurn_, IArrakisV2 vaultV2_)
         external
         view
         returns (BurnLiquidity[] memory burns)
@@ -233,7 +230,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
                     UniswapV3Amounts.subtractAdminFees(
                         underlying.fee0,
                         underlying.fee1,
-                        vaultV2_.managerFeeBPS(),
+                        vaultV2_.manager().managerFeeBPS(),
                         vaultV2_.arrakisFeeBPS()
                     );
                 underlying.amount0 += underlying.leftOver0 + fee0;
@@ -294,7 +291,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
 
     // solhint-disable-next-line function-max-lines
     function getMintAmounts(
-        IVaultV2 vaultV2_,
+        IArrakisV2 vaultV2_,
         uint256 amount0Max_,
         uint256 amount1Max_
     )
@@ -346,7 +343,7 @@ contract ArrakisV2Resolver is IArrakisV2Resolver {
     }
 
     // #region view internal functions.
-    function _getUnderlyingOrLiquidity(IVaultV2 vault)
+    function _getUnderlyingOrLiquidity(IArrakisV2 vault)
         internal
         view
         returns (uint256 gross0, uint256 gross1)

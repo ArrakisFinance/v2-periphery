@@ -8,3 +8,8 @@ struct VaultInfo {
     bytes32 strat; // strat type
     uint256 endOfMM; // expiry of the Market Making terms.
 }
+
+struct VaultData {
+    address vault;
+    VaultInfo vaultInfo;
+}

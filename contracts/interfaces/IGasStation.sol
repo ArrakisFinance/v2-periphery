@@ -2,7 +2,7 @@
 // solhint-disable-next-line compiler-version
 pragma solidity >=0.8.0;
 
-import {Rebalance, Range} from "../structs/SVaultV2.sol";
+import {Rebalance, Range} from "../structs/SArrakisV2.sol";
 import {IManagerProxy} from "./IManagerProxy.sol";
 import {VaultInfo} from "../structs/SGasStation.sol";
 

@@ -13,6 +13,9 @@ export interface Addresses {
   DAI: string;
   USDC: string;
   GasStation: string;
+  faucetDai: string;
+  faucetUSDC: string;
+  faucetWeth: string;
 }
 
 export const getAddresses = (network: string): Addresses => {
@@ -22,16 +25,19 @@ export const getAddresses = (network: string): Addresses => {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
         ArrakisV2Router: "",
         ArrakisV2Resolver: "",
-        ArrakisV2Factory: "",
-        WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        ArrakisV2Factory: "0xFBF23A8ADc3998aF469DADdD9E5BA79b196352ba",
+        WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
         ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
         ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
-        DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+        USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
         GasStation: "0xd148b64fE5704659006c3970487E2fe40C97a475",
+        faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+        faucetUSDC: "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+        faucetWeth: "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4",
       };
     case "mainnet":
       return {
@@ -48,6 +54,9 @@ export const getAddresses = (network: string): Addresses => {
         DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         GasStation: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
       };
     case "goerli":
       return {
@@ -64,6 +73,9 @@ export const getAddresses = (network: string): Addresses => {
         DAI: "",
         USDC: "",
         GasStation: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
       };
     case "polygon":
       return {
@@ -80,6 +92,9 @@ export const getAddresses = (network: string): Addresses => {
         DAI: "",
         USDC: "",
         GasStation: "0xd148b64fE5704659006c3970487E2fe40C97a475",
+        faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+        faucetUSDC: "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+        faucetWeth: "0x8dF3aad3a84da6b69A4DA8aeC3eA40d9091B2Ac4",
       };
     case "optimism":
       return {
@@ -96,6 +111,9 @@ export const getAddresses = (network: string): Addresses => {
         DAI: "",
         USDC: "",
         GasStation: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
       };
     default:
       throw new Error(`No addresses for Network: ${network}`);

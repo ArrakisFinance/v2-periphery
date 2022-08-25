@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.8.13;
 
 import {
@@ -16,7 +15,7 @@ import {
 
 import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IArrakisV2} from "./interfaces/IArrakisV2.sol";
 import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
@@ -57,11 +56,11 @@ contract ArrakisV2Router is IArrakisV2Router {
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
-    /// @notice addLiquidity adds liquidity to ArrakisVaultV2 vault of interest (mints LP tokens)
+    /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param _mintData MintData struct containing data for minting
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
-    /// @return mintAmount amount of ArrakisVaultV2 tokens minted and transferred to `receiver`
+    /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     // solhint-disable-next-line code-complexity, function-max-lines
     function addLiquidity(MintData memory _mintData)
         external
@@ -147,11 +146,11 @@ contract ArrakisV2Router is IArrakisV2Router {
     }
 
     // solhint-disable-next-line max-line-length
-    /// @notice swapAndAddLiquidity makes a swap and deposits to an ArrakisVaultV2 vault and mints LP tokens
+    /// @notice swapAndAddLiquidity makes a swap and deposits to an ArrakisV2 vault and mints LP tokens
     /// @param _swapData struct AddAndSwapData containing data for swap
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
-    /// @return mintAmount amount of ArrakisVaultV2 tokens minted and transferred to `receiver`
+    /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     /// @return amount0Diff token0 balance difference post swap
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
@@ -253,7 +252,7 @@ contract ArrakisV2Router is IArrakisV2Router {
     }
 
     function _deposit(
-        IVaultV2 vault,
+        IArrakisV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         uint256 mintAmount,
@@ -276,7 +275,7 @@ contract ArrakisV2Router is IArrakisV2Router {
 
     // solhint-disable-next-line code-complexity
     function _receiveETH(
-        IVaultV2 vault,
+        IArrakisV2 vault,
         uint256 amount0,
         uint256 amount1,
         address payable receiver

@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.13;
 
-import {BurnLiquidity} from "./SVaultV2.sol";
+import {BurnLiquidity} from "./SArrakisV2.sol";
 
-import {IVaultV2} from "../interfaces/IVaultV2.sol";
+import {IArrakisV2} from "../interfaces/IArrakisV2.sol";
 import {IGauge} from "../interfaces/IGauge.sol";
 
 struct AddLiquidityData {
     // address of ArrakisV2 vault
-    IVaultV2 vault;
+    IArrakisV2 vault;
     // maximum amount of token0 to forward on mint
     uint256 amount0Max;
     // maximum amount of token1 to forward on mint
@@ -24,13 +24,11 @@ struct AddLiquidityData {
     bool useETH;
     // address of gauge to stake tokens in
     address gaugeAddress;
-    // bool indicating whether to call AutoOperator to rebalance
-    bool rebalance;
 }
 
 struct MintData {
     // address of ArrakisV2 vault
-    IVaultV2 vault;
+    IArrakisV2 vault;
     // amount of token0 to deposit
     uint256 amount0In;
     // amount of token1 to deposit
@@ -45,7 +43,7 @@ struct MintData {
 
 struct RemoveLiquidityData {
     // address of ArrakisV2 vault
-    IVaultV2 vault;
+    IArrakisV2 vault;
     // array of BurnLiquidity
     BurnLiquidity[] burns;
     // amount of LP tokens to burn
@@ -64,7 +62,7 @@ struct RemoveLiquidityData {
 
 struct AddAndSwapData {
     // address of ArrakisV2 vault
-    IVaultV2 vault;
+    IArrakisV2 vault;
     // maximum amount of token0 to forward on mint
     uint256 amount0Max;
     // maximum amount of token1 to forward on mint
@@ -91,6 +89,4 @@ struct AddAndSwapData {
     bytes swapPayload;
     // address of the user to be refunded
     address payable userToRefund;
-    // bool indicating whether to call AutoOperator to rebalance
-    bool rebalance;
 }

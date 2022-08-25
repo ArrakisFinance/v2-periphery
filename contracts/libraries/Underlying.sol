@@ -12,7 +12,7 @@ import {
     RangeData,
     PositionUnderlying,
     FeesEarnedPayload
-} from "../structs/SVaultV2.sol";
+} from "../structs/SArrakisV2.sol";
 import {UniswapV3Amounts} from "./UniswapV3Amounts.sol";
 import {Position} from "./Position.sol";
 

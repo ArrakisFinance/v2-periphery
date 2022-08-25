@@ -4,10 +4,9 @@ import {
   ArrakisV2Router,
   ArrakisV2RouterWrapper,
   ArrakisV2Resolver,
-  ArrakisV2AutoOperator,
   ERC20,
-  IVaultV2,
-  IVaultV2Factory,
+  IArrakisV2,
+  IArrakisV2Factory,
   IUniswapV3Factory,
   IUniswapV3Pool,
 } from "../typechain";
@@ -20,9 +19,8 @@ import {
   OneInchDataType,
 } from "./oneInchApiIntegration";
 import { BigNumber, ContractTransaction, Contract } from "ethers";
-import VaultV2 from "../deployJSON/VaultV2.json";
-import VaultV2Factory from "../deployJSON/VaultV2Factory.json";
-import Gauge from "../src/LiquidityGaugeV4.json";
+import ArrakisV2 from "../deployJSON/ArrakisV2.json";
+import ArrakisV2Factory from "../deployJSON/ArrakisV2Factory.json";
 
 const addresses: Addresses = getAddresses(network.name);
 
@@ -33,7 +31,7 @@ export const swapAndAddTest = async (
   vaultRouterWrapper: ArrakisV2RouterWrapper,
   resolver: ArrakisV2Resolver,
 
-  vault: IVaultV2,
+  vault: IArrakisV2,
   token0: ERC20,
   token1: ERC20,
   rakisToken: ERC20,
@@ -96,6 +94,12 @@ export const swapAndAddTest = async (
   let swapParams: OneInchDataType;
   let swapAmountIn: BigNumber;
   let swapAmountOut: BigNumber;
+
+  // const vaultNamet = (await token0.symbol()) + "/" + (await token1.symbol());
+
+  // console.log("vaultName : ", vaultNamet);
+  // console.log("scenario : ", mockPayloadScenario);
+
   if (mockPayloadScenario && shouldUseMockPayloads) {
     const vaultName = (await token0.symbol()) + "/" + (await token1.symbol());
     if (
@@ -121,14 +125,18 @@ export const swapAndAddTest = async (
   } else {
     // get quote and swap data from live 1inch API
 
+    const chainID =
+      network.name == "hardhat"
+        ? "137"
+        : network.config.chainId?.toString() ?? "1";
+
     // amount here is not so important, as what we want is an initial price for this asset pair
     const quoteAmount = await quote1Inch(
-      "1",
+      chainID,
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       zeroForOne ? amount0Max.toString() : amount1Max.toString()
     );
-    // console.log("quoteAmount: ", quoteAmount);
 
     const numerator = ethers.BigNumber.from(quoteAmount).mul(
       zeroForOne
@@ -147,6 +155,7 @@ export const swapAndAddTest = async (
 
     // given this price and the amounts the user is willing to spend
     // which token should be swapped and how much
+
     const result = await resolver.calculateSwapAmount(
       vault.address,
       amount0Max,
@@ -162,12 +171,12 @@ export const swapAndAddTest = async (
 
     // now that we know how much to swap, let's get a new quote
     const quoteAmount2 = await quote1Inch(
-      "1",
+      chainID,
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       result.swapAmount.toString()
     );
-    // console.log("quoteAmount2:", quoteAmount2);
+    console.log("quoteAmount2:", quoteAmount2);
 
     const numerator2 = ethers.BigNumber.from(quoteAmount2).mul(
       zeroForOne
@@ -199,7 +208,7 @@ export const swapAndAddTest = async (
 
     // given this new swapAmount, how much of the other token will I receive?
     const quoteAmount3 = await quote1Inch(
-      "1",
+      chainID,
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       result2.swapAmount.toString()
@@ -210,7 +219,7 @@ export const swapAndAddTest = async (
     swapAmountOut = ethers.BigNumber.from(quoteAmount3);
 
     swapParams = await swapTokenData(
-      "1",
+      chainID,
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       swapAmountIn.toString(),
@@ -280,6 +289,11 @@ export const swapAndAddTest = async (
     userToRefund: "0x0000000000000000000000000000000000000000",
     rebalance: rebalance,
   };
+
+  // console.log("swapIn : ", swapAmountIn.toString());
+  // console.log("swapOut : ", amountOut.toString());
+  // console.log("to : ", swapParams.to);
+  // console.log("data : ", swapParams.data);
 
   // flag indicating if "Swapped" event fired
   let hasSwapped = false;
@@ -522,12 +536,7 @@ export const swapAndAddTest = async (
 };
 
 export const getPeripheryContracts = async (): Promise<
-  [
-    ArrakisV2Resolver,
-    ArrakisV2Router,
-    ArrakisV2RouterWrapper,
-    ArrakisV2AutoOperator
-  ]
+  [ArrakisV2Resolver, ArrakisV2Router, ArrakisV2RouterWrapper]
 > => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("ArrakisV2Resolver")).address;
@@ -552,39 +561,32 @@ export const getPeripheryContracts = async (): Promise<
     vaultRouterWrapperAddress
   )) as ArrakisV2RouterWrapper;
 
-  // getting auto operator contract
-  const autoOperatorContractAddress = (
-    await deployments.get("ArrakisV2AutoOperator")
-  ).address;
-  const autoOperator = (await ethers.getContractAt(
-    "ArrakisV2AutoOperator",
-    autoOperatorContractAddress
-  )) as ArrakisV2AutoOperator;
-
   // updating wrapper's router
   await vaultRouterWrapper.updateRouter(vaultRouter.address);
 
-  return [resolver, vaultRouter, vaultRouterWrapper, autoOperator];
+  return [resolver, vaultRouter, vaultRouterWrapper];
 };
 
-export const getVaultV2 = async (
+export const getArrakisV2 = async (
   signer: SignerWithAddress,
   token0Address: string,
   token1Address: string,
   fee: number,
   resolver: ArrakisV2Resolver
-): Promise<[IVaultV2]> => {
+): Promise<[IArrakisV2]> => {
   const signerAddress = await signer.getAddress();
 
   // get vault implementation address
-  const vaultImplementationAddress = (await deployments.get("VaultV2")).address;
+  const vaultImplementationAddress = (await deployments.get("ArrakisV2"))
+    .address;
 
   // getting vault factory
-  const vaultFactoryAddress = (await deployments.get("VaultV2Factory")).address;
+  const vaultFactoryAddress = (await deployments.get("ArrakisV2Factory"))
+    .address;
   const vaultV2Factory = (await ethers.getContractAt(
-    VaultV2Factory.abi,
+    ArrakisV2Factory.abi,
     vaultFactoryAddress
-  )) as IVaultV2Factory;
+  )) as IArrakisV2Factory;
 
   // initializing factory
   await vaultV2Factory.initialize(vaultImplementationAddress, signerAddress);
@@ -636,7 +638,7 @@ export const getVaultV2 = async (
     managerTreasury: signerAddress,
     managerFeeBPS: 100,
     maxTwapDeviation: 100,
-    twapDuration: 2000,
+    twapDuration: 100,
   });
 
   const rc = await tx.wait();
@@ -646,10 +648,10 @@ export const getVaultV2 = async (
 
   // getting vault
   const vault = (await ethers.getContractAt(
-    VaultV2.abi,
+    ArrakisV2.abi,
     result?.vault,
     signer
-  )) as IVaultV2;
+  )) as IArrakisV2;
 
   return [vault];
 };
@@ -671,34 +673,22 @@ export const getFundsFromFaucet = async (
   await token
     .connect(faucetSigner)
     .transfer(targetAddress, await token.balanceOf(faucetAddress));
+
+  await network.provider.request({
+    method: "hardhat_stopImpersonatingAccount",
+    params: [faucetAddress],
+  });
 };
 
 export const createGauge = async (
-  signer: SignerWithAddress,
   vaultAddress: string
 ): Promise<[Contract, ERC20]> => {
-  const ANGLE = "0x31429d1856aD1377A8A0079410B297e1a9e214c2";
-  const veANGLE = "0x0C462Dbb9EC8cD1630f1728B2CFD2769d09f0dd5";
-  const veBoost = "0x52701bFA0599db6db2b2476075D9a2f4Cb77DAe3";
+  const gaugeMockFactory = await ethers.getContractFactory("GaugeMock");
 
-  const signerAddress = await signer.getAddress();
-  const gaugeImplFactory = ethers.ContractFactory.fromSolidity(Gauge);
-  const gaugeImpl = await gaugeImplFactory
-    .connect(signer)
-    .deploy({ gasLimit: 6000000 });
-  const encoded = gaugeImpl.interface.encodeFunctionData("initialize", [
-    vaultAddress,
-    signerAddress,
-    ANGLE,
-    veANGLE,
-    veBoost,
-    signerAddress,
-  ]);
-  const factory = await ethers.getContractFactory("EIP173Proxy");
-  const contract = await factory
-    .connect(signer)
-    .deploy(gaugeImpl.address, signerAddress, encoded);
-  const gauge = await ethers.getContractAt(Gauge.abi, contract.address);
+  const gauge = await gaugeMockFactory.deploy(vaultAddress, {
+    gasLimit: 6000000,
+  });
+
   const stRakisToken = (await ethers.getContractAt(
     "ERC20",
     gauge.address
