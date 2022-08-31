@@ -6,4 +6,6 @@ import {
 } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 // solhint-disable-next-line no-empty-blocks
-contract TempProxyAdmin is ProxyAdmin {}
+contract TempProxyAdmin is ProxyAdmin {
+
+}
