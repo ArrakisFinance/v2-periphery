@@ -5,7 +5,8 @@ export interface Addresses {
   ArrakisV2Resolver: string;
   ArrakisV2Factory: string;
   WETH: string;
-  ArrakisDevMultiSig: string;
+  ArrakisDevAdmin: string;
+  ArrakisDevOwner: string;
   ArrakisFeeTreasury: string;
   ArrakisV2UsdcWethPool: string;
   ArrakisV2agEURWethPool: string;
@@ -27,7 +28,8 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Factory: "0xFBF23A8ADc3998aF469DADdD9E5BA79b196352ba",
         WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-        ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisDevAdmin: "",
+        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
         ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",
@@ -46,7 +48,8 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "0x0317650Af6f184344D7368AC8bB0bEbA5EDB214a",
         ArrakisV2Factory: "0xEA1aFf9dbFfD1580F6b81A3ad3589E66652dB7D9",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisDevAdmin: "",
+        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
         ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",
@@ -65,7 +68,8 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "0x78bfb478192bEFbb0D2ae01354d1362cF54F5D93",
         ArrakisV2Factory: "0x399cFce1F3f5AB74C46d9F0361BE18f87c23FCC3",
         WETH: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
-        ArrakisDevMultiSig: "0xAabB54394E8dd61Dd70897E9c80be8de7C64A895",
+        ArrakisDevAdmin: "",
+        ArrakisDevOwner: "0xAabB54394E8dd61Dd70897E9c80be8de7C64A895",
         ArrakisFeeTreasury: "",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",
@@ -84,7 +88,8 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "0x3638fc820c22b9ecd631943Bc7d5591C0004C7b2",
         ArrakisV2Factory: "0x37265A834e95D11c36527451c7844eF346dC342a",
         WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-        ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisDevAdmin: "",
+        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
         ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",
@@ -103,7 +108,8 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "0xd2Bb190dD88e7Af5DF176064Ec42f6dfA8672F40",
         ArrakisV2Factory: "0x2845c6929d621e32B7596520C8a1E5a37e616F09",
         WETH: "0x4200000000000000000000000000000000000006",
-        ArrakisDevMultiSig: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
+        ArrakisDevAdmin: "",
+        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
         ArrakisFeeTreasury: "",
         ArrakisV2UsdcWethPool: "",
         ArrakisV2agEURWethPool: "",

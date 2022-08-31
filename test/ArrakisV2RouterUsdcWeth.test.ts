@@ -25,6 +25,8 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   let wallet: SignerWithAddress;
   let walletAddress: string;
 
+  let owner: SignerWithAddress;
+
   let token0: ERC20;
   let token1: ERC20;
   let rakisToken: ERC20;
@@ -44,10 +46,12 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     await deployments.fixture();
 
     addresses = getAddresses(network.name);
-    [wallet] = await ethers.getSigners();
+    [wallet, owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
-    [resolver, vaultRouter, vaultRouterWrapper] = await getPeripheryContracts();
+    [resolver, vaultRouter, vaultRouterWrapper] = await getPeripheryContracts(
+      owner
+    );
 
     [vault] = await getArrakisV2(
       wallet,

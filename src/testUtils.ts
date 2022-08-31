@@ -18,7 +18,7 @@ import {
   mockPayloads,
   OneInchDataType,
 } from "./oneInchApiIntegration";
-import { BigNumber, ContractTransaction, Contract } from "ethers";
+import { BigNumber, ContractTransaction, Contract, Signer } from "ethers";
 import ArrakisV2 from "../deployJSON/ArrakisV2.json";
 import ArrakisV2Factory from "../deployJSON/ArrakisV2Factory.json";
 
@@ -535,9 +535,9 @@ export const swapAndAddTest = async (
   ).to.be.revertedWith("ArrakisVaultV2: mint 0");
 };
 
-export const getPeripheryContracts = async (): Promise<
-  [ArrakisV2Resolver, ArrakisV2Router, ArrakisV2RouterWrapper]
-> => {
+export const getPeripheryContracts = async (
+  owner: Signer
+): Promise<[ArrakisV2Resolver, ArrakisV2Router, ArrakisV2RouterWrapper]> => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("ArrakisV2Resolver")).address;
   const resolver = (await ethers.getContractAt(
@@ -562,7 +562,7 @@ export const getPeripheryContracts = async (): Promise<
   )) as ArrakisV2RouterWrapper;
 
   // updating wrapper's router
-  await vaultRouterWrapper.updateRouter(vaultRouter.address);
+  await vaultRouterWrapper.connect(owner).updateRouter(vaultRouter.address);
 
   return [resolver, vaultRouter, vaultRouterWrapper];
 };
