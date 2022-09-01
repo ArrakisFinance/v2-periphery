@@ -24,6 +24,9 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
+    hardhatOwner: {
+      default: 1,
+    },
   },
 
   etherscan: {

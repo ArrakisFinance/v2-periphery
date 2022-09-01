@@ -55,9 +55,9 @@ contract ArrakisV2RouterWrapper is
         resolver = _resolver;
     }
 
-    function initialize() external initializer {
+    function initialize(address owner_) external initializer {
         __Pausable_init();
-        __Ownable_init();
+        _transferOwnership(owner_);
         __ReentrancyGuard_init();
     }
 

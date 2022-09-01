@@ -16,28 +16,46 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, hardhatOwner } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
   const arrakisV2Resolver = await deployments.get("ArrakisV2Resolver");
 
   // TODO: add correct addresses in args here
-  await deploy("ArrakisV2RouterWrapper", {
-    from: deployer,
-    proxy: {
-      proxyContract: "EIP173ProxyWithReceive",
-      owner: addresses.ArrakisDevMultiSig,
-      execute: {
-        init: {
+  if (hre.network.name == "hardhat")
+    await deploy("ArrakisV2RouterWrapper", {
+      from: deployer,
+      proxy: {
+        proxyContract: "OpenZeppelinTransparentProxy",
+        viaAdminContract: {
+          name: "TempProxyAdmin",
+        },
+        execute: {
           methodName: "initialize",
-          args: [],
+          args: [hardhatOwner],
         },
       },
-    },
-    args: [addresses.WETH, arrakisV2Resolver.address],
-    log: hre.network.name !== "hardhat",
-    // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
-  });
+      args: [addresses.WETH, arrakisV2Resolver.address],
+      log: hre.network.name !== "hardhat",
+      // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    });
+  else
+    await deploy("ArrakisV2RouterWrapper", {
+      from: deployer,
+      proxy: {
+        proxyContract: "OpenZeppelinTransparentProxy",
+        viaAdminContract: addresses.ArrakisDevAdmin,
+        execute: {
+          init: {
+            methodName: "initialize",
+            args: [addresses.ArrakisDevOwner],
+          },
+        },
+      },
+      args: [addresses.WETH, arrakisV2Resolver.address],
+      log: hre.network.name !== "hardhat",
+      // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    });
 };
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
@@ -51,6 +69,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 
 func.tags = ["ArrakisV2RouterWrapper"];
 
-func.dependencies = ["ArrakisV2Resolver"];
+func.dependencies = ["ArrakisV2Resolver", "TempProxyAdmin"];
 
 export default func;
