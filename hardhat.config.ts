@@ -24,6 +24,9 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
+    hardhatOwner: {
+      default: 1,
+    },
   },
 
   etherscan: {
@@ -35,8 +38,8 @@ const config: HardhatUserConfig = {
       // Standard config
       // timeout: 150000,
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
-        blockNumber: 15045368,
+        url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
+        blockNumber: 32263898,
       },
     },
     mainnet: {

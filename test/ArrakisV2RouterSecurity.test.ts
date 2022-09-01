@@ -1,20 +1,27 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
-import { EIP173ProxyWithReceive, ArrakisV2RouterWrapper } from "../typechain/";
+import {
+  TransparentUpgradeableProxy,
+  ArrakisV2RouterWrapper,
+  TempProxyAdmin,
+} from "../typechain/";
 
 let wallet: SignerWithAddress;
 let walletAddress: string;
+let owner: SignerWithAddress;
 
 describe("ArrakisV2RouterWrapper Security Tests", function () {
   this.timeout(0);
 
   let vaultRouterWrapper: ArrakisV2RouterWrapper;
-  let proxy: EIP173ProxyWithReceive;
+  let tempsProxyAdmin: TempProxyAdmin;
+  let proxy: TransparentUpgradeableProxy;
+
   before(async function () {
     await deployments.fixture();
 
-    [wallet] = await ethers.getSigners();
+    [wallet, owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
     const vaultRouterWrapperAddress = (
@@ -23,16 +30,22 @@ describe("ArrakisV2RouterWrapper Security Tests", function () {
 
     vaultRouterWrapper = (await ethers.getContractAt(
       "ArrakisV2RouterWrapper",
-      vaultRouterWrapperAddress
+      vaultRouterWrapperAddress,
+      owner
     )) as ArrakisV2RouterWrapper;
 
+    tempsProxyAdmin = (await ethers.getContract(
+      "TempProxyAdmin",
+      wallet
+    )) as TempProxyAdmin;
+
     proxy = (await ethers.getContractAt(
-      "EIP173ProxyWithReceive",
+      "TransparentUpgradeableProxy",
       vaultRouterWrapperAddress
-    )) as EIP173ProxyWithReceive;
+    )) as TransparentUpgradeableProxy;
 
     await network.provider.send("hardhat_setBalance", [
-      await proxy.proxyAdmin(),
+      await tempsProxyAdmin.getProxyAdmin(proxy.address),
       "0x313030303030303030303030303030303030303030",
     ]);
 
@@ -42,41 +55,39 @@ describe("ArrakisV2RouterWrapper Security Tests", function () {
     ]);
   });
 
-  describe("Upgradable tests", function () {
-    it("Pause, Revocation, Ownership, Upgradeability", async function () {
-      const proxyOwner = await proxy.proxyAdmin();
+  it("Pause, Revocation, Ownership, Upgradeability", async function () {
+    const proxyOwner = await tempsProxyAdmin.getProxyAdmin(proxy.address);
 
-      await vaultRouterWrapper.pause();
+    await vaultRouterWrapper.pause();
 
-      const addLiquidityData = {
-        vault: "0x0000000000000000000000000000000000000000",
-        amount0Max: 0,
-        amount1Max: 0,
-        amount0Min: 0,
-        amount1Min: 0,
-        receiver: walletAddress,
-        useETH: false,
-        gaugeAddress: "0x0000000000000000000000000000000000000000",
-        rebalance: false,
-      };
+    const addLiquidityData = {
+      vault: "0x0000000000000000000000000000000000000000",
+      amount0Max: 0,
+      amount1Max: 0,
+      amount0Min: 0,
+      amount1Min: 0,
+      receiver: walletAddress,
+      useETH: false,
+      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      rebalance: false,
+    };
 
-      await expect(
-        vaultRouterWrapper.addLiquidity(addLiquidityData)
-      ).to.be.revertedWith("Pausable: paused");
-      await vaultRouterWrapper.transferOwnership(proxyOwner);
-      const owner = await vaultRouterWrapper.owner();
-      expect(owner).to.be.eq(proxyOwner);
-      await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [proxyOwner],
-      });
-      const proxySigner = await ethers.provider.getSigner(proxyOwner);
-
-      await proxy.connect(proxySigner).upgradeTo(ethers.constants.AddressZero);
-
-      await proxy
-        .connect(proxySigner)
-        .transferProxyAdmin(ethers.constants.AddressZero);
+    await expect(
+      vaultRouterWrapper.addLiquidity(addLiquidityData)
+    ).to.be.revertedWith("Pausable: paused");
+    await vaultRouterWrapper.transferOwnership(walletAddress);
+    const owner = await vaultRouterWrapper.owner();
+    expect(owner).to.be.eq(walletAddress);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [proxyOwner],
     });
+    const proxySigner = await ethers.provider.getSigner(proxyOwner);
+
+    const update = (await deployments.get("ArrakisV2Router")).address;
+
+    await tempsProxyAdmin.upgrade(proxy.address, update);
+
+    await proxy.connect(proxySigner).changeAdmin(update);
   });
 });

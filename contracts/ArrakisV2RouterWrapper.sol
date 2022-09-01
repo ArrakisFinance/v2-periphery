@@ -29,13 +29,12 @@ import {
 
 import {IGauge} from "./interfaces/IGauge.sol";
 import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IArrakisV2} from "./interfaces/IArrakisV2.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {
     IArrakisV2RouterWrapper
 } from "./interfaces/IArrakisV2RouterWrapper.sol";
 import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
-import {IArrakisV2AutoOperator} from "./interfaces/IArrakisV2AutoOperator.sol";
 
 contract ArrakisV2RouterWrapper is
     IArrakisV2RouterWrapper,
@@ -49,22 +48,16 @@ contract ArrakisV2RouterWrapper is
 
     IWETH public immutable weth;
     IArrakisV2Resolver public immutable resolver;
-    IArrakisV2AutoOperator public immutable autoOperator;
     IArrakisV2Router public router;
 
-    constructor(
-        IWETH _weth,
-        IArrakisV2Resolver _resolver,
-        IArrakisV2AutoOperator _autoOperator
-    ) {
+    constructor(IWETH _weth, IArrakisV2Resolver _resolver) {
         weth = _weth;
         resolver = _resolver;
-        autoOperator = _autoOperator;
     }
 
-    function initialize() external initializer {
+    function initialize(address owner_) external initializer {
         __Pausable_init();
-        __Ownable_init();
+        _transferOwnership(owner_);
         __ReentrancyGuard_init();
     }
 
@@ -76,11 +69,11 @@ contract ArrakisV2RouterWrapper is
         _unpause();
     }
 
-    /// @notice addLiquidity adds liquidity to ArrakisVaultV2 vault of interest (mints LP tokens)
+    /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param _addData AddLiquidityData struct containing data for adding liquidity
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
-    /// @return mintAmount amount of ArrakisVaultV2 tokens minted and transferred to `receiver`
+    /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     // solhint-disable-next-line code-complexity, function-max-lines
     function addLiquidity(AddLiquidityData memory _addData)
         external
@@ -167,10 +160,6 @@ contract ArrakisV2RouterWrapper is
                 payable(msg.sender).sendValue(msg.value - amount1);
             }
         }
-
-        if (_addData.rebalance) {
-            autoOperator.rebalance(_addData.vault);
-        }
     }
 
     /// @notice removeLiquidity removes liquidity from vault and burns LP tokens
@@ -218,7 +207,7 @@ contract ArrakisV2RouterWrapper is
     /// @param _swapData SwapData struct containing data for swap
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
-    /// @return mintAmount amount of ArrakisVaultV2 tokens minted and transferred to `receiver`
+    /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     /// @return amount0Diff token0 balance difference post swap
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
@@ -281,10 +270,6 @@ contract ArrakisV2RouterWrapper is
         _swapData.userToRefund = payable(msg.sender);
         (amount0, amount1, mintAmount, amount0Diff, amount1Diff) = router
             .swapAndAddLiquidity(_swapData);
-
-        if (_swapData.rebalance) {
-            autoOperator.rebalance(_swapData.vault);
-        }
     }
 
     /// @notice updates address of ArrakisV2Router used by this wrapper
@@ -294,12 +279,12 @@ contract ArrakisV2RouterWrapper is
     }
 
     /// @notice _wrapAndTransferETH wrap ETH into WETH and transfers to router
-    /// @param vault The ArrakisVaultV2 vault
+    /// @param vault The ArrakisV2 vault
     /// @param amount0In amount of token1 to be wrapped and transfered (if isToken0Weth)
     /// @param amount1In amount of token1 to be wrapped and transfered (if !isToken0Weth)
     /// @return isToken0Weth bool indicating which token is WETH
     function _wrapAndTransferETH(
-        IVaultV2 vault,
+        IArrakisV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         bool matchAmount

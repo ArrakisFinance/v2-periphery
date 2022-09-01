@@ -1,34 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import {IVaultV2} from "./IVaultV2.sol";
-import {RangeWeight, Rebalance, BurnLiquidity} from "../structs/SVaultV2.sol";
+import {IArrakisV2} from "./IArrakisV2.sol";
+import {RangeWeight, Rebalance, BurnLiquidity} from "../structs/SArrakisV2.sol";
 
 interface IArrakisV2Resolver {
     function calculateSwapAmount(
-        IVaultV2 vault,
+        IArrakisV2 vault,
         uint256 amount0In,
         uint256 amount1In,
         uint256 price18Decimals
     ) external view returns (bool zeroForOne, uint256 swapAmount);
 
-    function getEqualWeightsForRanges(IVaultV2 vault)
+    function getEqualWeightsForRanges(IArrakisV2 vault)
         external
         view
         returns (RangeWeight[] memory rangeWeights);
 
     function standardRebalance(
         RangeWeight[] memory rangeWeights_,
-        IVaultV2 vaultV2_
+        IArrakisV2 vaultV2_
     ) external view returns (Rebalance memory rebalanceParams);
 
-    function standardBurnParams(uint256 amountToBurn_, IVaultV2 vaultV2_)
+    function standardBurnParams(uint256 amountToBurn_, IArrakisV2 vaultV2_)
         external
         view
         returns (BurnLiquidity[] memory burns);
 
     function getMintAmounts(
-        IVaultV2 vaultV2_,
+        IArrakisV2 vaultV2_,
         uint256 amount0Max_,
         uint256 amount1Max_
     )
