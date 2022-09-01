@@ -27,9 +27,9 @@ import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
 import {IArrakisV2Helper} from "./interfaces/IArrakisV2Helper.sol";
 import {IArrakisV2} from "./interfaces/IArrakisV2.sol";
 
-import {FullMath} from "./vendor/uniswap/FullMath.sol";
-import {TickMath} from "./vendor/uniswap/TickMath.sol";
-import {LiquidityAmounts} from "./vendor/uniswap/LiquidityAmounts.sol";
+import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
+import {TickMath} from "@arrakisfi/v3-lib-0.8/contracts/TickMath.sol";
+import {LiquidityAmounts} from "@arrakisfi/v3-lib-0.8/contracts/LiquidityAmounts.sol";
 
 import {Underlying as UnderlyingHelper} from "./libraries/Underlying.sol";
 import {UniswapV3Amounts} from "./libraries/UniswapV3Amounts.sol";
