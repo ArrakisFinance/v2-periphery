@@ -25,6 +25,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy("GasStationHelper", {
     from: deployer,
     args: [addresses.GasStation],
+    log: hre.network.name !== "hardhat" ? true : false,
   });
 };
 
