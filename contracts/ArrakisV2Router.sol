@@ -1,25 +1,30 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import {
-    IERC20,
-    SafeERC20
-} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
+import {IGauge} from "./interfaces/IGauge.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 
 import {
     MintData,
     RemoveLiquidityData,
     AddAndSwapData
 } from "./structs/SArrakisV2Router.sol";
-
-import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
-import {IGauge} from "./interfaces/IGauge.sol";
-import {IArrakisV2} from "./interfaces/IArrakisV2.sol";
-import {IArrakisV2Resolver} from "./interfaces/IArrakisV2Resolver.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
-
 import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
+
+import {
+    IArrakisV2
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+import {
+    IArrakisV2Resolver
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+import {
+    IERC20,
+    SafeERC20
+} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
+import "hardhat/console.sol";
 
 // @notice External functions of this contract can only be called by ArrakisV2RouterWrapper
 // @notice do not give approvals to this contract's address
@@ -57,12 +62,12 @@ contract ArrakisV2Router is IArrakisV2Router {
     receive() external payable {}
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
-    /// @param _mintData MintData struct containing data for minting
+    /// @param mintData_ MintData struct containing data for minting
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
     /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     // solhint-disable-next-line code-complexity, function-max-lines
-    function addLiquidity(MintData memory _mintData)
+    function addLiquidity(MintData memory mintData_)
         external
         payable
         override
@@ -73,88 +78,90 @@ contract ArrakisV2Router is IArrakisV2Router {
             uint256 mintAmount
         )
     {
-        if (_mintData.gaugeAddress != address(0)) {
+        console.log("Router - addLiquidity!");
+        if (mintData_.gaugeAddress != address(0)) {
             _deposit(
-                _mintData.vault,
-                _mintData.amount0In,
-                _mintData.amount1In,
-                _mintData.mintAmount,
+                mintData_.vault,
+                mintData_.amount0In,
+                mintData_.amount1In,
+                mintData_.mintAmount,
                 address(this)
             );
 
-            IERC20(address(_mintData.vault)).safeIncreaseAllowance(
-                _mintData.gaugeAddress,
-                _mintData.mintAmount
+            IERC20(address(mintData_.vault)).safeIncreaseAllowance(
+                mintData_.gaugeAddress,
+                mintData_.mintAmount
             );
 
-            IGauge(_mintData.gaugeAddress).deposit(
-                _mintData.mintAmount,
-                _mintData.receiver
+            IGauge(mintData_.gaugeAddress).deposit(
+                mintData_.mintAmount,
+                mintData_.receiver
             );
         } else {
             _deposit(
-                _mintData.vault,
-                _mintData.amount0In,
-                _mintData.amount1In,
-                _mintData.mintAmount,
-                _mintData.receiver
+                mintData_.vault,
+                mintData_.amount0In,
+                mintData_.amount1In,
+                mintData_.mintAmount,
+                mintData_.receiver
             );
         }
-        amount0 = _mintData.amount0In;
-        amount1 = _mintData.amount1In;
-        mintAmount = _mintData.mintAmount;
+        console.log("Router - after _deposit!");
+        amount0 = mintData_.amount0In;
+        amount1 = mintData_.amount1In;
+        mintAmount = mintData_.mintAmount;
     }
 
-    /// @param _removeData RemoveLiquidityData struct containing data for removing liquidity
+    /// @param removeData_ RemoveLiquidityData struct containing data for removing liquidity
     /// @return amount0 amount of token0 received when burning `burnAmount`
     /// @return amount1 amount of token1 received when burning `burnAmount`
     // solhint-disable-next-line function-max-lines
-    function removeLiquidity(RemoveLiquidityData memory _removeData)
+    function removeLiquidity(RemoveLiquidityData memory removeData_)
         external
         override
         onlyRouterWrapper
         returns (uint256 amount0, uint256 amount1)
     {
-        if (_removeData.receiveETH) {
-            (amount0, amount1) = _removeData.vault.burn(
-                _removeData.burns,
-                _removeData.burnAmount,
+        if (removeData_.receiveETH) {
+            (amount0, amount1) = IArrakisV2(removeData_.vault).burn(
+                removeData_.burns,
+                removeData_.burnAmount,
                 address(this)
             );
         } else {
-            (amount0, amount1) = _removeData.vault.burn(
-                _removeData.burns,
-                _removeData.burnAmount,
-                _removeData.receiver
+            (amount0, amount1) = IArrakisV2(removeData_.vault).burn(
+                removeData_.burns,
+                removeData_.burnAmount,
+                removeData_.receiver
             );
         }
 
         require(
-            amount0 >= _removeData.amount0Min &&
-                amount1 >= _removeData.amount1Min,
+            amount0 >= removeData_.amount0Min &&
+                amount1 >= removeData_.amount1Min,
             "received below minimum"
         );
 
-        if (_removeData.receiveETH) {
+        if (removeData_.receiveETH) {
             _receiveETH(
-                _removeData.vault,
+                IArrakisV2(removeData_.vault),
                 amount0,
                 amount1,
-                _removeData.receiver
+                removeData_.receiver
             );
         }
     }
 
     // solhint-disable-next-line max-line-length
     /// @notice swapAndAddLiquidity makes a swap and deposits to an ArrakisV2 vault and mints LP tokens
-    /// @param _swapData struct AddAndSwapData containing data for swap
+    /// @param addAndSwapData_ struct AddAndSwapData containing data for swap
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
     /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     /// @return amount0Diff token0 balance difference post swap
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
-    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
+    function swapAndAddLiquidity(AddAndSwapData memory addAndSwapData_)
         external
         payable
         override
@@ -167,214 +174,234 @@ contract ArrakisV2Router is IArrakisV2Router {
             uint256 amount1Diff
         )
     {
-        (amount0Diff, amount1Diff) = _swap(_swapData);
+        (amount0Diff, amount1Diff) = _swap(addAndSwapData_);
 
         uint256 amount0Use =
-            (_swapData.zeroForOne)
-                ? _swapData.amount0Max - amount0Diff
-                : _swapData.amount0Max + amount0Diff;
+            (addAndSwapData_.swapData.zeroForOne)
+                ? addAndSwapData_.addData.amount0Max - amount0Diff
+                : addAndSwapData_.addData.amount0Max + amount0Diff;
         uint256 amount1Use =
-            (_swapData.zeroForOne)
-                ? _swapData.amount1Max + amount1Diff
-                : _swapData.amount1Max - amount1Diff;
+            (addAndSwapData_.swapData.zeroForOne)
+                ? addAndSwapData_.addData.amount1Max + amount1Diff
+                : addAndSwapData_.addData.amount1Max - amount1Diff;
 
         (amount0, amount1, mintAmount) = resolver.getMintAmounts(
-            _swapData.vault,
+            IArrakisV2(addAndSwapData_.addData.vault),
             amount0Use,
             amount1Use
         );
 
         require(
-            amount0 >= _swapData.amount0Min && amount1 >= _swapData.amount1Min,
+            amount0 >= addAndSwapData_.addData.amount0Min &&
+                amount1 >= addAndSwapData_.addData.amount1Min,
             "below min amounts"
         );
 
-        if (_swapData.gaugeAddress != address(0)) {
+        if (addAndSwapData_.addData.gaugeAddress != address(0)) {
             _deposit(
-                _swapData.vault,
+                addAndSwapData_.addData.vault,
                 amount0,
                 amount1,
                 mintAmount,
                 address(this)
             );
 
-            IERC20(address(_swapData.vault)).safeIncreaseAllowance(
-                _swapData.gaugeAddress,
+            IERC20(address(addAndSwapData_.addData.vault)).safeIncreaseAllowance(
+                addAndSwapData_.addData.gaugeAddress,
                 mintAmount
             );
-            IGauge(_swapData.gaugeAddress).deposit(
+            IGauge(addAndSwapData_.addData.gaugeAddress).deposit(
                 mintAmount,
-                _swapData.receiver
+                addAndSwapData_.addData.receiver
             );
         } else {
             _deposit(
-                _swapData.vault,
+                addAndSwapData_.addData.vault,
                 amount0,
                 amount1,
                 mintAmount,
-                _swapData.receiver
+                addAndSwapData_.addData.receiver
             );
         }
 
         // now we send leftovers to user.
         // if we can send leftovers in WETH, this logic would be much simpler
         bool isToken0Weth;
-        if (_swapData.useETH) {
+        if (addAndSwapData_.addData.useETH) {
             isToken0Weth = _isToken0Weth(
-                address(_swapData.vault.token0()),
-                address(_swapData.vault.token1())
+                address(IArrakisV2(addAndSwapData_.addData.vault).token0()),
+                address(IArrakisV2(addAndSwapData_.addData.vault).token1())
             );
             if (isToken0Weth && amount0Use > amount0) {
-                _refundETH(_swapData.userToRefund, amount0Use - amount0);
+                _refundETH(addAndSwapData_.swapData.userToRefund, amount0Use - amount0);
             } else if (!isToken0Weth && amount1Use > amount1) {
-                _refundETH(_swapData.userToRefund, amount1Use - amount1);
+                _refundETH(addAndSwapData_.swapData.userToRefund, amount1Use - amount1);
             }
         }
 
         if (
             amount0Use > amount0 &&
-            (!_swapData.useETH || (_swapData.useETH && !isToken0Weth))
+            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && !isToken0Weth))
         ) {
-            IERC20(_swapData.vault.token0()).safeTransfer(
-                _swapData.userToRefund,
+            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token0()).safeTransfer(
+                addAndSwapData_.swapData.userToRefund,
                 amount0Use - amount0
             );
         }
         if (
             amount1Use > amount1 &&
-            (!_swapData.useETH || (_swapData.useETH && isToken0Weth))
+            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && isToken0Weth))
         ) {
-            IERC20(_swapData.vault.token1()).safeTransfer(
-                _swapData.userToRefund,
+            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token1()).safeTransfer(
+                addAndSwapData_.swapData.userToRefund,
                 amount1Use - amount1
             );
         }
     }
 
     function _deposit(
-        IArrakisV2 vault,
-        uint256 amount0In,
-        uint256 amount1In,
-        uint256 mintAmount,
-        address receiver
+        address vault_,
+        uint256 amount0In_,
+        uint256 amount1In_,
+        uint256 mintAmount_,
+        address receiver_
     ) internal {
-        if (amount0In > 0) {
-            vault.token0().safeIncreaseAllowance(address(vault), amount0In);
+        console.log("Router - _deposit! vault_: %s", vault_);
+        console.log("Router - _deposit! amount0In_: %s", amount0In_);
+        console.log("Router - _deposit! amount1In_: %s", amount1In_);
+        console.log("Router - _deposit! mintAmount_: %s", mintAmount_);
+        console.log("Router - _deposit! receiver_: %s", receiver_);
+        if (amount0In_ > 0) {
+            IArrakisV2(vault_).token0().safeIncreaseAllowance(
+                vault_,
+                amount0In_
+            );
         }
-        if (amount1In > 0) {
-            vault.token1().safeIncreaseAllowance(address(vault), amount1In);
+        if (amount1In_ > 0) {
+            IArrakisV2(vault_).token1().safeIncreaseAllowance(
+                vault_,
+                amount1In_
+            );
         }
-
-        (uint256 amount0, uint256 amount1) = vault.mint(mintAmount, receiver);
+        uint256 a0 = IERC20(IArrakisV2(vault_).token0()).allowance(address(this), vault_);
+        uint256 a1 = IERC20(IArrakisV2(vault_).token1()).allowance(address(this), vault_);
+        uint256 b0 = IERC20(IArrakisV2(vault_).token0()).balanceOf(address(this));
+        uint256 b1 = IERC20(IArrakisV2(vault_).token1()).balanceOf(address(this));
+        console.log("Router - deposit - a0: %s", a0);
+        console.log("Router - deposit - a1: %s", a1);
+        console.log("Router - deposit - b0: %s", b0);
+        console.log("Router - deposit - b1: %s", b1);
+        (uint256 amount0, uint256 amount1) =
+            IArrakisV2(vault_).mint(mintAmount_, receiver_);
 
         require(
-            amount0 == amount0In && amount1 == amount1In,
+            amount0 == amount1In_ && amount1 == amount1In_,
             "unexpected amounts deposited"
         );
     }
 
     // solhint-disable-next-line code-complexity
     function _receiveETH(
-        IArrakisV2 vault,
-        uint256 amount0,
-        uint256 amount1,
-        address payable receiver
+        IArrakisV2 vault_,
+        uint256 amount0_,
+        uint256 amount1_,
+        address payable receiver_
     ) internal {
-        IERC20 token0 = vault.token0();
-        IERC20 token1 = vault.token1();
+        IERC20 token0 = vault_.token0();
+        IERC20 token1 = vault_.token1();
         bool wethToken0 = _isToken0Weth(address(token0), address(token1));
         if (wethToken0) {
-            if (amount0 > 0) {
-                weth.withdraw(amount0);
-                receiver.sendValue(amount0);
+            if (amount0_ > 0) {
+                weth.withdraw(amount0_);
+                receiver_.sendValue(amount0_);
             }
-            if (amount1 > 0) {
-                token1.safeTransfer(receiver, amount1);
+            if (amount1_ > 0) {
+                token1.safeTransfer(receiver_, amount1_);
             }
         } else {
-            if (amount1 > 0) {
-                weth.withdraw(amount1);
-                receiver.sendValue(amount1);
+            if (amount1_ > 0) {
+                weth.withdraw(amount1_);
+                receiver_.sendValue(amount1_);
             }
-            if (amount0 > 0) {
-                token0.safeTransfer(receiver, amount0);
+            if (amount0_ > 0) {
+                token0.safeTransfer(receiver_, amount0_);
             }
         }
     }
 
     // solhint-disable-next-line function-max-lines
-    function _swap(AddAndSwapData memory _swapData)
+    function _swap(AddAndSwapData memory addAndSwapData_)
         internal
         returns (uint256 amount0Diff, uint256 amount1Diff)
     {
-        IERC20 token0 = _swapData.vault.token0();
-        IERC20 token1 = _swapData.vault.token1();
+        IERC20 token0 = IArrakisV2(addAndSwapData_.addData.vault).token0();
+        IERC20 token1 = IArrakisV2(addAndSwapData_.addData.vault).token1();
         uint256 balance0Before = token0.balanceOf(address(this));
         uint256 balance1Before = token1.balanceOf(address(this));
 
-        if (_swapData.zeroForOne) {
+        if (addAndSwapData_.swapData.zeroForOne) {
             token0.safeIncreaseAllowance(
-                _swapData.swapRouter,
-                _swapData.amountInSwap
+                addAndSwapData_.swapData.swapRouter,
+                addAndSwapData_.swapData.amountInSwap
             );
         } else {
             token1.safeIncreaseAllowance(
-                _swapData.swapRouter,
-                _swapData.amountInSwap
+                addAndSwapData_.swapData.swapRouter,
+                addAndSwapData_.swapData.amountInSwap
             );
         }
         (bool success, bytes memory returnsData) =
-            _swapData.swapRouter.call(_swapData.swapPayload);
+            addAndSwapData_.swapData.swapRouter.call(addAndSwapData_.swapData.swapPayload);
         if (!success) GelatoBytes.revertWithError(returnsData, "swap: ");
 
         // setting allowance to 0
-        if (_swapData.zeroForOne) {
-            token0.safeApprove(_swapData.swapRouter, 0);
+        if (addAndSwapData_.swapData.zeroForOne) {
+            token0.safeApprove(addAndSwapData_.swapData.swapRouter, 0);
         } else {
-            token1.safeApprove(_swapData.swapRouter, 0);
+            token1.safeApprove(addAndSwapData_.swapData.swapRouter, 0);
         }
 
         uint256 balance0 = token0.balanceOf(address(this));
         uint256 balance1 = token1.balanceOf(address(this));
-        if (_swapData.zeroForOne) {
+        if (addAndSwapData_.swapData.zeroForOne) {
             amount0Diff = balance0Before - balance0;
             amount1Diff = balance1 - balance1Before;
             require(
-                (amount0Diff == _swapData.amountInSwap) &&
-                    (amount1Diff >= _swapData.amountOutSwap),
+                (amount0Diff == addAndSwapData_.swapData.amountInSwap) &&
+                    (amount1Diff >= addAndSwapData_.swapData.amountOutSwap),
                 "Token0 swap failed!"
             );
         } else {
             amount0Diff = balance0 - balance0Before;
             amount1Diff = balance1Before - balance1;
             require(
-                (amount0Diff >= _swapData.amountOutSwap) &&
-                    (amount1Diff == _swapData.amountInSwap),
+                (amount0Diff >= addAndSwapData_.swapData.amountOutSwap) &&
+                    (amount1Diff == addAndSwapData_.swapData.amountInSwap),
                 "Token1 swap failed!"
             );
         }
 
         emit Swapped(
-            _swapData.zeroForOne,
+            addAndSwapData_.swapData.zeroForOne,
             amount0Diff,
             amount1Diff,
-            _swapData.amountOutSwap
+            addAndSwapData_.swapData.amountOutSwap
         );
     }
 
-    function _refundETH(address userToRefund, uint256 refundAmount) internal {
-        weth.withdraw(refundAmount);
-        payable(userToRefund).sendValue(refundAmount);
+    function _refundETH(address userToRefund_, uint256 refundAmount_) internal {
+        weth.withdraw(refundAmount_);
+        payable(userToRefund_).sendValue(refundAmount_);
     }
 
-    function _isToken0Weth(address token0, address token1)
+    function _isToken0Weth(address token0_, address token1_)
         internal
         view
         returns (bool wethToken0)
     {
-        if (token0 == address(weth)) {
+        if (token0_ == address(weth)) {
             wethToken0 = true;
-        } else if (token1 == address(weth)) {
+        } else if (token1_ == address(weth)) {
             wethToken0 = false;
         } else {
             revert("one vault token must be WETH");

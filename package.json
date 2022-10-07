@@ -15,8 +15,9 @@
     "verify": "npx hardhat etherscan-verify"
   },
   "devDependencies": {
-    "@gelatonetwork/core": "1.6.1",
-    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
+    "@arrakisfi/v3-lib-0.8": "0.1.1",
+    "@arrakisfi/vault-v2-core": "0.1.2",
+    "@nomiclabs/hardhat-ethers": "2.1.1",
     "@nomiclabs/hardhat-etherscan": "3.0.3",
     "@nomiclabs/hardhat-waffle": "2.0.3",
     "@openzeppelin/contracts": "4.6.0",
@@ -52,10 +53,10 @@
     "ts-generator": "0.1.1",
     "ts-node": "10.7.0",
     "typechain": "8.0.0",
-    "typescript": "4.6.4",
-    "@arrakisfi/v3-lib-0.8": "0.1.1"
+    "typescript": "4.6.4"
   },
   "lint-staged": {
     "*.{ts,js}": "eslint -c .eslintrc.json"
-  }
+  },
+  "packageManager": "yarn@3.2.4"
 }

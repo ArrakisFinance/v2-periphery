@@ -16,46 +16,26 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { deployer, hardhatOwner } = await getNamedAccounts();
+  const { deployer, arrakisDaoAdmin, arrakisDaoOwner } =
+    await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  const arrakisV2Resolver = await deployments.get("ArrakisV2Resolver");
-
-  // TODO: add correct addresses in args here
-  if (hre.network.name == "hardhat")
-    await deploy("ArrakisV2RouterWrapper", {
-      from: deployer,
-      proxy: {
-        proxyContract: "OpenZeppelinTransparentProxy",
-        viaAdminContract: {
-          name: "TempProxyAdmin",
-        },
-        execute: {
+  await deploy("ArrakisV2RouterWrapper", {
+    from: deployer,
+    proxy: {
+      proxyContract: "OpenZeppelinTransparentProxy",
+      owner: arrakisDaoAdmin,
+      execute: {
+        init: {
           methodName: "initialize",
-          args: [hardhatOwner],
+          args: [arrakisDaoOwner],
         },
       },
-      args: [addresses.WETH, arrakisV2Resolver.address],
-      log: hre.network.name !== "hardhat",
-      // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
-    });
-  else
-    await deploy("ArrakisV2RouterWrapper", {
-      from: deployer,
-      proxy: {
-        proxyContract: "OpenZeppelinTransparentProxy",
-        viaAdminContract: addresses.ArrakisDevAdmin,
-        execute: {
-          init: {
-            methodName: "initialize",
-            args: [addresses.ArrakisDevOwner],
-          },
-        },
-      },
-      args: [addresses.WETH, arrakisV2Resolver.address],
-      log: hre.network.name !== "hardhat",
-      // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
-    });
+    },
+    args: [addresses.WETH, addresses.ArrakisV2Resolver],
+    log: hre.network.name !== "hardhat",
+    // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+  });
 };
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
@@ -69,6 +49,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 
 func.tags = ["ArrakisV2RouterWrapper"];
 
-func.dependencies = ["ArrakisV2Resolver", "TempProxyAdmin"];
+func.dependencies = ["TempProxyAdmin"];
 
 export default func;

@@ -2,43 +2,39 @@ import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { getAddresses } from "../src/addresses";
-import { sleep } from "../src/utils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
     hre.network.name === "mainnet" ||
-    hre.network.name === "polygon" ||
-    hre.network.name === "optimism"
+    hre.network.name === "optimism" ||
+    hre.network.name === "polygon"
   ) {
     console.log(
-      `Deploying GasStationHelper to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying SwapResolver to ${hre.network.name}. Hit ctrl + c to abort`
     );
-    await sleep(10000);
+    await new Promise((r) => setTimeout(r, 20000));
   }
-
-  const addresses = getAddresses(hre.network.name);
 
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  const addresses = getAddresses(hre.network.name);
 
-  await deploy("GasStationHelper", {
+  await deploy("SwapResolver", {
     from: deployer,
-    args: [addresses.GasStation],
-    log: hre.network.name !== "hardhat" ? true : false,
+    args: [addresses.ArrakisV2Helper, addresses.ArrakisV2Resolver],
+    log: hre.network.name !== "hardhat",
   });
 };
-
-export default func;
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
-    hre.network.name === "goerli" ||
     hre.network.name === "polygon" ||
-    hre.network.name === "optimism";
-
-  return shouldSkip ? true : false;
+    hre.network.name === "optimism" ||
+    hre.network.name === "goerli";
+  return shouldSkip;
 };
 
-func.tags = ["GasStationHelper"];
+func.tags = ["SwapResolver"];
+
+export default func;

@@ -3,12 +3,9 @@ import { ethers, network, deployments } from "hardhat";
 import {
   ArrakisV2Router,
   ArrakisV2RouterWrapper,
-  ArrakisV2Resolver,
+  SwapResolver,
   ERC20,
   IArrakisV2,
-  IArrakisV2Factory,
-  IUniswapV3Factory,
-  IUniswapV3Pool,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
@@ -19,8 +16,11 @@ import {
   OneInchDataType,
 } from "./oneInchApiIntegration";
 import { BigNumber, ContractTransaction, Contract, Signer } from "ethers";
-import ArrakisV2 from "../deployJSON/ArrakisV2.json";
-import ArrakisV2Factory from "../deployJSON/ArrakisV2Factory.json";
+import ArrakisV2 from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2.json";
+import ArrakisV2Factory from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Factory.json";
+import ArrakisV2Resolver from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Resolver.json";
+import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
+import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 
 const addresses: Addresses = getAddresses(network.name);
 
@@ -29,9 +29,11 @@ export const swapAndAddTest = async (
 
   vaultRouter: ArrakisV2Router,
   vaultRouterWrapper: ArrakisV2RouterWrapper,
-  resolver: ArrakisV2Resolver,
+  swapResolver: SwapResolver,
 
-  vault: IArrakisV2,
+  resolver: Contract,
+
+  vault: Contract,
   token0: ERC20,
   token1: ERC20,
   rakisToken: ERC20,
@@ -156,7 +158,7 @@ export const swapAndAddTest = async (
     // given this price and the amounts the user is willing to spend
     // which token should be swapped and how much
 
-    const result = await resolver.calculateSwapAmount(
+    const result = await swapResolver.calculateSwapAmount(
       vault.address,
       amount0Max,
       amount1Max,
@@ -194,7 +196,7 @@ export const swapAndAddTest = async (
     // console.log("price2 check:", price2.toString());
 
     // given the new price, let's get a new swap amount
-    const result2 = await resolver.calculateSwapAmount(
+    const result2 = await swapResolver.calculateSwapAmount(
       vault.address,
       amount0Max,
       amount1Max,
@@ -267,7 +269,7 @@ export const swapAndAddTest = async (
   }
 
   // preparing parameter structs for swapAndAddLiquidity()
-  const swapData = {
+  const addData = {
     vault: vault.address,
 
     amount0Max: amount0Max,
@@ -279,7 +281,8 @@ export const swapAndAddTest = async (
     gaugeAddress: stRakisToken
       ? stRakisToken.address
       : ethers.constants.AddressZero,
-
+  };
+  const swapData = {
     amountInSwap: swapAmountIn.toString(),
     amountOutSwap: amountOut,
     zeroForOne: zeroForOne,
@@ -287,7 +290,10 @@ export const swapAndAddTest = async (
     swapPayload: swapParams.data,
 
     userToRefund: "0x0000000000000000000000000000000000000000",
-    rebalance: rebalance,
+  };
+  const addAndSwapData = {
+    addData: addData,
+    swapData: swapData,
   };
 
   // console.log("swapIn : ", swapAmountIn.toString());
@@ -360,28 +366,32 @@ export const swapAndAddTest = async (
 
   if (useETH) {
     if (isToken0Weth) {
-      const value = transactionEthValue || swapData.amount0Max;
-      if (value == swapData.amount0Max) {
+      const value = transactionEthValue || addAndSwapData.addData.amount0Max;
+      if (value == addAndSwapData.addData.amount0Max) {
         swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
-          swapData,
+          addAndSwapData,
           { value: value }
         );
       } else {
         await expect(
-          vaultRouterWrapper.swapAndAddLiquidity(swapData, { value: value })
+          vaultRouterWrapper.swapAndAddLiquidity(addAndSwapData, {
+            value: value,
+          })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
         return;
       }
     } else {
-      const value = transactionEthValue || swapData.amount1Max;
-      if (value == swapData.amount1Max) {
+      const value = transactionEthValue || addAndSwapData.addData.amount1Max;
+      if (value == addAndSwapData.addData.amount1Max) {
         swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
-          swapData,
+          addAndSwapData,
           { value: value }
         );
       } else {
         await expect(
-          vaultRouterWrapper.swapAndAddLiquidity(swapData, { value: value })
+          vaultRouterWrapper.swapAndAddLiquidity(addAndSwapData, {
+            value: value,
+          })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
         return;
       }
@@ -389,12 +399,12 @@ export const swapAndAddTest = async (
   } else {
     if (transactionEthValue) {
       swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
-        swapData,
+        addAndSwapData,
         { value: transactionEthValue }
       );
     } else {
       swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
-        swapData
+        addAndSwapData
       );
     }
   }
@@ -419,13 +429,21 @@ export const swapAndAddTest = async (
 
   // calculate actual amounts used for mintAmounts after swap and validate swapAmountOut
   if (swapppedEventData.zeroForOne) {
-    amount0Use = swapData.amount0Max.sub(swapppedEventData.amount0Diff);
-    amount1Use = swapData.amount1Max.add(swapppedEventData.amount1Diff);
+    amount0Use = addAndSwapData.addData.amount0Max.sub(
+      swapppedEventData.amount0Diff
+    );
+    amount1Use = addAndSwapData.addData.amount1Max.add(
+      swapppedEventData.amount1Diff
+    );
 
     expect(amountOut).to.be.lt(swapppedEventData.amount1Diff);
   } else {
-    amount0Use = swapData.amount0Max.add(swapppedEventData.amount0Diff);
-    amount1Use = swapData.amount1Max.sub(swapppedEventData.amount1Diff);
+    amount0Use = addAndSwapData.addData.amount0Max.add(
+      swapppedEventData.amount0Diff
+    );
+    amount1Use = addAndSwapData.addData.amount1Max.sub(
+      swapppedEventData.amount1Diff
+    );
 
     expect(amountOut).to.be.lt(swapppedEventData.amount0Diff);
   }
@@ -447,32 +465,32 @@ export const swapAndAddTest = async (
   // validate balances
   if (!useETH) {
     expect(balance0After).to.equal(
-      balance0Before.sub(swapData.amount0Max).add(refund0)
+      balance0Before.sub(addAndSwapData.addData.amount0Max).add(refund0)
     );
     expect(balance1After).to.equal(
-      balance1Before.sub(swapData.amount1Max).add(refund1)
+      balance1Before.sub(addAndSwapData.addData.amount1Max).add(refund1)
     );
     expect(balanceEthAfter).to.equal(balanceEthBefore.sub(ethSpentForGas));
   } else {
     if (isToken0Weth) {
       expect(balance0After).to.equal(balance0Before);
       expect(balance1After).to.equal(
-        balance1Before.sub(swapData.amount1Max).add(refund1)
+        balance1Before.sub(addAndSwapData.addData.amount1Max).add(refund1)
       );
       expect(balanceEthAfter).to.equal(
         balanceEthBefore
-          .sub(swapData.amount0Max)
+          .sub(addAndSwapData.addData.amount0Max)
           .sub(ethSpentForGas)
           .add(refund0)
       );
     } else {
       expect(balance0After).to.equal(
-        balance0Before.sub(swapData.amount0Max).add(refund0)
+        balance0Before.sub(addAndSwapData.addData.amount0Max).add(refund0)
       );
       expect(balance1After).to.equal(balance1Before);
       expect(balanceEthAfter).to.equal(
         balanceEthBefore
-          .sub(swapData.amount1Max)
+          .sub(addAndSwapData.addData.amount1Max)
           .sub(ethSpentForGas)
           .add(refund1)
       );
@@ -537,13 +555,13 @@ export const swapAndAddTest = async (
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[ArrakisV2Resolver, ArrakisV2Router, ArrakisV2RouterWrapper]> => {
+): Promise<[SwapResolver, ArrakisV2Router, ArrakisV2RouterWrapper]> => {
   // getting resolver contract
-  const resolverAddress = (await deployments.get("ArrakisV2Resolver")).address;
-  const resolver = (await ethers.getContractAt(
-    "ArrakisV2Resolver",
+  const resolverAddress = (await deployments.get("SwapResolver")).address;
+  const swapResolver = (await ethers.getContractAt(
+    "SwapResolver",
     resolverAddress
-  )) as ArrakisV2Resolver;
+  )) as SwapResolver;
 
   // getting router contract
   const vaultRouterAddress = (await deployments.get("ArrakisV2Router")).address;
@@ -564,53 +582,53 @@ export const getPeripheryContracts = async (
   // updating wrapper's router
   await vaultRouterWrapper.connect(owner).updateRouter(vaultRouter.address);
 
-  return [resolver, vaultRouter, vaultRouterWrapper];
+  return [swapResolver, vaultRouter, vaultRouterWrapper];
 };
 
-export const getArrakisV2 = async (
+export const deployArrakisV2 = async (
   signer: SignerWithAddress,
   token0Address: string,
   token1Address: string,
   fee: number,
-  resolver: ArrakisV2Resolver
-): Promise<[IArrakisV2]> => {
+  resolver: Contract
+): Promise<[Contract]> => {
   const signerAddress = await signer.getAddress();
 
-  // get vault implementation address
-  const vaultImplementationAddress = (await deployments.get("ArrakisV2"))
-    .address;
-
   // getting vault factory
-  const vaultFactoryAddress = (await deployments.get("ArrakisV2Factory"))
-    .address;
-  const vaultV2Factory = (await ethers.getContractAt(
+  const vaultV2Factory = new ethers.Contract(
+    addresses.ArrakisV2Factory,
     ArrakisV2Factory.abi,
-    vaultFactoryAddress
-  )) as IArrakisV2Factory;
-
-  // initializing factory
-  await vaultV2Factory.initialize(vaultImplementationAddress, signerAddress);
+    signer
+  );
 
   // getting uniswap factory
-  const uniswapV3Factory = (await ethers.getContractAt(
-    "IUniswapV3Factory",
+  const uniswapV3Factory = new ethers.Contract(
     addresses.UniswapV3Factory,
+    UniswapV3Factory.abi,
     signer
-  )) as IUniswapV3Factory;
+  );
+
+  // getting pool address
+  const poolAddress = await uniswapV3Factory.getPool(
+    token0Address,
+    token1Address,
+    fee
+  );
+  console.log("poolAddress: ", poolAddress);
 
   // getting uniswap pool
-  const uniswapV3Pool = (await ethers.getContractAt(
-    "IUniswapV3Pool",
-    await uniswapV3Factory.getPool(token0Address, token1Address, fee),
+  const uniswapV3Pool = new ethers.Contract(
+    poolAddress,
+    UniswapV3Pool.abi,
     signer
-  )) as IUniswapV3Pool;
+  );
 
   // getting pool data
   const slot0 = await uniswapV3Pool.slot0();
   const tickSpacing = await uniswapV3Pool.tickSpacing();
   const lowerTick = slot0.tick - (slot0.tick % tickSpacing) - tickSpacing;
   const upperTick = slot0.tick - (slot0.tick % tickSpacing) + 2 * tickSpacing;
-
+  console.log("slot0: ", slot0);
   // get initial amounts
   const res = await resolver.getAmountsForLiquidity(
     slot0.tick,
@@ -618,40 +636,31 @@ export const getArrakisV2 = async (
     upperTick,
     ethers.utils.parseUnits("1", 18)
   );
-
+  console.log("res: ", res);
   // deploying vault
-  const tx = await vaultV2Factory.deployVault({
-    feeTiers: [fee],
-    token0: token0Address,
-    token1: token1Address,
-    owner: signerAddress,
-    operators: [signerAddress],
-    ranges: [
-      {
-        lowerTick: lowerTick,
-        upperTick: upperTick,
-        feeTier: fee,
-      },
-    ],
-    init0: res.amount0,
-    init1: res.amount1,
-    managerTreasury: signerAddress,
-    managerFeeBPS: 100,
-    maxTwapDeviation: 100,
-    twapDuration: 100,
-  });
-
+  const tx = await vaultV2Factory.deployVault(
+    {
+      feeTiers: [fee],
+      token0: token0Address,
+      token1: token1Address,
+      owner: signerAddress,
+      init0: res.amount0,
+      init1: res.amount1,
+      manager: signerAddress,
+    },
+    true
+  );
+  console.log("vault deployed..");
   const rc = await tx.wait();
-  const event = rc?.events?.find((event) => event.event === "VaultCreated");
+  const event = rc?.events?.find(
+    (event: any) => event.event === "VaultCreated"
+  );
   // eslint-disable-next-line no-unsafe-optional-chaining
   const result = event?.args;
-
+  console.log("result: ", result);
+  console.log("vaultAddress: ", result?.vault);
   // getting vault
-  const vault = (await ethers.getContractAt(
-    ArrakisV2.abi,
-    result?.vault,
-    signer
-  )) as IArrakisV2;
+  const vault = new ethers.Contract(result?.vault, ArrakisV2.abi, signer);
 
   return [vault];
 };
@@ -695,4 +704,16 @@ export const createGauge = async (
   )) as ERC20;
 
   return [gauge, stRakisToken];
+};
+
+export const getArrakisResolver = async (
+  signer: SignerWithAddress
+): Promise<Contract> => {
+  console.log("getArrakisResolver");
+  const resolver = new ethers.Contract(
+    addresses.ArrakisV2Resolver,
+    ArrakisV2Resolver.abi,
+    signer
+  );
+  return resolver;
 };

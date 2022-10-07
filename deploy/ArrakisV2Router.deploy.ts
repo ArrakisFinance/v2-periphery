@@ -22,7 +22,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const arrakisV2RouterWrapper = await deployments.get(
     "ArrakisV2RouterWrapper"
   );
-  const arrakisV2Resolver = await deployments.get("ArrakisV2Resolver");
 
   // TODO: update resolver address in params below
   await deploy("ArrakisV2Router", {
@@ -30,7 +29,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: [
       addresses.WETH,
       arrakisV2RouterWrapper.address,
-      arrakisV2Resolver.address,
+      addresses.ArrakisV2Resolver,
     ],
     log: hre.network.name !== "hardhat",
     gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
@@ -48,6 +47,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 
 func.tags = ["ArrakisV2Router"];
 
-func.dependencies = ["ArrakisV2RouterWrapper", "ArrakisV2Resolver"];
+func.dependencies = ["ArrakisV2RouterWrapper"];
 
 export default func;

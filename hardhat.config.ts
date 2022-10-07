@@ -24,8 +24,13 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
-    hardhatOwner: {
+    arrakisDaoAdmin: {
       default: 1,
+      polygon: "0xd06a7cc1a162fDfB515595A2eC1c47B75743C381",
+    },
+    arrakisDaoOwner: {
+      default: 2,
+      polygon: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
     },
   },
 
@@ -39,7 +44,7 @@ const config: HardhatUserConfig = {
       // timeout: 150000,
       forking: {
         url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
-        blockNumber: 32263898,
+        blockNumber: 34039259,
       },
     },
     mainnet: {
@@ -61,6 +66,11 @@ const config: HardhatUserConfig = {
       accounts: PK_TEST ? [PK_TEST] : [],
       chainId: 5,
       url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_ID}`,
+    },
+    local: {
+      accounts: PK_TEST ? [PK_TEST] : [],
+      chainId: 31337,
+      url: `http://localhost:8545`,
     },
   },
 
