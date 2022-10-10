@@ -77,7 +77,7 @@ struct SwapData {
     address payable userToRefund;
 }
 
-struct AddAndSwapData {
-    AddLiquidityData addData;
+struct SwapAndAddData {
     SwapData swapData;
+    AddLiquidityData addData;
 }

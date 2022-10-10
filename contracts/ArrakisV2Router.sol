@@ -367,7 +367,7 @@ contract ArrakisV2Router is IArrakisV2Router {
             amount0Diff = balance0Before - balance0;
             amount1Diff = balance1 - balance1Before;
             require(
-                (amount0Diff == addAndSwapData_.swapData.amountInSwap) &&
+                (amount0Diff <= addAndSwapData_.swapData.amountInSwap) &&
                     (amount1Diff >= addAndSwapData_.swapData.amountOutSwap),
                 "Token0 swap failed!"
             );
@@ -376,7 +376,7 @@ contract ArrakisV2Router is IArrakisV2Router {
             amount1Diff = balance1Before - balance1;
             require(
                 (amount0Diff >= addAndSwapData_.swapData.amountOutSwap) &&
-                    (amount1Diff == addAndSwapData_.swapData.amountInSwap),
+                    (amount1Diff <= addAndSwapData_.swapData.amountInSwap),
                 "Token1 swap failed!"
             );
         }

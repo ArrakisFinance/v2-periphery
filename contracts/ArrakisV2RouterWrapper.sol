@@ -15,17 +15,14 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {
-    Initializable
-} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+    Pausable
+} from "@openzeppelin/contracts/security/Pausable.sol";
 import {
-    PausableUpgradeable
-} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+    Ownable
+} from "@openzeppelin/contracts/access/Ownable.sol";
 import {
-    OwnableUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {
-    ReentrancyGuardUpgradeable
-} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+    ReentrancyGuard
+} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
     IArrakisV2Resolver
@@ -35,17 +32,16 @@ import {
     AddLiquidityData,
     MintData,
     RemoveLiquidityData,
-    AddAndSwapData
+    SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
 
 import "hardhat/console.sol";
 
 contract ArrakisV2RouterWrapper is
     IArrakisV2RouterWrapper,
-    Initializable,
-    PausableUpgradeable,
-    OwnableUpgradeable,
-    ReentrancyGuardUpgradeable
+    Pausable,
+    Ownable,
+    ReentrancyGuard
 {
     using Address for address payable;
     using SafeERC20 for IERC20;
@@ -57,12 +53,6 @@ contract ArrakisV2RouterWrapper is
     constructor(IWETH weth_, IArrakisV2Resolver resolver_) {
         weth = weth_;
         resolver = resolver_;
-    }
-
-    function initialize(address owner_) external initializer {
-        __Pausable_init();
-        _transferOwnership(owner_);
-        __ReentrancyGuard_init();
     }
 
     function pause() external onlyOwner {
@@ -215,14 +205,14 @@ contract ArrakisV2RouterWrapper is
     }
 
     /// @notice swapAndAddLiquidity transfer tokens to and calls ArrakisV2Router
-    /// @param addAndSwapData_ SwapData struct containing data for swap
+    /// @param swapAndAddData_ SwapAndAddData struct containing data for swap
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
     /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     /// @return amount0Diff token0 balance difference post swap
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
-    function swapAndAddLiquidity(AddAndSwapData memory addAndSwapData_)
+    function swapAndAddLiquidity(SwapAndAddData memory swapAndAddData_)
         external
         payable
         override
@@ -237,50 +227,49 @@ contract ArrakisV2RouterWrapper is
         )
     {
         require(
-            addAndSwapData_.addData.amount0Max > 0 || addAndSwapData_.addData.amount1Max > 0,
+            swapAndAddData_.addData.amount0Max > 0 || swapAndAddData_.addData.amount1Max > 0,
             "Empty max amounts"
         );
-        if (addAndSwapData_.addData.gaugeAddress != address(0)) {
+        if (swapAndAddData_.addData.gaugeAddress != address(0)) {
             require(
-                addAndSwapData_.addData.vault ==
-                    IGauge(addAndSwapData_.addData.gaugeAddress).staking_token(),
+                swapAndAddData_.addData.vault ==
+                    IGauge(swapAndAddData_.addData.gaugeAddress).staking_token(),
                 "Incorrect gauge!"
             );
         }
         bool isToken0Weth;
-        if (addAndSwapData_.addData.useETH) {
+        if (swapAndAddData_.addData.useETH) {
             isToken0Weth = _wrapAndTransferETH(
-                IArrakisV2(addAndSwapData_.addData.vault),
-                addAndSwapData_.addData.amount0Max,
-                addAndSwapData_.addData.amount1Max,
+                IArrakisV2(swapAndAddData_.addData.vault),
+                swapAndAddData_.addData.amount0Max,
+                swapAndAddData_.addData.amount1Max,
                 true
             );
         }
 
         if (
-            addAndSwapData_.addData.amount0Max > 0 &&
-            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && !isToken0Weth))
+            swapAndAddData_.addData.amount0Max > 0 &&
+            (!swapAndAddData_.addData.useETH || !isToken0Weth)
         ) {
-            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token0()).safeTransferFrom(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0()).safeTransferFrom(
                 msg.sender,
                 address(router),
-                addAndSwapData_.addData.amount0Max
+                swapAndAddData_.addData.amount0Max
             );
         }
         if (
-            addAndSwapData_.addData.amount1Max > 0 &&
-            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && isToken0Weth))
+            swapAndAddData_.addData.amount1Max > 0 &&
+            (!swapAndAddData_.addData.useETH || isToken0Weth)
         ) {
-            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token1()).safeTransferFrom(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1()).safeTransferFrom(
                 msg.sender,
                 address(router),
-                addAndSwapData_.addData.amount1Max
+                swapAndAddData_.addData.amount1Max
             );
         }
 
-        addAndSwapData_.swapData.userToRefund = payable(msg.sender);
         (amount0, amount1, mintAmount, amount0Diff, amount1Diff) = router
-            .swapAndAddLiquidity(addAndSwapData_);
+            .swapAndAddLiquidity(swapAndAddData_);
     }
 
     /// @notice updates address of ArrakisV2Router used by this wrapper

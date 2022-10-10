@@ -16,22 +16,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { deployer, arrakisDaoAdmin, arrakisDaoOwner } =
-    await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
   await deploy("ArrakisV2RouterWrapper", {
     from: deployer,
-    proxy: {
-      proxyContract: "OpenZeppelinTransparentProxy",
-      owner: arrakisDaoAdmin,
-      execute: {
-        init: {
-          methodName: "initialize",
-          args: [arrakisDaoOwner],
-        },
-      },
-    },
     args: [addresses.WETH, addresses.ArrakisV2Resolver],
     log: hre.network.name !== "hardhat",
     // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
@@ -48,7 +37,5 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ["ArrakisV2RouterWrapper"];
-
-func.dependencies = ["TempProxyAdmin"];
 
 export default func;

@@ -5,7 +5,6 @@ import {
   ArrakisV2RouterWrapper,
   SwapResolver,
   ERC20,
-  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
