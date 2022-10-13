@@ -8,7 +8,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {
     MintData,
     RemoveLiquidityData,
-    AddAndSwapData
+    SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
 import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
 
@@ -154,14 +154,14 @@ contract ArrakisV2Router is IArrakisV2Router {
 
     // solhint-disable-next-line max-line-length
     /// @notice swapAndAddLiquidity makes a swap and deposits to an ArrakisV2 vault and mints LP tokens
-    /// @param addAndSwapData_ struct AddAndSwapData containing data for swap
+    /// @param swapAndAddData_ struct SwapAndAddData containing data for swap
     /// @return amount0 amount of token0 transferred from msg.sender to mint `mintAmount`
     /// @return amount1 amount of token1 transferred from msg.sender to mint `mintAmount`
     /// @return mintAmount amount of ArrakisV2 tokens minted and transferred to `receiver`
     /// @return amount0Diff token0 balance difference post swap
     /// @return amount1Diff token1 balance difference post swap
     // solhint-disable-next-line code-complexity, function-max-lines
-    function swapAndAddLiquidity(AddAndSwapData memory addAndSwapData_)
+    function swapAndAddLiquidity(SwapAndAddData memory swapAndAddData_)
         external
         payable
         override
@@ -174,86 +174,86 @@ contract ArrakisV2Router is IArrakisV2Router {
             uint256 amount1Diff
         )
     {
-        (amount0Diff, amount1Diff) = _swap(addAndSwapData_);
+        (amount0Diff, amount1Diff) = _swap(swapAndAddData_);
 
         uint256 amount0Use =
-            (addAndSwapData_.swapData.zeroForOne)
-                ? addAndSwapData_.addData.amount0Max - amount0Diff
-                : addAndSwapData_.addData.amount0Max + amount0Diff;
+            (swapAndAddData_.swapData.zeroForOne)
+                ? swapAndAddData_.addData.amount0Max - amount0Diff
+                : swapAndAddData_.addData.amount0Max + amount0Diff;
         uint256 amount1Use =
-            (addAndSwapData_.swapData.zeroForOne)
-                ? addAndSwapData_.addData.amount1Max + amount1Diff
-                : addAndSwapData_.addData.amount1Max - amount1Diff;
+            (swapAndAddData_.swapData.zeroForOne)
+                ? swapAndAddData_.addData.amount1Max + amount1Diff
+                : swapAndAddData_.addData.amount1Max - amount1Diff;
 
         (amount0, amount1, mintAmount) = resolver.getMintAmounts(
-            IArrakisV2(addAndSwapData_.addData.vault),
+            IArrakisV2(swapAndAddData_.addData.vault),
             amount0Use,
             amount1Use
         );
 
         require(
-            amount0 >= addAndSwapData_.addData.amount0Min &&
-                amount1 >= addAndSwapData_.addData.amount1Min,
+            amount0 >= swapAndAddData_.addData.amount0Min &&
+                amount1 >= swapAndAddData_.addData.amount1Min,
             "below min amounts"
         );
 
-        if (addAndSwapData_.addData.gaugeAddress != address(0)) {
+        if (swapAndAddData_.addData.gaugeAddress != address(0)) {
             _deposit(
-                addAndSwapData_.addData.vault,
+                swapAndAddData_.addData.vault,
                 amount0,
                 amount1,
                 mintAmount,
                 address(this)
             );
 
-            IERC20(address(addAndSwapData_.addData.vault)).safeIncreaseAllowance(
-                addAndSwapData_.addData.gaugeAddress,
+            IERC20(address(swapAndAddData_.addData.vault)).safeIncreaseAllowance(
+                swapAndAddData_.addData.gaugeAddress,
                 mintAmount
             );
-            IGauge(addAndSwapData_.addData.gaugeAddress).deposit(
+            IGauge(swapAndAddData_.addData.gaugeAddress).deposit(
                 mintAmount,
-                addAndSwapData_.addData.receiver
+                swapAndAddData_.addData.receiver
             );
         } else {
             _deposit(
-                addAndSwapData_.addData.vault,
+                swapAndAddData_.addData.vault,
                 amount0,
                 amount1,
                 mintAmount,
-                addAndSwapData_.addData.receiver
+                swapAndAddData_.addData.receiver
             );
         }
 
         // now we send leftovers to user.
         // if we can send leftovers in WETH, this logic would be much simpler
         bool isToken0Weth;
-        if (addAndSwapData_.addData.useETH) {
+        if (swapAndAddData_.addData.useETH) {
             isToken0Weth = _isToken0Weth(
-                address(IArrakisV2(addAndSwapData_.addData.vault).token0()),
-                address(IArrakisV2(addAndSwapData_.addData.vault).token1())
+                address(IArrakisV2(swapAndAddData_.addData.vault).token0()),
+                address(IArrakisV2(swapAndAddData_.addData.vault).token1())
             );
             if (isToken0Weth && amount0Use > amount0) {
-                _refundETH(addAndSwapData_.swapData.userToRefund, amount0Use - amount0);
+                _refundETH(swapAndAddData_.swapData.userToRefund, amount0Use - amount0);
             } else if (!isToken0Weth && amount1Use > amount1) {
-                _refundETH(addAndSwapData_.swapData.userToRefund, amount1Use - amount1);
+                _refundETH(swapAndAddData_.swapData.userToRefund, amount1Use - amount1);
             }
         }
 
         if (
             amount0Use > amount0 &&
-            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && !isToken0Weth))
+            (!swapAndAddData_.addData.useETH || (swapAndAddData_.addData.useETH && !isToken0Weth))
         ) {
-            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token0()).safeTransfer(
-                addAndSwapData_.swapData.userToRefund,
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0()).safeTransfer(
+                swapAndAddData_.swapData.userToRefund,
                 amount0Use - amount0
             );
         }
         if (
             amount1Use > amount1 &&
-            (!addAndSwapData_.addData.useETH || (addAndSwapData_.addData.useETH && isToken0Weth))
+            (!swapAndAddData_.addData.useETH || (swapAndAddData_.addData.useETH && isToken0Weth))
         ) {
-            IERC20(IArrakisV2(addAndSwapData_.addData.vault).token1()).safeTransfer(
-                addAndSwapData_.swapData.userToRefund,
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1()).safeTransfer(
+                swapAndAddData_.swapData.userToRefund,
                 amount1Use - amount1
             );
         }
@@ -330,62 +330,62 @@ contract ArrakisV2Router is IArrakisV2Router {
     }
 
     // solhint-disable-next-line function-max-lines
-    function _swap(AddAndSwapData memory addAndSwapData_)
+    function _swap(SwapAndAddData memory swapAndAddData_)
         internal
         returns (uint256 amount0Diff, uint256 amount1Diff)
     {
-        IERC20 token0 = IArrakisV2(addAndSwapData_.addData.vault).token0();
-        IERC20 token1 = IArrakisV2(addAndSwapData_.addData.vault).token1();
+        IERC20 token0 = IArrakisV2(swapAndAddData_.addData.vault).token0();
+        IERC20 token1 = IArrakisV2(swapAndAddData_.addData.vault).token1();
         uint256 balance0Before = token0.balanceOf(address(this));
         uint256 balance1Before = token1.balanceOf(address(this));
 
-        if (addAndSwapData_.swapData.zeroForOne) {
+        if (swapAndAddData_.swapData.zeroForOne) {
             token0.safeIncreaseAllowance(
-                addAndSwapData_.swapData.swapRouter,
-                addAndSwapData_.swapData.amountInSwap
+                swapAndAddData_.swapData.swapRouter,
+                swapAndAddData_.swapData.amountInSwap
             );
         } else {
             token1.safeIncreaseAllowance(
-                addAndSwapData_.swapData.swapRouter,
-                addAndSwapData_.swapData.amountInSwap
+                swapAndAddData_.swapData.swapRouter,
+                swapAndAddData_.swapData.amountInSwap
             );
         }
         (bool success, bytes memory returnsData) =
-            addAndSwapData_.swapData.swapRouter.call(addAndSwapData_.swapData.swapPayload);
+            swapAndAddData_.swapData.swapRouter.call(swapAndAddData_.swapData.swapPayload);
         if (!success) GelatoBytes.revertWithError(returnsData, "swap: ");
 
         // setting allowance to 0
-        if (addAndSwapData_.swapData.zeroForOne) {
-            token0.safeApprove(addAndSwapData_.swapData.swapRouter, 0);
+        if (swapAndAddData_.swapData.zeroForOne) {
+            token0.safeApprove(swapAndAddData_.swapData.swapRouter, 0);
         } else {
-            token1.safeApprove(addAndSwapData_.swapData.swapRouter, 0);
+            token1.safeApprove(swapAndAddData_.swapData.swapRouter, 0);
         }
 
         uint256 balance0 = token0.balanceOf(address(this));
         uint256 balance1 = token1.balanceOf(address(this));
-        if (addAndSwapData_.swapData.zeroForOne) {
+        if (swapAndAddData_.swapData.zeroForOne) {
             amount0Diff = balance0Before - balance0;
             amount1Diff = balance1 - balance1Before;
             require(
-                (amount0Diff <= addAndSwapData_.swapData.amountInSwap) &&
-                    (amount1Diff >= addAndSwapData_.swapData.amountOutSwap),
+                (amount0Diff <= swapAndAddData_.swapData.amountInSwap) &&
+                    (amount1Diff >= swapAndAddData_.swapData.amountOutSwap),
                 "Token0 swap failed!"
             );
         } else {
             amount0Diff = balance0 - balance0Before;
             amount1Diff = balance1Before - balance1;
             require(
-                (amount0Diff >= addAndSwapData_.swapData.amountOutSwap) &&
-                    (amount1Diff <= addAndSwapData_.swapData.amountInSwap),
+                (amount0Diff >= swapAndAddData_.swapData.amountOutSwap) &&
+                    (amount1Diff <= swapAndAddData_.swapData.amountInSwap),
                 "Token1 swap failed!"
             );
         }
 
         emit Swapped(
-            addAndSwapData_.swapData.zeroForOne,
+            swapAndAddData_.swapData.zeroForOne,
             amount0Diff,
             amount1Diff,
-            addAndSwapData_.swapData.amountOutSwap
+            swapAndAddData_.swapData.amountOutSwap
         );
     }
 

@@ -16,11 +16,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { arrakisDaoOwner } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
   await deploy("ArrakisV2RouterWrapper", {
-    from: deployer,
+    from: arrakisDaoOwner,
     args: [addresses.WETH, addresses.ArrakisV2Resolver],
     log: hre.network.name !== "hardhat",
     // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),

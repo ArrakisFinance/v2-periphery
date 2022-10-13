@@ -5,7 +5,7 @@ pragma solidity 0.8.13;
 import {
     MintData,
     RemoveLiquidityData,
-    AddAndSwapData
+    SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
 interface IArrakisV2Router {
@@ -22,7 +22,7 @@ interface IArrakisV2Router {
         external
         returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
+    function swapAndAddLiquidity(SwapAndAddData memory _swapData)
         external
         payable
         returns (

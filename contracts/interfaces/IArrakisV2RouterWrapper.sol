@@ -7,7 +7,7 @@ import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakis
 import {
     AddLiquidityData,
     RemoveLiquidityData,
-    AddAndSwapData
+    SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
 interface IArrakisV2RouterWrapper {
@@ -24,7 +24,7 @@ interface IArrakisV2RouterWrapper {
         external
         returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
+    function swapAndAddLiquidity(SwapAndAddData memory _swapData)
         external
         payable
         returns (
