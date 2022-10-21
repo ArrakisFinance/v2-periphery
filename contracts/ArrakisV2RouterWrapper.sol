@@ -26,10 +26,10 @@ import {
 import {
     ReentrancyGuardUpgradeable
 } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+import {IArrakisV2} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
     IArrakisV2Resolver
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
 
 import {
     AddLiquidityData,

@@ -15,6 +15,7 @@ export interface Addresses {
   faucetDai: string;
   faucetUSDC: string;
   faucetWeth: string;
+  swapRouter: string;
 }
 
 export const getAddresses = (network: string): Addresses => {
@@ -36,6 +37,7 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
         faucetUSDC: "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
         faucetWeth: "0x28424507fefb6f7f8e9d3860f56504e4e5f5f390",
+        swapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
       };
     case "mainnet":
       return {
@@ -54,6 +56,7 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "",
         faucetUSDC: "",
         faucetWeth: "",
+        swapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
       };
     case "polygon":
       return {
@@ -72,6 +75,7 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
         faucetUSDC: "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
         faucetWeth: "0x28424507fefb6f7f8e9d3860f56504e4e5f5f390",
+        swapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
       };
     case "optimism":
       return {
@@ -90,6 +94,7 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "",
         faucetUSDC: "",
         faucetWeth: "",
+        swapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
       };
     default:
       throw new Error(`No addresses for Network: ${network}`);

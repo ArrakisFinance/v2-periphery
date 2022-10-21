@@ -16,9 +16,9 @@ import {
   OneInchDataType,
 } from "./oneInchApiIntegration";
 import { BigNumber, ContractTransaction, Contract, Signer } from "ethers";
-import ArrakisV2 from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2.json";
-import ArrakisV2Factory from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Factory.json";
-import ArrakisV2Resolver from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Resolver.json";
+import ArrakisV2 from "@arrakisfi/v2-core/deployments/polygon/ArrakisV2.json";
+import ArrakisV2Factory from "@arrakisfi/v2-core/deployments/polygon/ArrakisV2Factory.json";
+import ArrakisV2Resolver from "@arrakisfi/v2-core/deployments/polygon/ArrakisV2Resolver.json";
 import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
 import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 
@@ -647,6 +647,7 @@ export const deployArrakisV2 = async (
       init0: res.amount0,
       init1: res.amount1,
       manager: signerAddress,
+      routers: [addresses.swapRouter],
     },
     true
   );
