@@ -3,10 +3,12 @@
 pragma solidity 0.8.13;
 
 import {
-    IArrakisV2RouterWrapper
-} from "./interfaces/IArrakisV2RouterWrapper.sol";
+    IArrakisV2GenericRouter
+} from "./interfaces/IArrakisV2GenericRouter.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
-import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
+import {
+    IArrakisV2RouterExecutor
+} from "./interfaces/IArrakisV2RouterExecutor.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 import {
@@ -33,8 +35,8 @@ import {
     SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
 
-contract ArrakisV2RouterWrapper is
-    IArrakisV2RouterWrapper,
+contract ArrakisV2GenericRouter is
+    IArrakisV2GenericRouter,
     Pausable,
     Ownable,
     ReentrancyGuard
@@ -44,7 +46,7 @@ contract ArrakisV2RouterWrapper is
 
     IWETH public immutable weth;
     IArrakisV2Resolver public immutable resolver;
-    IArrakisV2Router public router;
+    IArrakisV2RouterExecutor public router;
 
     constructor(IWETH weth_, IArrakisV2Resolver resolver_) {
         weth = weth_;
@@ -268,9 +270,12 @@ contract ArrakisV2RouterWrapper is
             .swapAndAddLiquidity(swapAndAddData_);
     }
 
-    /// @notice updates address of ArrakisV2Router used by this wrapper
-    /// @param router_ the router address
-    function updateRouter(IArrakisV2Router router_) external onlyOwner {
+    /// @notice updates address of ArrakisV2RouterExecutor used by this contract
+    /// @param router_ the ArrakisV2RouterExecutor address
+    function updateRouterExecutor(IArrakisV2RouterExecutor router_)
+        external
+        onlyOwner
+    {
         router = router_;
     }
 

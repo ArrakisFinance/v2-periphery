@@ -1,16 +1,16 @@
 # Vault V2 Router Spec
 
-## Wrapper & Router
+## Generic Router & Router Executor
 
-**ArrakisV2RouterWrapper** (aka wrapper contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to ArrakisV2Router.
+**ArrakisV2GenericRouter** (aka generic contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to ArrakisV2RouterExecutor.
 
-**ArrakisV2Router** (aka router contract) is responsible for executing swap payloads (prepared off-chain) and interacting with vaults (ArrakisV2Vault).
+**ArrakisV2RouterExecutor** (aka executor contract) is responsible for executing swap payloads (prepared off-chain) and interacting with vaults (ArrakisV2Vault).
 
-External functions in the router contract can only be called by the wrapper contract. For this, the wrapper has a function `updateRouter` to set the router address to be used. The router contract receives the wrapper address to validate on deployment (constructor).
+External functions in the executor contract can only be called by the generic contract. For this, the generic contract has a function `updateRouter` to set the executor address to be used. The executor contract receives the generic address to validate on deployment (constructor).
 
 ## Parameter structs
 
-- AddLiquidityData is used by `addLiquidity` function on both wrapper and router contracts.
+- AddLiquidityData is used by `addLiquidity` function on both generic and executor contracts.
 
 ```
 struct AddLiquidityData {
@@ -33,7 +33,7 @@ struct AddLiquidityData {
 }
 ```
 
-- MintData is created by `ArrakisV2RouterWrapper.addLiquidity` and passed as parameter to `ArrakisV2Router.addLiquidity`.
+- MintData is created by `ArrakisV2GenericRouter.addLiquidity` and passed as parameter to `ArrakisV2RouterExecutor.addLiquidity`.
 
 ```
 struct MintData {
@@ -52,7 +52,7 @@ struct MintData {
 }
 ```
 
-- RemoveLiquidityData is used `removeLiquidity` function on both wrapper and router contracts.
+- RemoveLiquidityData is used `removeLiquidity` function on both generic and executor contracts.
 
 ```
 struct RemoveLiquidityData {
@@ -108,7 +108,7 @@ struct AddAndSwapData {
 }
 ```
 
-## ArrakisV2RouterWrapper
+## ArrakisV2GenericRouter
 
 ### addLiquidity
 
@@ -165,9 +165,9 @@ function swapAndAddLiquidity(
 - if AddLiquidityData.gaugeAddress is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
 - if the user is depositing 2 tokens and doing a swap => if token0 is being swapped for token1, AddLiquidityData.amount0Max should be the amount of token0 being deposited "normally" plus the amount to be swapped (SwapData.amountInSwap). (same applies for amount1Max on the inverse swap scenario)
 
-### ArrakisV2Router
+### ArrakisV2RouterExecutor
 
-**Important:** Functions below can only be called by ArrakisV2RouterWrapper.
+**Important:** Functions below can only be called by ArrakisV2GenericRouter.
 
 ## addLiquidity
 
@@ -224,6 +224,6 @@ function swapAndAddLiquidity(
 
 ### Updates for additional security on swaps:
 
-- on `ArrakisV2Router.swapAndAddLiquidity` only 1 swap action is allowed. The router will increase the allowance of the `swapRouter` for the amount being swapped.
+- on `ArrakisV2RouterExecutor.swapAndAddLiquidity` only 1 swap action is allowed. The executor will increase the allowance of the `swapRouter` for the amount being swapped.
 
 - Validate amount post-swap. Added parameter `_amountOutSwap` to `swapAndAddLiquidity` for validating the amount received after a swap. This parameter should consider price impact/slippage when being passed and the transaction should revert if balance difference pre/post swap is less than `_amountOutSwap`.

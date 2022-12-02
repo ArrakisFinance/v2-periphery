@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { ethers, network, deployments } from "hardhat";
 import {
-  ArrakisV2Router,
-  ArrakisV2RouterWrapper,
+  ArrakisV2RouterExecutor,
+  ArrakisV2GenericRouter,
   SwapResolver,
   ERC20,
   ManagerMock,
@@ -27,8 +27,8 @@ const addresses: Addresses = getAddresses(network.name);
 export const swapAndAddTest = async (
   signer: SignerWithAddress,
 
-  vaultRouter: ArrakisV2Router,
-  vaultRouterWrapper: ArrakisV2RouterWrapper,
+  genericRouter: ArrakisV2GenericRouter,
+  routerExecutor: ArrakisV2RouterExecutor,
   swapResolver: SwapResolver,
 
   resolver: Contract,
@@ -68,16 +68,12 @@ export const swapAndAddTest = async (
   let amount0Use: BigNumber;
   let amount1Use: BigNumber;
 
-  // approve the wrapper for user's max amounts
+  // approve the generic router for user's max amounts
   if (amount0Max.gt(0)) {
-    await token0
-      .connect(signer)
-      .approve(vaultRouterWrapper.address, amount0Max);
+    await token0.connect(signer).approve(genericRouter.address, amount0Max);
   }
   if (amount1Max.gt(0)) {
-    await token1
-      .connect(signer)
-      .approve(vaultRouterWrapper.address, amount1Max);
+    await token1.connect(signer).approve(genericRouter.address, amount1Max);
   }
 
   // get before balances
@@ -225,7 +221,7 @@ export const swapAndAddTest = async (
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       swapAmountIn.toString(),
-      vaultRouter.address,
+      routerExecutor.address,
       slippage.toString()
     );
   }
@@ -323,7 +319,7 @@ export const swapAndAddTest = async (
   };
 
   // listener for getting data from "Swapped" event
-  vaultRouter.on(
+  routerExecutor.on(
     "Swapped",
     (zeroForOne: boolean, amount0Diff: BigNumber, amount1Diff: BigNumber) => {
       swapppedEventData.zeroForOne = zeroForOne;
@@ -368,13 +364,13 @@ export const swapAndAddTest = async (
     if (isToken0Weth) {
       const value = transactionEthValue || addAndSwapData.addData.amount0Max;
       if (value == addAndSwapData.addData.amount0Max) {
-        swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
+        swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
           addAndSwapData,
           { value: value }
         );
       } else {
         await expect(
-          vaultRouterWrapper.swapAndAddLiquidity(addAndSwapData, {
+          genericRouter.swapAndAddLiquidity(addAndSwapData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
@@ -383,13 +379,13 @@ export const swapAndAddTest = async (
     } else {
       const value = transactionEthValue || addAndSwapData.addData.amount1Max;
       if (value == addAndSwapData.addData.amount1Max) {
-        swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
+        swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
           addAndSwapData,
           { value: value }
         );
       } else {
         await expect(
-          vaultRouterWrapper.swapAndAddLiquidity(addAndSwapData, {
+          genericRouter.swapAndAddLiquidity(addAndSwapData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
@@ -398,12 +394,12 @@ export const swapAndAddTest = async (
     }
   } else {
     if (transactionEthValue) {
-      swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
+      swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
         addAndSwapData,
         { value: transactionEthValue }
       );
     } else {
-      swapAndAddTxPending = await vaultRouterWrapper.swapAndAddLiquidity(
+      swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
         addAndSwapData
       );
     }
@@ -507,45 +503,45 @@ export const swapAndAddTest = async (
   }
 
   // validate router balances
-  const routerBalance0 = await token0.balanceOf(vaultRouter.address);
-  const routerBalance1 = await token1.balanceOf(vaultRouter.address);
-  const routerBalanceRakis = await rakisToken.balanceOf(vaultRouter.address);
+  const routerBalance0 = await token0.balanceOf(routerExecutor.address);
+  const routerBalance1 = await token1.balanceOf(routerExecutor.address);
+  const routerBalanceRakis = await rakisToken.balanceOf(routerExecutor.address);
   expect(routerBalance0).to.equal(ethers.constants.Zero);
   expect(routerBalance1).to.equal(ethers.constants.Zero);
   expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
   if (stRakisToken) {
     const routerBalanceStRakis = await stRakisToken.balanceOf(
-      vaultRouter.address
+      routerExecutor.address
     );
     expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
   }
 
   // validate router - 1inch allowance
-  const routerAllowance0 = await token0.allowance(
-    vaultRouter.address,
+  const routerExecutorAllowance0 = await token0.allowance(
+    routerExecutor.address,
     addresses.OneInchRouter
   );
-  const routerAllowance1 = await token1.allowance(
-    vaultRouter.address,
+  const routerExecutorAllowance1 = await token1.allowance(
+    routerExecutor.address,
     addresses.OneInchRouter
   );
-  expect(routerAllowance0).to.equal(ethers.constants.Zero);
-  expect(routerAllowance1).to.equal(ethers.constants.Zero);
+  expect(routerExecutorAllowance0).to.equal(ethers.constants.Zero);
+  expect(routerExecutorAllowance1).to.equal(ethers.constants.Zero);
 
-  // validate wrapper balances
-  const wrapperBalance0 = await token0.balanceOf(vaultRouterWrapper.address);
-  const wrapperBalance1 = await token1.balanceOf(vaultRouterWrapper.address);
-  const wrapperBalanceRakis = await rakisToken.balanceOf(
-    vaultRouterWrapper.address
+  // validate generic router balances
+  const genericRouterBalance0 = await token0.balanceOf(genericRouter.address);
+  const genericRouterBalance1 = await token1.balanceOf(genericRouter.address);
+  const genericRouterBalanceRakis = await rakisToken.balanceOf(
+    genericRouter.address
   );
-  expect(wrapperBalance0).to.equal(ethers.constants.Zero);
-  expect(wrapperBalance1).to.equal(ethers.constants.Zero);
-  expect(wrapperBalanceRakis).to.equal(ethers.constants.Zero);
+  expect(genericRouterBalance0).to.equal(ethers.constants.Zero);
+  expect(genericRouterBalance1).to.equal(ethers.constants.Zero);
+  expect(genericRouterBalanceRakis).to.equal(ethers.constants.Zero);
   if (stRakisToken) {
-    const wrapperBalanceStRakis = await stRakisToken.balanceOf(
-      vaultRouterWrapper.address
+    const genericRouterBalanceStRakis = await stRakisToken.balanceOf(
+      genericRouter.address
     );
-    expect(wrapperBalanceStRakis).to.equal(ethers.constants.Zero);
+    expect(genericRouterBalanceStRakis).to.equal(ethers.constants.Zero);
   }
 
   await expect(
@@ -555,7 +551,7 @@ export const swapAndAddTest = async (
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[SwapResolver, ArrakisV2Router, ArrakisV2RouterWrapper]> => {
+): Promise<[SwapResolver, ArrakisV2RouterExecutor, ArrakisV2GenericRouter]> => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("SwapResolver")).address;
   const swapResolver = (await ethers.getContractAt(
@@ -563,26 +559,29 @@ export const getPeripheryContracts = async (
     resolverAddress
   )) as SwapResolver;
 
-  // getting router contract
-  const vaultRouterAddress = (await deployments.get("ArrakisV2Router")).address;
-  const vaultRouter = (await ethers.getContractAt(
-    "ArrakisV2Router",
-    vaultRouterAddress
-  )) as ArrakisV2Router;
-
-  // getting wrapper contract
-  const vaultRouterWrapperAddress = (
-    await deployments.get("ArrakisV2RouterWrapper")
+  // getting router executor contract
+  const routerExecutorAddress = (
+    await deployments.get("ArrakisV2RouterExecutor")
   ).address;
-  const vaultRouterWrapper = (await ethers.getContractAt(
-    "ArrakisV2RouterWrapper",
-    vaultRouterWrapperAddress
-  )) as ArrakisV2RouterWrapper;
+  const routerExecutor = (await ethers.getContractAt(
+    "ArrakisV2RouterExecutor",
+    routerExecutorAddress
+  )) as ArrakisV2RouterExecutor;
 
-  // updating wrapper's router
-  await vaultRouterWrapper.connect(owner).updateRouter(vaultRouter.address);
+  // getting generic router contract
+  const genericRouterAddress = (await deployments.get("ArrakisV2GenericRouter"))
+    .address;
+  const genericRouter = (await ethers.getContractAt(
+    "ArrakisV2GenericRouter",
+    genericRouterAddress
+  )) as ArrakisV2GenericRouter;
 
-  return [swapResolver, vaultRouter, vaultRouterWrapper];
+  // updating genericRouter's executor
+  await genericRouter
+    .connect(owner)
+    .updateRouterExecutor(routerExecutor.address);
+
+  return [swapResolver, routerExecutor, genericRouter];
 };
 
 export const getManagerMock = async (): Promise<ManagerMock> => {

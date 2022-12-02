@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
+import {
+    IArrakisV2RouterExecutor
+} from "./interfaces/IArrakisV2RouterExecutor.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
@@ -24,14 +26,14 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-// @notice External functions of this contract can only be called by ArrakisV2RouterWrapper
+// @notice External functions of this contract can only be called by ArrakisV2GenericRouter
 // @notice do not give approvals to this contract's address
-contract ArrakisV2Router is IArrakisV2Router {
+contract ArrakisV2RouterExecutor is IArrakisV2RouterExecutor {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
     IWETH public immutable weth;
-    address public immutable routerWrapperAddress;
+    address public immutable genericRouterAddress;
     IArrakisV2Resolver public immutable resolver;
 
     event Swapped(
@@ -41,18 +43,18 @@ contract ArrakisV2Router is IArrakisV2Router {
         uint256 amountOutSwap
     );
 
-    modifier onlyRouterWrapper() {
-        require(msg.sender == routerWrapperAddress, "onlyRouterWrapper");
+    modifier onlyGenericRouter() {
+        require(msg.sender == genericRouterAddress, "onlyGenericRouter");
         _;
     }
 
     constructor(
         IWETH _weth,
-        address _routerWrapperAddress,
+        address _genericRouterAddress,
         IArrakisV2Resolver _resolver
     ) {
         weth = _weth;
-        routerWrapperAddress = _routerWrapperAddress;
+        genericRouterAddress = _genericRouterAddress;
         resolver = _resolver;
     }
 
@@ -69,7 +71,7 @@ contract ArrakisV2Router is IArrakisV2Router {
         external
         payable
         override
-        onlyRouterWrapper
+        onlyGenericRouter
         returns (
             uint256 amount0,
             uint256 amount1,
@@ -116,7 +118,7 @@ contract ArrakisV2Router is IArrakisV2Router {
     function removeLiquidity(RemoveLiquidityData memory removeData_)
         external
         override
-        onlyRouterWrapper
+        onlyGenericRouter
         returns (uint256 amount0, uint256 amount1)
     {
         if (removeData_.receiveETH) {
@@ -162,7 +164,7 @@ contract ArrakisV2Router is IArrakisV2Router {
         external
         payable
         override
-        onlyRouterWrapper
+        onlyGenericRouter
         returns (
             uint256 amount0,
             uint256 amount1,

@@ -3,17 +3,13 @@
 pragma solidity 0.8.13;
 
 import {
-    IArrakisV2
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
-
-import {
-    AddLiquidityData,
+    MintData,
     RemoveLiquidityData,
     SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
-interface IArrakisV2RouterWrapper {
-    function addLiquidity(AddLiquidityData memory _addData)
+interface IArrakisV2RouterExecutor {
+    function addLiquidity(MintData memory _mintData)
         external
         payable
         returns (
