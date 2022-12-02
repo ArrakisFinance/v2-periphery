@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.13;
 
-import {BurnLiquidity} from "@arrakisfi/vault-v2-core/contracts/structs/SArrakisV2.sol";
+import {
+    BurnLiquidity
+} from "@arrakisfi/vault-v2-core/contracts/structs/SArrakisV2.sol";
 
 import {
     IArrakisV2

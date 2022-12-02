@@ -27,10 +27,12 @@ const config: HardhatUserConfig = {
     arrakisDaoAdmin: {
       default: 1,
       polygon: "0xd06a7cc1a162fDfB515595A2eC1c47B75743C381",
+      local: "0xd06a7cc1a162fDfB515595A2eC1c47B75743C381",
     },
     arrakisDaoOwner: {
       default: 2,
       polygon: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
+      local: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     },
   },
 

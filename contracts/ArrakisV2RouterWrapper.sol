@@ -14,16 +14,14 @@ import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {
-    Pausable
-} from "@openzeppelin/contracts/security/Pausable.sol";
-import {
-    Ownable
-} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+import {
+    IArrakisV2
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
     IArrakisV2Resolver
 } from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
@@ -34,8 +32,6 @@ import {
     RemoveLiquidityData,
     SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
-
-import "hardhat/console.sol";
 
 contract ArrakisV2RouterWrapper is
     IArrakisV2RouterWrapper,
@@ -81,36 +77,31 @@ contract ArrakisV2RouterWrapper is
             uint256 mintAmount
         )
     {
-        console.log("Wrapper - addLiquidity!");
         require(
             addData_.amount0Max > 0 || addData_.amount1Max > 0,
             "Empty max amounts"
         );
         if (addData_.gaugeAddress != address(0)) {
             require(
-                addData_.vault ==
-                    IGauge(addData_.gaugeAddress).staking_token(),
+                addData_.vault == IGauge(addData_.gaugeAddress).staking_token(),
                 "Incorrect gauge!"
             );
         }
-        console.log("Wrapper - before getMintAmounts!");
+
         (uint256 amount0In, uint256 amount1In, uint256 _mintAmount) =
             resolver.getMintAmounts(
                 IArrakisV2(addData_.vault),
                 addData_.amount0Max,
                 addData_.amount1Max
             );
-        console.log("Wrapper - after getMintAmounts!");
-        console.log("Wrapper - amount0In: %s", amount0In);
-        console.log("Wrapper - amount1In: %s", amount1In);
-        console.log("Wrapper - _mintAmount: %s", _mintAmount);
+
         require(
             amount0In >= addData_.amount0Min &&
                 amount1In >= addData_.amount1Min,
             "below min amounts"
         );
         require(_mintAmount > 0, "nothing to mint");
-        console.log("Wrapper - before _wrapAndTransferETH!");
+
         bool isToken0Weth;
         if (addData_.useETH) {
             isToken0Weth = _wrapAndTransferETH(
@@ -120,7 +111,7 @@ contract ArrakisV2RouterWrapper is
                 false
             );
         }
-        console.log("Wrapper - before transfers!");
+
         if (
             amount0In > 0 &&
             (!addData_.useETH || (addData_.useETH && !isToken0Weth))
@@ -151,9 +142,9 @@ contract ArrakisV2RouterWrapper is
                 addData_.receiver,
                 addData_.gaugeAddress
             );
-        console.log("Wrapper - before calling router!");
+
         (amount0, amount1, mintAmount) = router.addLiquidity(_mintData);
-        console.log("Wrapper - after calling router!");
+
         if (addData_.useETH) {
             if (isToken0Weth && msg.value > amount0) {
                 payable(msg.sender).sendValue(msg.value - amount0);
@@ -201,6 +192,7 @@ contract ArrakisV2RouterWrapper is
                 removeData_.burnAmount
             );
         }
+
         (amount0, amount1) = router.removeLiquidity(removeData_);
     }
 
@@ -227,13 +219,15 @@ contract ArrakisV2RouterWrapper is
         )
     {
         require(
-            swapAndAddData_.addData.amount0Max > 0 || swapAndAddData_.addData.amount1Max > 0,
+            swapAndAddData_.addData.amount0Max > 0 ||
+                swapAndAddData_.addData.amount1Max > 0,
             "Empty max amounts"
         );
         if (swapAndAddData_.addData.gaugeAddress != address(0)) {
             require(
                 swapAndAddData_.addData.vault ==
-                    IGauge(swapAndAddData_.addData.gaugeAddress).staking_token(),
+                    IGauge(swapAndAddData_.addData.gaugeAddress)
+                        .staking_token(),
                 "Incorrect gauge!"
             );
         }
@@ -251,7 +245,8 @@ contract ArrakisV2RouterWrapper is
             swapAndAddData_.addData.amount0Max > 0 &&
             (!swapAndAddData_.addData.useETH || !isToken0Weth)
         ) {
-            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0()).safeTransferFrom(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
+                .safeTransferFrom(
                 msg.sender,
                 address(router),
                 swapAndAddData_.addData.amount0Max
@@ -261,7 +256,8 @@ contract ArrakisV2RouterWrapper is
             swapAndAddData_.addData.amount1Max > 0 &&
             (!swapAndAddData_.addData.useETH || isToken0Weth)
         ) {
-            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1()).safeTransferFrom(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
+                .safeTransferFrom(
                 msg.sender,
                 address(router),
                 swapAndAddData_.addData.amount1Max

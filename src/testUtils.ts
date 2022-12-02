@@ -5,6 +5,7 @@ import {
   ArrakisV2RouterWrapper,
   SwapResolver,
   ERC20,
+  ManagerMock,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
@@ -584,15 +585,24 @@ export const getPeripheryContracts = async (
   return [swapResolver, vaultRouter, vaultRouterWrapper];
 };
 
+export const getManagerMock = async (): Promise<ManagerMock> => {
+  const managerAddress = (await deployments.get("ManagerMock")).address;
+  const managerMock = (await ethers.getContractAt(
+    "ManagerMock",
+    managerAddress
+  )) as ManagerMock;
+  return managerMock;
+};
+
 export const deployArrakisV2 = async (
   signer: SignerWithAddress,
   token0Address: string,
   token1Address: string,
   fee: number,
-  resolver: Contract
+  resolver: Contract,
+  managerAddress: string
 ): Promise<[Contract]> => {
   const signerAddress = await signer.getAddress();
-
   // getting vault factory
   const vaultV2Factory = new ethers.Contract(
     addresses.ArrakisV2Factory,
@@ -645,7 +655,9 @@ export const deployArrakisV2 = async (
       owner: signerAddress,
       init0: res.amount0,
       init1: res.amount1,
-      manager: signerAddress,
+      manager: managerAddress,
+      routers: [addresses.SwapRouter],
+      burnBuffer: 1000,
     },
     true
   );
@@ -669,23 +681,37 @@ export const getFundsFromFaucet = async (
   token: ERC20,
   targetAddress: string
 ) => {
-  await network.provider.send("hardhat_setBalance", [
-    faucetAddress,
-    "0x313030303030303030303030303030303030303030",
-  ]);
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [faucetAddress],
-  });
-  const faucetSigner = await ethers.provider.getSigner(faucetAddress);
-  await token
-    .connect(faucetSigner)
-    .transfer(targetAddress, await token.balanceOf(faucetAddress));
+  if (network.name === "local") {
+    const provider = new ethers.providers.JsonRpcProvider(
+      "http://localhost:8545"
+    );
+    await provider.send("hardhat_impersonateAccount", [faucetAddress]);
+    await provider.send("hardhat_setBalance", [
+      faucetAddress,
+      "0x313030303030303030303030303030303030303030",
+    ]);
+    const faucetSigner = await provider.getSigner(faucetAddress);
+    const faucetBalance = await token.balanceOf(faucetAddress);
+    await token.connect(faucetSigner).transfer(targetAddress, faucetBalance);
+  } else {
+    await network.provider.send("hardhat_setBalance", [
+      faucetAddress,
+      "0x313030303030303030303030303030303030303030",
+    ]);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [faucetAddress],
+    });
+    const faucetSigner = await ethers.provider.getSigner(faucetAddress);
+    await token
+      .connect(faucetSigner)
+      .transfer(targetAddress, await token.balanceOf(faucetAddress));
 
-  await network.provider.request({
-    method: "hardhat_stopImpersonatingAccount",
-    params: [faucetAddress],
-  });
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [faucetAddress],
+    });
+  }
 };
 
 export const createGauge = async (
@@ -708,7 +734,6 @@ export const createGauge = async (
 export const getArrakisResolver = async (
   signer: SignerWithAddress
 ): Promise<Contract> => {
-  console.log("getArrakisResolver");
   const resolver = new ethers.Contract(
     addresses.ArrakisV2Resolver,
     ArrakisV2Resolver.abi,

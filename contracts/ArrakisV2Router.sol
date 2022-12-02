@@ -24,8 +24,6 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import "hardhat/console.sol";
-
 // @notice External functions of this contract can only be called by ArrakisV2RouterWrapper
 // @notice do not give approvals to this contract's address
 contract ArrakisV2Router is IArrakisV2Router {
@@ -78,7 +76,6 @@ contract ArrakisV2Router is IArrakisV2Router {
             uint256 mintAmount
         )
     {
-        console.log("Router - addLiquidity!");
         if (mintData_.gaugeAddress != address(0)) {
             _deposit(
                 mintData_.vault,
@@ -106,7 +103,7 @@ contract ArrakisV2Router is IArrakisV2Router {
                 mintData_.receiver
             );
         }
-        console.log("Router - after _deposit!");
+
         amount0 = mintData_.amount0In;
         amount1 = mintData_.amount1In;
         mintAmount = mintData_.mintAmount;
@@ -206,7 +203,8 @@ contract ArrakisV2Router is IArrakisV2Router {
                 address(this)
             );
 
-            IERC20(address(swapAndAddData_.addData.vault)).safeIncreaseAllowance(
+            IERC20(address(swapAndAddData_.addData.vault))
+                .safeIncreaseAllowance(
                 swapAndAddData_.addData.gaugeAddress,
                 mintAmount
             );
@@ -233,26 +231,36 @@ contract ArrakisV2Router is IArrakisV2Router {
                 address(IArrakisV2(swapAndAddData_.addData.vault).token1())
             );
             if (isToken0Weth && amount0Use > amount0) {
-                _refundETH(swapAndAddData_.swapData.userToRefund, amount0Use - amount0);
+                _refundETH(
+                    swapAndAddData_.swapData.userToRefund,
+                    amount0Use - amount0
+                );
             } else if (!isToken0Weth && amount1Use > amount1) {
-                _refundETH(swapAndAddData_.swapData.userToRefund, amount1Use - amount1);
+                _refundETH(
+                    swapAndAddData_.swapData.userToRefund,
+                    amount1Use - amount1
+                );
             }
         }
 
         if (
             amount0Use > amount0 &&
-            (!swapAndAddData_.addData.useETH || (swapAndAddData_.addData.useETH && !isToken0Weth))
+            (!swapAndAddData_.addData.useETH ||
+                (swapAndAddData_.addData.useETH && !isToken0Weth))
         ) {
-            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0()).safeTransfer(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
+                .safeTransfer(
                 swapAndAddData_.swapData.userToRefund,
                 amount0Use - amount0
             );
         }
         if (
             amount1Use > amount1 &&
-            (!swapAndAddData_.addData.useETH || (swapAndAddData_.addData.useETH && isToken0Weth))
+            (!swapAndAddData_.addData.useETH ||
+                (swapAndAddData_.addData.useETH && isToken0Weth))
         ) {
-            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1()).safeTransfer(
+            IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
+                .safeTransfer(
                 swapAndAddData_.swapData.userToRefund,
                 amount1Use - amount1
             );
@@ -266,11 +274,6 @@ contract ArrakisV2Router is IArrakisV2Router {
         uint256 mintAmount_,
         address receiver_
     ) internal {
-        console.log("Router - _deposit! vault_: %s", vault_);
-        console.log("Router - _deposit! amount0In_: %s", amount0In_);
-        console.log("Router - _deposit! amount1In_: %s", amount1In_);
-        console.log("Router - _deposit! mintAmount_: %s", mintAmount_);
-        console.log("Router - _deposit! receiver_: %s", receiver_);
         if (amount0In_ > 0) {
             IArrakisV2(vault_).token0().safeIncreaseAllowance(
                 vault_,
@@ -283,19 +286,12 @@ contract ArrakisV2Router is IArrakisV2Router {
                 amount1In_
             );
         }
-        uint256 a0 = IERC20(IArrakisV2(vault_).token0()).allowance(address(this), vault_);
-        uint256 a1 = IERC20(IArrakisV2(vault_).token1()).allowance(address(this), vault_);
-        uint256 b0 = IERC20(IArrakisV2(vault_).token0()).balanceOf(address(this));
-        uint256 b1 = IERC20(IArrakisV2(vault_).token1()).balanceOf(address(this));
-        console.log("Router - deposit - a0: %s", a0);
-        console.log("Router - deposit - a1: %s", a1);
-        console.log("Router - deposit - b0: %s", b0);
-        console.log("Router - deposit - b1: %s", b1);
+
         (uint256 amount0, uint256 amount1) =
             IArrakisV2(vault_).mint(mintAmount_, receiver_);
 
         require(
-            amount0 == amount1In_ && amount1 == amount1In_,
+            amount0 == amount0In_ && amount1 == amount1In_,
             "unexpected amounts deposited"
         );
     }
@@ -351,7 +347,9 @@ contract ArrakisV2Router is IArrakisV2Router {
             );
         }
         (bool success, bytes memory returnsData) =
-            swapAndAddData_.swapData.swapRouter.call(swapAndAddData_.swapData.swapPayload);
+            swapAndAddData_.swapData.swapRouter.call(
+                swapAndAddData_.swapData.swapPayload
+            );
         if (!success) GelatoBytes.revertWithError(returnsData, "swap: ");
 
         // setting allowance to 0

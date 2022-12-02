@@ -7,8 +7,12 @@ import {ISwapResolver} from "./interfaces/ISwapResolver.sol";
 import {
     IArrakisV2Resolver
 } from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
-import {IArrakisV2Helper} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Helper.sol";
-import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+import {
+    IArrakisV2Helper
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Helper.sol";
+import {
+    IArrakisV2
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
 
 import {
     IERC20Metadata

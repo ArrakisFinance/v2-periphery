@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.13;
 
-import {IArrakisV2} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+import {
+    IArrakisV2
+} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
 
 import {
     AddLiquidityData,
