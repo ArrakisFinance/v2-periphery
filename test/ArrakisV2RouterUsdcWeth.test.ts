@@ -83,6 +83,8 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
 
     [gauge, stRakisToken] = await createGauge(vault.address);
 
+    await routerExecutor.whitelistRouter(genericRouter.address);
+
     routerExecutorBalanceEth = await wallet.provider?.getBalance(
       routerExecutor.address
     );

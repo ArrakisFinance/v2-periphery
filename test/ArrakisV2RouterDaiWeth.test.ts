@@ -81,6 +81,8 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     [gauge, stRakisToken] = await createGauge(vault.address);
 
+    await routerExecutor.whitelistRouter(genericRouter.address);
+
     routerExecutorBalanceEth = await wallet.provider?.getBalance(
       routerExecutor.address
     );
