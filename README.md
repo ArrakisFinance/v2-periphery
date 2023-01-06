@@ -76,23 +76,7 @@ struct RemoveLiquidityData {
 - SwapData is used by `swapAndAddLiquidity` function
 
 ```
-struct AddAndSwapData {
-    // Arrakis vault
-    IVaultV2 vault;
-    // maximum amount of token0 to forward on mint
-    uint256 amount0Max;
-    // maximum amount of token1 to forward on mint
-    uint256 amount1Max;
-    // the minimum amount of token0 actually deposited (slippage protection)
-    uint256 amount0Min;
-    // the minimum amount of token1 actually deposited (slippage protection)
-    uint256 amount1Min;
-    // account to receive minted tokens
-    address receiver;
-    // bool indicating to use native ETH
-    bool useETH;
-    // address of gauge to stake tokens in
-    address gaugeAddress;
+struct SwapData {
     // max amount being swapped
     uint256 amountInSwap;
     // min amount received on swap
@@ -105,6 +89,15 @@ struct AddAndSwapData {
     bytes swapPayload;
     // address of the user to be refunded
     address payable userToRefund;
+}
+```
+
+- SwapAndAddData struct contains all data needed for Swap and AddLiquidity 
+
+```
+struct SwapAndAddData {
+    SwapData swapData;
+    AddLiquidityData addData;
 }
 ```
 
@@ -148,7 +141,7 @@ function removeLiquidity(
 
 ```
 function swapAndAddLiquidity(
-    AddAndSwapData memory _swapData
+    SwapAndAddData memory _swapData
 )
     external
     payable
@@ -206,7 +199,7 @@ function removeLiquidity(
 
 ```
 function swapAndAddLiquidity(
-    AddAndSwapData memory _swapData,
+    SwapAndAddData memory _swapData,
 )
     external
     payable

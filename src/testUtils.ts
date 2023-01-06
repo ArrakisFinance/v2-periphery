@@ -284,7 +284,7 @@ export const swapAndAddTest = async (
 
     userToRefund: "0x0000000000000000000000000000000000000000",
   };
-  const addAndSwapData = {
+  const swapAndAddData = {
     addData: addData,
     swapData: swapData,
   };
@@ -359,30 +359,30 @@ export const swapAndAddTest = async (
 
   if (useETH) {
     if (isToken0Weth) {
-      const value = transactionEthValue || addAndSwapData.addData.amount0Max;
-      if (value == addAndSwapData.addData.amount0Max) {
+      const value = transactionEthValue || swapAndAddData.addData.amount0Max;
+      if (value == swapAndAddData.addData.amount0Max) {
         swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-          addAndSwapData,
+          swapAndAddData,
           { value: value }
         );
       } else {
         await expect(
-          genericRouter.swapAndAddLiquidity(addAndSwapData, {
+          genericRouter.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
         return;
       }
     } else {
-      const value = transactionEthValue || addAndSwapData.addData.amount1Max;
-      if (value == addAndSwapData.addData.amount1Max) {
+      const value = transactionEthValue || swapAndAddData.addData.amount1Max;
+      if (value == swapAndAddData.addData.amount1Max) {
         swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-          addAndSwapData,
+          swapAndAddData,
           { value: value }
         );
       } else {
         await expect(
-          genericRouter.swapAndAddLiquidity(addAndSwapData, {
+          genericRouter.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
@@ -392,12 +392,12 @@ export const swapAndAddTest = async (
   } else {
     if (transactionEthValue) {
       swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-        addAndSwapData,
+        swapAndAddData,
         { value: transactionEthValue }
       );
     } else {
       swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-        addAndSwapData
+        swapAndAddData
       );
     }
   }
@@ -422,19 +422,19 @@ export const swapAndAddTest = async (
 
   // calculate actual amounts used for mintAmounts after swap and validate swapAmountOut
   if (swapppedEventData.zeroForOne) {
-    amount0Use = addAndSwapData.addData.amount0Max.sub(
+    amount0Use = swapAndAddData.addData.amount0Max.sub(
       swapppedEventData.amount0Diff
     );
-    amount1Use = addAndSwapData.addData.amount1Max.add(
+    amount1Use = swapAndAddData.addData.amount1Max.add(
       swapppedEventData.amount1Diff
     );
 
     expect(amountOut).to.be.lt(swapppedEventData.amount1Diff);
   } else {
-    amount0Use = addAndSwapData.addData.amount0Max.add(
+    amount0Use = swapAndAddData.addData.amount0Max.add(
       swapppedEventData.amount0Diff
     );
-    amount1Use = addAndSwapData.addData.amount1Max.sub(
+    amount1Use = swapAndAddData.addData.amount1Max.sub(
       swapppedEventData.amount1Diff
     );
 
@@ -458,32 +458,32 @@ export const swapAndAddTest = async (
   // validate balances
   if (!useETH) {
     expect(balance0After).to.equal(
-      balance0Before.sub(addAndSwapData.addData.amount0Max).add(refund0)
+      balance0Before.sub(swapAndAddData.addData.amount0Max).add(refund0)
     );
     expect(balance1After).to.equal(
-      balance1Before.sub(addAndSwapData.addData.amount1Max).add(refund1)
+      balance1Before.sub(swapAndAddData.addData.amount1Max).add(refund1)
     );
     expect(balanceEthAfter).to.equal(balanceEthBefore.sub(ethSpentForGas));
   } else {
     if (isToken0Weth) {
       expect(balance0After).to.equal(balance0Before);
       expect(balance1After).to.equal(
-        balance1Before.sub(addAndSwapData.addData.amount1Max).add(refund1)
+        balance1Before.sub(swapAndAddData.addData.amount1Max).add(refund1)
       );
       expect(balanceEthAfter).to.equal(
         balanceEthBefore
-          .sub(addAndSwapData.addData.amount0Max)
+          .sub(swapAndAddData.addData.amount0Max)
           .sub(ethSpentForGas)
           .add(refund0)
       );
     } else {
       expect(balance0After).to.equal(
-        balance0Before.sub(addAndSwapData.addData.amount0Max).add(refund0)
+        balance0Before.sub(swapAndAddData.addData.amount0Max).add(refund0)
       );
       expect(balance1After).to.equal(balance1Before);
       expect(balanceEthAfter).to.equal(
         balanceEthBefore
-          .sub(addAndSwapData.addData.amount1Max)
+          .sub(swapAndAddData.addData.amount1Max)
           .sub(ethSpentForGas)
           .add(refund1)
       );
