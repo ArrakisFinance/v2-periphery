@@ -23,10 +23,10 @@ import {
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {
     IArrakisV2
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
     IArrakisV2Resolver
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
 
 import {
     AddLiquidityData,
@@ -90,8 +90,8 @@ contract ArrakisV2GenericRouter is
             );
         }
 
-        (uint256 amount0In, uint256 amount1In, uint256 _mintAmount) =
-            resolver.getMintAmounts(
+        (uint256 amount0In, uint256 amount1In, uint256 _mintAmount) = resolver
+            .getMintAmounts(
                 IArrakisV2(addData_.vault),
                 addData_.amount0Max,
                 addData_.amount1Max
@@ -135,15 +135,14 @@ contract ArrakisV2GenericRouter is
             );
         }
 
-        MintData memory _mintData =
-            MintData(
-                addData_.vault,
-                amount0In,
-                amount1In,
-                _mintAmount,
-                addData_.receiver,
-                addData_.gaugeAddress
-            );
+        MintData memory _mintData = MintData(
+            addData_.vault,
+            amount0In,
+            amount1In,
+            _mintAmount,
+            addData_.receiver,
+            addData_.gaugeAddress
+        );
 
         (amount0, amount1, mintAmount) = router.addLiquidity(_mintData);
 
@@ -249,10 +248,10 @@ contract ArrakisV2GenericRouter is
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
                 .safeTransferFrom(
-                msg.sender,
-                address(router),
-                swapAndAddData_.addData.amount0Max
-            );
+                    msg.sender,
+                    address(router),
+                    swapAndAddData_.addData.amount0Max
+                );
         }
         if (
             swapAndAddData_.addData.amount1Max > 0 &&
@@ -260,10 +259,10 @@ contract ArrakisV2GenericRouter is
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
                 .safeTransferFrom(
-                msg.sender,
-                address(router),
-                swapAndAddData_.addData.amount1Max
-            );
+                    msg.sender,
+                    address(router),
+                    swapAndAddData_.addData.amount1Max
+                );
         }
 
         (amount0, amount1, mintAmount, amount0Diff, amount1Diff) = router

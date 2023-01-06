@@ -16,9 +16,6 @@ import {
   OneInchDataType,
 } from "./oneInchApiIntegration";
 import { BigNumber, ContractTransaction, Contract, Signer } from "ethers";
-import ArrakisV2 from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2.json";
-import ArrakisV2Factory from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Factory.json";
-import ArrakisV2Resolver from "@arrakisfi/vault-v2-core/deployments/polygon/ArrakisV2Resolver.json";
 import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
 import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 
@@ -602,10 +599,11 @@ export const deployArrakisV2 = async (
   managerAddress: string
 ): Promise<[Contract]> => {
   const signerAddress = await signer.getAddress();
+
   // getting vault factory
-  const vaultV2Factory = new ethers.Contract(
+  const vaultV2Factory = await ethers.getContractAt(
+    "IArrakisV2Factory",
     addresses.ArrakisV2Factory,
-    ArrakisV2Factory.abi,
     signer
   );
 
@@ -622,7 +620,6 @@ export const deployArrakisV2 = async (
     token1Address,
     fee
   );
-  console.log("poolAddress: ", poolAddress);
 
   // getting uniswap pool
   const uniswapV3Pool = new ethers.Contract(
@@ -636,7 +633,7 @@ export const deployArrakisV2 = async (
   const tickSpacing = await uniswapV3Pool.tickSpacing();
   const lowerTick = slot0.tick - (slot0.tick % tickSpacing) - tickSpacing;
   const upperTick = slot0.tick - (slot0.tick % tickSpacing) + 2 * tickSpacing;
-  console.log("slot0: ", slot0);
+
   // get initial amounts
   const res = await resolver.getAmountsForLiquidity(
     slot0.tick,
@@ -644,7 +641,7 @@ export const deployArrakisV2 = async (
     upperTick,
     ethers.utils.parseUnits("1", 18)
   );
-  console.log("res: ", res);
+
   // deploying vault
   const tx = await vaultV2Factory.deployVault(
     {
@@ -660,17 +657,16 @@ export const deployArrakisV2 = async (
     },
     true
   );
-  console.log("vault deployed..");
+
   const rc = await tx.wait();
   const event = rc?.events?.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (event: any) => event.event === "VaultCreated"
   );
-  // eslint-disable-next-line no-unsafe-optional-chaining
   const result = event?.args;
-  console.log("result: ", result);
-  console.log("vaultAddress: ", result?.vault);
+
   // getting vault
-  const vault = new ethers.Contract(result?.vault, ArrakisV2.abi, signer);
+  const vault = await ethers.getContractAt("IArrakisV2", result?.vault, signer);
 
   return [vault];
 };
@@ -733,9 +729,14 @@ export const createGauge = async (
 export const getArrakisResolver = async (
   signer: SignerWithAddress
 ): Promise<Contract> => {
-  const resolver = new ethers.Contract(
+  // const resolver = new ethers.Contract(
+  //   addresses.ArrakisV2Resolver,
+  //   ArrakisV2Resolver.abi,
+  //   signer
+  // );
+  const resolver = await ethers.getContractAt(
+    "IArrakisV2Resolver",
     addresses.ArrakisV2Resolver,
-    ArrakisV2Resolver.abi,
     signer
   );
   return resolver;

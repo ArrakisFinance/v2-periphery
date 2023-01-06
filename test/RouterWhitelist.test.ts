@@ -24,6 +24,8 @@ describe("Router whitelist", function () {
   let wallet: SignerWithAddress;
   let walletAddress: string;
 
+  let owner: SignerWithAddress;
+
   let token0: ERC20;
   let token1: ERC20;
 
@@ -38,14 +40,15 @@ describe("Router whitelist", function () {
     await deployments.fixture();
 
     addresses = getAddresses(network.name);
-    [wallet, ,] = await ethers.getSigners();
+
+    [wallet, , owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
-    [, routerExecutor, genericRouter] = await getPeripheryContracts(wallet);
+    [, routerExecutor, genericRouter] = await getPeripheryContracts(owner);
 
     manager = await getManagerMock();
 
-    resolver = await getArrakisResolver(wallet);
+    resolver = await getArrakisResolver(owner);
 
     [vault] = await deployArrakisV2(
       wallet,
@@ -93,7 +96,7 @@ describe("Router whitelist", function () {
   });
 
   it("#1 : should not revert because router is whitelisted", async function () {
-    await routerExecutor.whitelistRouter(genericRouter.address);
+    await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
 
     const amount0In = ethers.utils.parseEther("10");
     const amount1In = ethers.utils.parseEther("10000");
@@ -118,12 +121,12 @@ describe("Router whitelist", function () {
 
   it("#2: should revert because router is already whitelisted", async function () {
     await expect(
-      routerExecutor.whitelistRouter(genericRouter.address)
+      routerExecutor.connect(owner).whitelistRouter(genericRouter.address)
     ).to.be.revertedWith("RW");
   });
 
   it("#3: should revert because router was removed from whitelist", async function () {
-    await routerExecutor.removeRouter(genericRouter.address);
+    await routerExecutor.connect(owner).removeRouter(genericRouter.address);
 
     const amount0In = ethers.utils.parseEther("10");
     const amount1In = ethers.utils.parseEther("10000");
@@ -149,7 +152,7 @@ describe("Router whitelist", function () {
 
   it("#4: should revert because router is not whitelisted", async function () {
     await expect(
-      routerExecutor.removeRouter(genericRouter.address)
+      routerExecutor.connect(owner).removeRouter(genericRouter.address)
     ).to.be.revertedWith("NW");
   });
 });

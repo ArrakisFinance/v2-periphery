@@ -6,13 +6,13 @@ import {ISwapResolver} from "./interfaces/ISwapResolver.sol";
 
 import {
     IArrakisV2Resolver
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
 import {
     IArrakisV2Helper
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Helper.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Helper.sol";
 import {
     IArrakisV2
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 
 import {
     IERC20Metadata
@@ -49,8 +49,11 @@ contract SwapResolver is ISwapResolver {
         uint256 amount0Left;
         uint256 amount1Left;
         if (amount0In > 0 && amount1In > 0) {
-            (uint256 amount0, uint256 amount1, ) =
-                resolver.getMintAmounts(vault, amount0In, amount1In);
+            (uint256 amount0, uint256 amount1, ) = resolver.getMintAmounts(
+                vault,
+                amount0In,
+                amount1In
+            );
             amount0Left = amount0In - amount0;
             amount1Left = amount1In - amount1;
         } else {
@@ -58,16 +61,25 @@ contract SwapResolver is ISwapResolver {
             amount1Left = amount1In;
         }
 
-        uint256 factor0 =
-            10**(18 - IERC20Metadata(address(vault.token0())).decimals());
-        uint256 factor1 =
-            10**(18 - IERC20Metadata(address(vault.token1())).decimals());
-        uint256 weightX18 =
-            FullMath.mulDiv(gross0 * factor0, 1 ether, gross1 * factor1);
-        uint256 proportionX18 =
-            FullMath.mulDiv(weightX18, price18Decimals, 1 ether);
-        uint256 factorX18 =
-            FullMath.mulDiv(proportionX18, 1 ether, proportionX18 + 1 ether);
+        uint256 factor0 = 10 **
+            (18 - IERC20Metadata(address(vault.token0())).decimals());
+        uint256 factor1 = 10 **
+            (18 - IERC20Metadata(address(vault.token1())).decimals());
+        uint256 weightX18 = FullMath.mulDiv(
+            gross0 * factor0,
+            1 ether,
+            gross1 * factor1
+        );
+        uint256 proportionX18 = FullMath.mulDiv(
+            weightX18,
+            price18Decimals,
+            1 ether
+        );
+        uint256 factorX18 = FullMath.mulDiv(
+            proportionX18,
+            1 ether,
+            proportionX18 + 1 ether
+        );
 
         if (amount0Left > amount1Left) {
             zeroForOne = true;

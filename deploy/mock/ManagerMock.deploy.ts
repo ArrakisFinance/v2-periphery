@@ -13,11 +13,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
-  const { arrakisDaoOwner } = await getNamedAccounts();
+  const { owner } = await getNamedAccounts();
   const { deploy } = deployments;
 
   await deploy("ManagerMock", {
-    from: arrakisDaoOwner,
+    from: owner,
     log: hre.network.name !== "hardhat",
     gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });

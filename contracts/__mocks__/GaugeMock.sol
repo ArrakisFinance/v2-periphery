@@ -36,12 +36,13 @@ contract GaugeMock is ERC20 {
     // solhint-disable-next-line func-name-mixedcase
     function claim_rewards(address account_) external {
         for (uint256 i = 0; i < tokenRewards.length; i++) {
-            uint256 rewardTokenBalance =
-                IERC20(tokenRewards[0]).balanceOf(address(this));
+            uint256 rewardTokenBalance = IERC20(tokenRewards[0]).balanceOf(
+                address(this)
+            );
 
             if (rewardTokenBalance != 0) {
-                uint256 reward =
-                    (rewardTokenBalance * balanceOf(account_)) / totalSupply();
+                uint256 reward = (rewardTokenBalance * balanceOf(account_)) /
+                    totalSupply();
 
                 if (reward > 0) {
                     IERC20(tokenRewards[0]).transfer(account_, reward);
@@ -51,8 +52,9 @@ contract GaugeMock is ERC20 {
     }
 
     function withdraw(uint256 burnAmount_) external {
-        uint256 stakingTokenBalance =
-            IERC20(stakingToken).balanceOf(address(this));
+        uint256 stakingTokenBalance = IERC20(stakingToken).balanceOf(
+            address(this)
+        );
 
         require(burnAmount_ <= balanceOf(msg.sender));
 

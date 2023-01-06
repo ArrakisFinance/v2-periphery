@@ -25,7 +25,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
   let wallet: SignerWithAddress;
   let walletAddress: string;
 
-  // let arrakisDaoOwner: SignerWithAddress;
+  let owner: SignerWithAddress;
 
   let token0: ERC20;
   let token1: ERC20;
@@ -48,14 +48,14 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     await deployments.fixture();
 
     addresses = getAddresses(network.name);
-    [wallet, ,] = await ethers.getSigners();
+    [wallet, , owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
-    [, routerExecutor, genericRouter] = await getPeripheryContracts(wallet);
+    [, routerExecutor, genericRouter] = await getPeripheryContracts(owner);
 
     manager = await getManagerMock();
 
-    resolver = await getArrakisResolver(wallet);
+    resolver = await getArrakisResolver(owner);
 
     [vault] = await deployArrakisV2(
       wallet,
@@ -81,7 +81,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     [gauge, stRakisToken] = await createGauge(vault.address);
 
-    await routerExecutor.whitelistRouter(genericRouter.address);
+    await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
 
     routerExecutorBalanceEth = await wallet.provider?.getBalance(
       routerExecutor.address
@@ -352,7 +352,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   it("#4 : add and remove liquidity using native ETH", async function () {
     const token1Address = await vault.token1();
-    expect(token1Address.toLowerCase()).to.equal(addresses.WETH);
+    expect(token1Address.toLowerCase()).to.equal(addresses.WETH.toLowerCase());
 
     const amount0In = ethers.utils.parseEther("10000");
     const amount1In = ethers.utils.parseEther("10");
@@ -476,7 +476,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   it("#5 : add and remove liquidity using native ETH and staking", async function () {
     const token1Address = await vault.token1();
-    expect(token1Address.toLowerCase()).to.equal(addresses.WETH);
+    expect(token1Address.toLowerCase()).to.equal(addresses.WETH.toLowerCase());
 
     const amount0In = ethers.utils.parseEther("10000");
     const amount1In = ethers.utils.parseEther("10");
@@ -633,7 +633,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   it("#6 : tests adding liquidity using native ETH passing empty msg.value", async function () {
     const token1Address = await vault.token1();
-    expect(token1Address.toLowerCase()).to.equal(addresses.WETH);
+    expect(token1Address.toLowerCase()).to.equal(addresses.WETH.toLowerCase());
 
     const amount0In = ethers.utils.parseEther("10000");
     const amount1In = ethers.utils.parseEther("10");
@@ -663,7 +663,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   it("#7 : tests adding liquidity using native ETH passing double msg.value", async function () {
     const token1Address = await vault.token1();
-    expect(token1Address.toLowerCase()).to.equal(addresses.WETH);
+    expect(token1Address.toLowerCase()).to.equal(addresses.WETH.toLowerCase());
 
     const amount0In = ethers.utils.parseEther("10000");
     const amount1In = ethers.utils.parseEther("10");

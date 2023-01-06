@@ -16,7 +16,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { arrakisDaoOwner } = await getNamedAccounts();
+  const { owner } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
   const arrakisV2GenericRouter = await deployments.get(
@@ -25,7 +25,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   // TODO: update resolver address in params below
   await deploy("ArrakisV2RouterExecutor", {
-    from: arrakisDaoOwner,
+    from: owner,
     args: [
       addresses.WETH,
       arrakisV2GenericRouter.address,

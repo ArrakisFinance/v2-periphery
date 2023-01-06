@@ -16,10 +16,10 @@ import {GelatoBytes} from "./vendor/gelato/GelatoBytes.sol";
 
 import {
     IArrakisV2
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
     IArrakisV2Resolver
-} from "@arrakisfi/vault-v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
 import {
     IERC20,
     SafeERC20
@@ -191,14 +191,12 @@ contract ArrakisV2RouterExecutor is
     {
         (amount0Diff, amount1Diff) = _swap(swapAndAddData_);
 
-        uint256 amount0Use =
-            (swapAndAddData_.swapData.zeroForOne)
-                ? swapAndAddData_.addData.amount0Max - amount0Diff
-                : swapAndAddData_.addData.amount0Max + amount0Diff;
-        uint256 amount1Use =
-            (swapAndAddData_.swapData.zeroForOne)
-                ? swapAndAddData_.addData.amount1Max + amount1Diff
-                : swapAndAddData_.addData.amount1Max - amount1Diff;
+        uint256 amount0Use = (swapAndAddData_.swapData.zeroForOne)
+            ? swapAndAddData_.addData.amount0Max - amount0Diff
+            : swapAndAddData_.addData.amount0Max + amount0Diff;
+        uint256 amount1Use = (swapAndAddData_.swapData.zeroForOne)
+            ? swapAndAddData_.addData.amount1Max + amount1Diff
+            : swapAndAddData_.addData.amount1Max - amount1Diff;
 
         (amount0, amount1, mintAmount) = resolver.getMintAmounts(
             IArrakisV2(swapAndAddData_.addData.vault),
@@ -223,9 +221,9 @@ contract ArrakisV2RouterExecutor is
 
             IERC20(address(swapAndAddData_.addData.vault))
                 .safeIncreaseAllowance(
-                swapAndAddData_.addData.gaugeAddress,
-                mintAmount
-            );
+                    swapAndAddData_.addData.gaugeAddress,
+                    mintAmount
+                );
             IGauge(swapAndAddData_.addData.gaugeAddress).deposit(
                 mintAmount,
                 swapAndAddData_.addData.receiver
@@ -268,9 +266,9 @@ contract ArrakisV2RouterExecutor is
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
                 .safeTransfer(
-                swapAndAddData_.swapData.userToRefund,
-                amount0Use - amount0
-            );
+                    swapAndAddData_.swapData.userToRefund,
+                    amount0Use - amount0
+                );
         }
         if (
             amount1Use > amount1 &&
@@ -279,9 +277,9 @@ contract ArrakisV2RouterExecutor is
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
                 .safeTransfer(
-                swapAndAddData_.swapData.userToRefund,
-                amount1Use - amount1
-            );
+                    swapAndAddData_.swapData.userToRefund,
+                    amount1Use - amount1
+                );
         }
     }
 
@@ -317,8 +315,10 @@ contract ArrakisV2RouterExecutor is
             );
         }
 
-        (uint256 amount0, uint256 amount1) =
-            IArrakisV2(vault_).mint(mintAmount_, receiver_);
+        (uint256 amount0, uint256 amount1) = IArrakisV2(vault_).mint(
+            mintAmount_,
+            receiver_
+        );
 
         require(
             amount0 == amount0In_ && amount1 == amount1In_,
@@ -376,10 +376,10 @@ contract ArrakisV2RouterExecutor is
                 swapAndAddData_.swapData.amountInSwap
             );
         }
-        (bool success, bytes memory returnsData) =
-            swapAndAddData_.swapData.swapRouter.call(
-                swapAndAddData_.swapData.swapPayload
-            );
+        (bool success, bytes memory returnsData) = swapAndAddData_
+            .swapData
+            .swapRouter
+            .call(swapAndAddData_.swapData.swapPayload);
         if (!success) GelatoBytes.revertWithError(returnsData, "swap: ");
 
         // setting allowance to 0
