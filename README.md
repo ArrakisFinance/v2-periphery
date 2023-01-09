@@ -92,7 +92,7 @@ struct SwapData {
 }
 ```
 
-- SwapAndAddData struct contains all data needed for Swap and AddLiquidity 
+- SwapAndAddData struct contains all data needed for Swap and AddLiquidity
 
 ```
 struct SwapAndAddData {

@@ -15,7 +15,7 @@ import {
   getFundsFromFaucet,
   getArrakisResolver,
   getManagerMock,
-} from "../src/testUtils";
+} from "../src/testEnvUtils";
 
 let addresses: Addresses;
 

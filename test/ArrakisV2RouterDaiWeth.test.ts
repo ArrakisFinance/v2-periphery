@@ -5,6 +5,8 @@ import {
   ArrakisV2GenericRouter,
   ERC20,
   ManagerMock,
+  SwapResolver,
+  ArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
@@ -16,7 +18,9 @@ import {
   createGauge,
   getArrakisResolver,
   getManagerMock,
-} from "../src/testUtils";
+  getSwapResolver,
+} from "../src/testEnvUtils";
+import { swapAndAddTest } from "../src/swapAndAddTest";
 
 let addresses: Addresses;
 
@@ -35,10 +39,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
   let resolver: Contract;
   let genericRouter: ArrakisV2GenericRouter;
   let routerExecutor: ArrakisV2RouterExecutor;
-  // let swapResolver: SwapResolver;
+  let swapResolver: SwapResolver;
   let manager: ManagerMock;
 
-  let vault: Contract;
+  let vault: ArrakisV2;
 
   let gauge: Contract;
   let routerExecutorBalanceEth: BigNumber | undefined;
@@ -56,6 +60,8 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     manager = await getManagerMock();
 
     resolver = await getArrakisResolver(owner);
+
+    swapResolver = await getSwapResolver();
 
     [vault] = await deployArrakisV2(
       wallet,
@@ -792,312 +798,456 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     expect(genericRouterBalanceEth).to.equal(genericRouterBalanceEthEnd);
   });
 
-  // it("#8 : should use A,B and swap A for B", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+  /**** Start of swapAndAddLiquidity tests */
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+  /** start of section depositing both tokens, swapping A for B */
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("1"),
-  //     true,
-  //     50,
-  //     false,
-  //     "scenario1"
-  //   );
-  // });
-  // it("#9 : should use A,B and swap A for B and stake", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+  it("#8 : should use A,B and swap A for B", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("1"),
-  //     true,
-  //     50,
-  //     false,
-  //     "scenario2",
-  //     stRakisToken
-  //   );
-  // });
-  // it("#10 : should use A,B and swap A for B using nativeETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      false, // 1
+      "scenario1"
+    );
+  });
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+  it("#9 : should use A,B and swap A for B and stake", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("1"),
-  //     true,
-  //     50,
-  //     true,
-  //     "scenario3"
-  //   );
-  // });
-  // it("#11 : should use A,B and swap A for B and stake using nativeETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      false,
+      "scenario1",
+      stRakisToken
+    );
+  });
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("1"),
-  //     true,
-  //     50,
-  //     true,
-  //     "scenario4",
-  //     stRakisToken
-  //   );
-  // });
+  it("#10 : should use A,B and swap A for B using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  // it("12 : should use only A and swap A for B", async function () {
-  //   // single side
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      true,
+      "scenario1"
+    );
+  });
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("0"),
-  //     true,
-  //     50,
-  //     false,
-  //     "scenario5"
-  //   );
-  // });
-  // it("13 : should use only A and swap A for B and stake", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+  it("#11 : should use A,B and swap A for B and stake using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("0"),
-  //     true,
-  //     50,
-  //     false,
-  //     "scenario5",
-  //     stRakisToken
-  //   );
-  // });
-  // it("14 : should use only A and swap A for B using native ETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      true,
+      "scenario1",
+      stRakisToken
+    );
+  });
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+  it("#12 : should use A and B and revert with empty msg.value", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("0"),
-  //     true,
-  //     50,
-  //     true,
-  //     "scenario5"
-  //   );
-  // });
-  // it("15 : should use only A and swap A for B and stake using nativeETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      true,
+      "scenario1",
+      stRakisToken,
+      ethers.BigNumber.from("0")
+    );
+  });
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("0"),
-  //     true,
-  //     50,
-  //     true,
-  //     "scenario5",
-  //     stRakisToken
-  //   );
-  // });
+  it("#13 : should use A and B and incorrect msg.value", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  // it("16 : should use only A and swap A for B with different msg.value and nativeETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("2"),
+      true,
+      50,
+      true,
+      "scenario1",
+      stRakisToken,
+      ethers.BigNumber.from("1")
+    );
+  });
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("0"),
-  //     true,
-  //     50,
-  //     true,
-  //     "scenario5",
-  //     stRakisToken,
-  //     ethers.BigNumber.from("100000")
-  //   );
-  // });
-  // it("17 : should use A and B and revert with empty msg.value", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+  /** end of section depositing both tokens, swapping A for B */
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+  /** start of section depositing both tokens, swapping B for A */
 
-  //     ethers.BigNumber.from("10000"),
-  //     ethers.BigNumber.from("1"),
-  //     true,
-  //     50,
-  //     false,
-  //     "scenario6",
-  //     stRakisToken,
-  //     ethers.BigNumber.from("0")
-  //   );
-  // });
+  it("#14 : should use A,B and swap B for A", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  // it("18 : should use only B and swap B for A", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("10"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      false, // 2
+      "scenario2"
+    );
+  });
 
-  //     ethers.BigNumber.from("0"),
-  //     ethers.BigNumber.from("10"),
-  //     false,
-  //     50,
-  //     false,
-  //     "scenario7"
-  //   );
-  // });
-  // it("#19 : should use only B and swap B for A and stake", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+  it("#15 : should use A,B and swap B for A and stake", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     ethers.BigNumber.from("0"),
-  //     ethers.BigNumber.from("10"),
-  //     false,
-  //     50,
-  //     false,
-  //     "scenario7",
-  //     stRakisToken
-  //   );
-  // });
-  // it("#20 : should use only B and swap B for A using native ETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      ethers.BigNumber.from("10"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      false,
+      "scenario2",
+      stRakisToken
+    );
+  });
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+  it("#16 : should use A,B and swap B for A using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
 
-  //     ethers.BigNumber.from("0"),
-  //     ethers.BigNumber.from("10"),
-  //     false,
-  //     50,
-  //     true,
-  //     "scenario7"
-  //   );
-  // });
-  // it("#21 : should use only B and swap B for A and stake using nativeETH", async function () {
-  //   await swapAndAddTest(
-  //     wallet,
-  //     routerExecutor,
-  //     genericRouter,
-  //     swapResolver,
-  //     resolver,
+      vault,
+      token0,
+      token1,
+      rakisToken,
 
-  //     vault,
-  //     token0,
-  //     token1,
-  //     rakisToken,
+      ethers.BigNumber.from("10"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      true,
+      "scenario2"
+    );
+  });
 
-  //     ethers.BigNumber.from("0"),
-  //     ethers.BigNumber.from("10"),
-  //     false,
-  //     50,
-  //     true,
-  //     "scenario7",
-  //     stRakisToken
-  //   );
-  // });
+  it("#17 : should use A,B and swap B for A and stake using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("10"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      true,
+      "scenario2",
+      stRakisToken
+    );
+  });
+
+  /** end of section depositing both tokens, swapping B for A */
+
+  /** start of section depositing only A, swapping A for B */
+
+  it("#18 : should use only A and swap A for B", async function () {
+    // single side
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("0"),
+      true,
+      50,
+      false,
+      "scenario3"
+    );
+  });
+
+  it("#19 : should use only A and swap A for B and stake", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("0"),
+      true,
+      50,
+      false,
+      "scenario3",
+      stRakisToken
+    );
+  });
+
+  it("#20 : should use only A and swap A for B using native ETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("0"),
+      true,
+      50,
+      true,
+      "scenario3"
+    );
+  });
+
+  it("#21 : should use only A and swap A for B and stake using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("0"),
+      true,
+      50,
+      true,
+      "scenario3",
+      stRakisToken
+    );
+  });
+
+  it("#22 : should use only A and swap A for B with different msg.value and nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("100000"),
+      ethers.BigNumber.from("0"),
+      true,
+      50,
+      true,
+      "scenario3",
+      stRakisToken,
+      ethers.BigNumber.from("100000")
+    );
+  });
+
+  /** end of section depositing only A, swapping A for B */
+
+  /** start of section depositing only B, swapping B for A */
+
+  it("#23 : should use only B and swap B for A", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("0"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      false,
+      "scenario4"
+    );
+  });
+
+  it("#24 : should use only B and swap B for A and stake", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("0"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      false,
+      "scenario4",
+      stRakisToken
+    );
+  });
+
+  it("#25 : should use only B and swap B for A using native ETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("0"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      true,
+      "scenario4"
+    );
+  });
+
+  it("#26 : should use only B and swap B for A and stake using nativeETH", async function () {
+    await swapAndAddTest(
+      wallet,
+      genericRouter,
+      routerExecutor,
+      swapResolver,
+      resolver,
+
+      vault,
+      token0,
+      token1,
+      rakisToken,
+
+      ethers.BigNumber.from("0"),
+      ethers.BigNumber.from("5"),
+      false,
+      50,
+      true,
+      "scenario4",
+      stRakisToken
+    );
+  });
+
+  /** end of section depositing only B, swapping B for A */
+
+  /**** end of swapAndAddLiquidity tests */
 });
