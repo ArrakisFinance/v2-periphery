@@ -8,6 +8,7 @@ import "@typechain/hardhat";
 import "hardhat-deploy";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
+import "hardhat-dependency-compiler";
 
 // Process Env Variables
 import * as dotenv from "dotenv";
@@ -102,6 +103,13 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
+  },
+
+  dependencyCompiler: {
+    paths: [
+      "@arrakisfi/v2-core/contracts/ArrakisV2.sol",
+      "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol",
+    ],
   },
 };
 
