@@ -25,15 +25,12 @@ import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {
-    EnumerableSet
-} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-// @notice External functions of this contract can only be called by ArrakisV2GenericRouter
+// @notice External functions of this contract can only be called by ArrakisV2Router
 // @notice do not give approvals to this contract's address
 contract ArrakisV2RouterExecutor is
     IArrakisV2RouterExecutor,
@@ -42,12 +39,10 @@ contract ArrakisV2RouterExecutor is
 {
     using Address for address payable;
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     IWETH public immutable weth;
-    address public immutable genericRouterAddress;
+    address public immutable wrapperAddress;
     IArrakisV2Resolver public immutable resolver;
-    EnumerableSet.AddressSet internal _routersWhitelist;
 
     event Swapped(
         bool zeroForOne,
@@ -56,18 +51,18 @@ contract ArrakisV2RouterExecutor is
         uint256 amountOutSwap
     );
 
-    modifier onlyWhitelistedRouters() {
-        require(_routersWhitelist.contains(msg.sender), "W");
+    modifier onlyWrapper() {
+        require(msg.sender == wrapperAddress, "R");
         _;
     }
 
     constructor(
         IWETH _weth,
-        address _genericRouterAddress,
+        address _wrapperAddress,
         IArrakisV2Resolver _resolver
     ) {
         weth = _weth;
-        genericRouterAddress = _genericRouterAddress;
+        wrapperAddress = _wrapperAddress;
         resolver = _resolver;
     }
 
@@ -84,7 +79,7 @@ contract ArrakisV2RouterExecutor is
         external
         payable
         override
-        onlyWhitelistedRouters
+        onlyWrapper
         nonReentrant
         returns (
             uint256 amount0,
@@ -132,19 +127,17 @@ contract ArrakisV2RouterExecutor is
     function removeLiquidity(RemoveLiquidityData memory removeData_)
         external
         override
-        onlyWhitelistedRouters
+        onlyWrapper
         nonReentrant
         returns (uint256 amount0, uint256 amount1)
     {
         if (removeData_.receiveETH) {
             (amount0, amount1) = IArrakisV2(removeData_.vault).burn(
-                removeData_.burns,
                 removeData_.burnAmount,
                 address(this)
             );
         } else {
             (amount0, amount1) = IArrakisV2(removeData_.vault).burn(
-                removeData_.burns,
                 removeData_.burnAmount,
                 removeData_.receiver
             );
@@ -179,7 +172,7 @@ contract ArrakisV2RouterExecutor is
         external
         payable
         override
-        onlyWhitelistedRouters
+        onlyWrapper
         nonReentrant
         returns (
             uint256 amount0,
@@ -281,18 +274,6 @@ contract ArrakisV2RouterExecutor is
                     amount1Use - amount1
                 );
         }
-    }
-
-    function whitelistRouter(address router_) external onlyOwner {
-        require(!_routersWhitelist.contains(router_), "RW");
-        _routersWhitelist.add(router_);
-        emit WhitelistRouter(router_);
-    }
-
-    function removeRouter(address router_) external onlyOwner {
-        require(_routersWhitelist.contains(router_), "RNW");
-        _routersWhitelist.remove(router_);
-        emit RemoveRouter(router_);
     }
 
     function _deposit(

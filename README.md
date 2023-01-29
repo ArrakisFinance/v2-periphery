@@ -2,7 +2,7 @@
 
 ## Generic Router & Router Executor
 
-**ArrakisV2GenericRouter** (aka generic contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to ArrakisV2RouterExecutor.
+**ArrakisV2Router** (aka generic contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to ArrakisV2RouterExecutor.
 
 **ArrakisV2RouterExecutor** (aka executor contract) is responsible for executing swap payloads (prepared off-chain) and interacting with vaults (ArrakisV2Vault).
 
@@ -33,7 +33,7 @@ struct AddLiquidityData {
 }
 ```
 
-- MintData is created by `ArrakisV2GenericRouter.addLiquidity` and passed as parameter to `ArrakisV2RouterExecutor.addLiquidity`.
+- MintData is created by `ArrakisV2Router.addLiquidity` and passed as parameter to `ArrakisV2RouterExecutor.addLiquidity`.
 
 ```
 struct MintData {
@@ -101,7 +101,7 @@ struct SwapAndAddData {
 }
 ```
 
-## ArrakisV2GenericRouter
+## ArrakisV2Router
 
 ### addLiquidity
 
@@ -160,7 +160,7 @@ function swapAndAddLiquidity(
 
 ### ArrakisV2RouterExecutor
 
-**Important:** Functions below can only be called by ArrakisV2GenericRouter.
+**Important:** Functions below can only be called by ArrakisV2Router.
 
 ## addLiquidity
 

@@ -86,15 +86,9 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.4",
-        settings: {
-          optimizer: { enabled: true, runs: 10 },
-        },
-      },
-      {
         version: "0.8.13",
         settings: {
-          optimizer: { enabled: true, runs: 10 },
+          optimizer: { enabled: true, runs: 999999 },
         },
       },
     ],
@@ -106,10 +100,7 @@ const config: HardhatUserConfig = {
   },
 
   dependencyCompiler: {
-    paths: [
-      "@arrakisfi/v2-core/contracts/ArrakisV2.sol",
-      "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol",
-    ],
+    paths: ["@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol"],
   },
 };
 

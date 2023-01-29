@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.13;
 
-import {
-    IArrakisV2GenericRouter
-} from "./interfaces/IArrakisV2GenericRouter.sol";
+import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 import {
     IArrakisV2RouterExecutor
@@ -35,8 +33,8 @@ import {
     SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
 
-contract ArrakisV2GenericRouter is
-    IArrakisV2GenericRouter,
+contract ArrakisV2Router is
+    IArrakisV2Router,
     Pausable,
     Ownable,
     ReentrancyGuard

@@ -3,10 +3,6 @@
 pragma solidity 0.8.13;
 
 import {
-    BurnLiquidity
-} from "@arrakisfi/v2-core/contracts/structs/SArrakisV2.sol";
-
-import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {IGauge} from "../interfaces/IGauge.sol";
@@ -48,8 +44,6 @@ struct MintData {
 struct RemoveLiquidityData {
     // address of ArrakisV2 vault
     address vault;
-    // array of BurnLiquidity
-    BurnLiquidity[] burns;
     // amount of LP tokens to burn
     uint256 burnAmount;
     // minimum amount of token0 to receive

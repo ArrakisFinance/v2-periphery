@@ -1,11 +1,11 @@
 import { ethers, network, deployments } from "hardhat";
 import {
   ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2Router,
   SwapResolver,
   ERC20,
   ManagerMock,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
@@ -17,7 +17,7 @@ const addresses: Addresses = getAddresses(network.name);
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[SwapResolver, ArrakisV2RouterExecutor, ArrakisV2GenericRouter]> => {
+): Promise<[SwapResolver, ArrakisV2RouterExecutor, ArrakisV2Router]> => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("SwapResolver")).address;
   const swapResolver = (await ethers.getContractAt(
@@ -35,12 +35,12 @@ export const getPeripheryContracts = async (
   )) as ArrakisV2RouterExecutor;
 
   // getting generic router contract
-  const genericRouterAddress = (await deployments.get("ArrakisV2GenericRouter"))
+  const genericRouterAddress = (await deployments.get("ArrakisV2Router"))
     .address;
   const genericRouter = (await ethers.getContractAt(
-    "ArrakisV2GenericRouter",
+    "ArrakisV2Router",
     genericRouterAddress
-  )) as ArrakisV2GenericRouter;
+  )) as ArrakisV2Router;
 
   // updating genericRouter's executor
   await genericRouter
@@ -86,7 +86,7 @@ export const deployArrakisV2 = async (
   fee: number,
   resolver: Contract,
   managerAddress: string
-): Promise<[ArrakisV2]> => {
+): Promise<[IArrakisV2]> => {
   const signerAddress = await signer.getAddress();
 
   // getting vault factory
@@ -142,7 +142,6 @@ export const deployArrakisV2 = async (
       init1: res.amount1,
       manager: managerAddress,
       routers: [addresses.SwapRouter],
-      burnBuffer: 1000,
     },
     true
   );
@@ -156,10 +155,10 @@ export const deployArrakisV2 = async (
 
   // getting vault
   const vault = (await ethers.getContractAt(
-    "ArrakisV2",
+    "IArrakisV2",
     result?.vault,
     signer
-  )) as ArrakisV2;
+  )) as IArrakisV2;
 
   return [vault];
 };

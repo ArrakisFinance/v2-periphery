@@ -10,7 +10,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV2GenericRouter to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2Router to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -19,11 +19,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { owner } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  await deploy("ArrakisV2GenericRouter", {
+  await deploy("ArrakisV2Router", {
     from: owner,
     args: [addresses.WETH, addresses.ArrakisV2Resolver],
     log: hre.network.name !== "hardhat",
-    // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });
 };
 
@@ -36,6 +35,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
   return shouldSkip;
 };
 
-func.tags = ["ArrakisV2GenericRouter"];
+func.tags = ["ArrakisV2Router"];
 
 export default func;

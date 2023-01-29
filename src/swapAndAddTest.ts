@@ -2,10 +2,10 @@ import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import {
   ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2Router,
   SwapResolver,
   ERC20,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
@@ -22,13 +22,13 @@ const addresses: Addresses = getAddresses(network.name);
 export const swapAndAddTest = async (
   signer: SignerWithAddress,
 
-  genericRouter: ArrakisV2GenericRouter,
+  genericRouter: ArrakisV2Router,
   routerExecutor: ArrakisV2RouterExecutor,
   swapResolver: SwapResolver,
 
   resolver: Contract,
 
-  vault: ArrakisV2,
+  vault: IArrakisV2,
   token0: ERC20,
   token1: ERC20,
   rakisToken: ERC20,

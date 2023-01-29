@@ -14,7 +14,7 @@ import {
     SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
-interface IArrakisV2GenericRouter {
+interface IArrakisV2Router {
     function addLiquidity(AddLiquidityData memory _addData)
         external
         payable

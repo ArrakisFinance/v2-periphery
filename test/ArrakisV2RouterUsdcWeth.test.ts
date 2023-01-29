@@ -2,11 +2,11 @@ import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
   ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2Router,
   ERC20,
   ManagerMock,
   SwapResolver,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
@@ -38,12 +38,12 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
 
   let resolver: Contract;
   let routerExecutor: ArrakisV2RouterExecutor;
-  let genericRouter: ArrakisV2GenericRouter;
+  let genericRouter: ArrakisV2Router;
   let swapResolver: SwapResolver;
 
   let manager: ManagerMock;
 
-  let vault: ArrakisV2;
+  let vault: IArrakisV2;
 
   let gauge: Contract;
   let routerExecutorBalanceEth: BigNumber | undefined;
@@ -89,7 +89,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
 
     [gauge, stRakisToken] = await createGauge(vault.address);
 
-    await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
+    // await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
 
     routerExecutorBalanceEth = await wallet.provider?.getBalance(
       routerExecutor.address
@@ -270,7 +270,6 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
 
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before.div(2),
       amount0Min: 0,
@@ -300,7 +299,6 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
     await stRakisToken.approve(genericRouter.address, balanceStakedBefore);
 
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceStakedBefore,
       amount0Min: 0,
@@ -396,7 +394,6 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
 
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before,
       amount0Min: 0,
@@ -545,7 +542,6 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
     await stRakisToken.approve(genericRouter.address, balanceStakedBefore);
 
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceStakedBefore,
       amount0Min: 0,
@@ -723,7 +719,6 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
 
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before,
       amount0Min: 0,
