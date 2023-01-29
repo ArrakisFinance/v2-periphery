@@ -5,9 +5,6 @@ export interface Addresses {
   ArrakisV2Resolver: string;
   ArrakisV2Helper: string;
   ArrakisV2Factory: string;
-  ArrakisDevAdmin: string;
-  ArrakisDevOwner: string;
-  ArrakisFeeTreasury: string;
   OneInchRouter: string;
   SwapRouter: string;
   DAI: string;
@@ -27,9 +24,6 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Helper: "",
         ArrakisV2Factory: "",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -46,9 +40,6 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Helper: "",
         ArrakisV2Factory: "",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -65,9 +56,6 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Helper: "",
         ArrakisV2Factory: "",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
         OneInchRouter: "",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
@@ -84,12 +72,25 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Helper: "",
         ArrakisV2Factory: "",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "",
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "0x4200000000000000000000000000000000000006",
+        DAI: "",
+        USDC: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
+      };
+    case "arbitrum":
+      return {
+        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+        ArrakisV2: "",
+        ArrakisV2Resolver: "",
+        ArrakisV2Helper: "",
+        ArrakisV2Factory: "",
+        OneInchRouter: "",
+        SwapRouter: "",
+        WETH: "",
         DAI: "",
         USDC: "",
         faucetDai: "",
@@ -103,9 +104,6 @@ export const getAddresses = (network: string): Addresses => {
         ArrakisV2Resolver: "",
         ArrakisV2Helper: "",
         ArrakisV2Factory: "",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",

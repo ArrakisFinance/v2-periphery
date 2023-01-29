@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
+  ArrakisV2SwapExecutor,
   ArrakisV2Router,
   ERC20,
   ManagerMock,
@@ -38,7 +38,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   let resolver: Contract;
   let genericRouter: ArrakisV2Router;
-  let routerExecutor: ArrakisV2RouterExecutor;
+  let routerExecutor: ArrakisV2SwapExecutor;
   let swapResolver: SwapResolver;
   let manager: ManagerMock;
 
@@ -114,6 +114,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
       gaugeAddress: ethers.constants.AddressZero,
@@ -184,6 +185,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
       gaugeAddress: gauge.address,
@@ -374,6 +376,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: "0x0000000000000000000000000000000000000000",
@@ -497,6 +500,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: gauge.address,
@@ -650,6 +654,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: "0x0000000000000000000000000000000000000000",
@@ -686,6 +691,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: "0x0000000000000000000000000000000000000000",

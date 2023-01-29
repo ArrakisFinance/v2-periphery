@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.13;
 
@@ -6,7 +6,7 @@ import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 
-import {IArrakisV2RouterExecutor} from "./IArrakisV2RouterExecutor.sol";
+import {IArrakisV2SwapExecutor} from "./IArrakisV2SwapExecutor.sol";
 
 import {
     AddLiquidityData,
@@ -21,7 +21,7 @@ interface IArrakisV2Router {
         returns (
             uint256 amount0,
             uint256 amount1,
-            uint256 mintAmount
+            uint256 sharesReceived
         );
 
     function removeLiquidity(RemoveLiquidityData memory _removeData)
@@ -34,10 +34,12 @@ interface IArrakisV2Router {
         returns (
             uint256 amount0,
             uint256 amount1,
-            uint256 mintAmount,
+            uint256 sharesReceived,
             uint256 amount0Diff,
             uint256 amount1Diff
         );
 
-    function updateRouterExecutor(IArrakisV2RouterExecutor router_) external;
+    function updateSwapExecutor(IArrakisV2SwapExecutor router_) external;
+
+    function updateFeeCollector(address feeCollector_) external;
 }

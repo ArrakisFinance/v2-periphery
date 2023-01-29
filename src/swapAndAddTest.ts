@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
+  ArrakisV2SwapExecutor,
   ArrakisV2Router,
   SwapResolver,
   ERC20,
@@ -23,7 +23,7 @@ export const swapAndAddTest = async (
   signer: SignerWithAddress,
 
   genericRouter: ArrakisV2Router,
-  routerExecutor: ArrakisV2RouterExecutor,
+  routerExecutor: ArrakisV2SwapExecutor,
   swapResolver: SwapResolver,
 
   resolver: Contract,
@@ -219,6 +219,7 @@ export const swapAndAddTest = async (
     amount1Max: amount1Max,
     amount0Min: 0,
     amount1Min: 0,
+    amountSharesMin: 0,
     receiver: signerAddress,
     useETH: useETH,
     gaugeAddress: stRakisToken

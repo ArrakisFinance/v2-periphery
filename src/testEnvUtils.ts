@@ -1,6 +1,6 @@
 import { ethers, network, deployments } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
+  ArrakisV2SwapExecutor,
   ArrakisV2Router,
   SwapResolver,
   ERC20,
@@ -17,7 +17,7 @@ const addresses: Addresses = getAddresses(network.name);
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[SwapResolver, ArrakisV2RouterExecutor, ArrakisV2Router]> => {
+): Promise<[SwapResolver, ArrakisV2SwapExecutor, ArrakisV2Router]> => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("SwapResolver")).address;
   const swapResolver = (await ethers.getContractAt(
@@ -26,28 +26,24 @@ export const getPeripheryContracts = async (
   )) as SwapResolver;
 
   // getting router executor contract
-  const routerExecutorAddress = (
-    await deployments.get("ArrakisV2RouterExecutor")
-  ).address;
-  const routerExecutor = (await ethers.getContractAt(
-    "ArrakisV2RouterExecutor",
-    routerExecutorAddress
-  )) as ArrakisV2RouterExecutor;
+  const swapExecutorAddress = (await deployments.get("ArrakisV2SwapExecutor"))
+    .address;
+  const swapExecutor = (await ethers.getContractAt(
+    "ArrakisV2SwapExecutor",
+    swapExecutorAddress
+  )) as ArrakisV2SwapExecutor;
 
   // getting generic router contract
-  const genericRouterAddress = (await deployments.get("ArrakisV2Router"))
-    .address;
-  const genericRouter = (await ethers.getContractAt(
+  const routerAddress = (await deployments.get("ArrakisV2Router")).address;
+  const router = (await ethers.getContractAt(
     "ArrakisV2Router",
-    genericRouterAddress
+    routerAddress
   )) as ArrakisV2Router;
 
-  // updating genericRouter's executor
-  await genericRouter
-    .connect(owner)
-    .updateRouterExecutor(routerExecutor.address);
+  // updating router's swap executor
+  await router.connect(owner).updateSwapExecutor(swapExecutor.address);
 
-  return [swapResolver, routerExecutor, genericRouter];
+  return [swapResolver, swapExecutor, router];
 };
 
 export const getManagerMock = async (): Promise<ManagerMock> => {

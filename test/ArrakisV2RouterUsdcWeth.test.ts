@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
+  ArrakisV2SwapExecutor,
   ArrakisV2Router,
   ERC20,
   ManagerMock,
@@ -24,7 +24,7 @@ import { swapAndAddTest } from "../src/swapAndAddTest";
 
 let addresses: Addresses;
 
-describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
+describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
   this.timeout(0);
   let wallet: SignerWithAddress;
   let walletAddress: string;
@@ -37,7 +37,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
   let stRakisToken: ERC20;
 
   let resolver: Contract;
-  let routerExecutor: ArrakisV2RouterExecutor;
+  let routerExecutor: ArrakisV2SwapExecutor;
   let genericRouter: ArrakisV2Router;
   let swapResolver: SwapResolver;
 
@@ -121,6 +121,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
       gaugeAddress: ethers.constants.AddressZero,
@@ -195,6 +196,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
       gaugeAddress: gauge.address,
@@ -340,6 +342,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: ethers.constants.AddressZero,
@@ -465,6 +468,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: gauge.address,
@@ -620,6 +624,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: "0x0000000000000000000000000000000000000000",
@@ -658,6 +663,7 @@ describe("ArrakisV2RouterExecutor tests on USDC/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
       gaugeAddress: "0x0000000000000000000000000000000000000000",
