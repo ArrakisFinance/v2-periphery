@@ -1,2 +1,5 @@
 node_modules/
 contracts/vendor
+contracts/__mocks__
+contracts/interfaces
+contracts/structs

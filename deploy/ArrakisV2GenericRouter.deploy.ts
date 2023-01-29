@@ -10,30 +10,20 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon"
   ) {
     console.log(
-      `!! Deploying ArrakisV2Router to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2GenericRouter to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { owner } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  const arrakisV2RouterWrapper = await deployments.get(
-    "ArrakisV2RouterWrapper"
-  );
-  const arrakisV2Resolver = await deployments.get("ArrakisV2Resolver");
-
-  // TODO: update resolver address in params below
-  await deploy("ArrakisV2Router", {
-    from: deployer,
-    args: [
-      addresses.WETH,
-      arrakisV2RouterWrapper.address,
-      arrakisV2Resolver.address,
-    ],
+  await deploy("ArrakisV2GenericRouter", {
+    from: owner,
+    args: [addresses.WETH, addresses.ArrakisV2Resolver],
     log: hre.network.name !== "hardhat",
-    gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
+    // gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });
 };
 
@@ -43,11 +33,9 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "goerli";
-  return shouldSkip ? true : false;
+  return shouldSkip;
 };
 
-func.tags = ["ArrakisV2Router"];
-
-func.dependencies = ["ArrakisV2RouterWrapper", "ArrakisV2Resolver"];
+func.tags = ["ArrakisV2GenericRouter"];
 
 export default func;

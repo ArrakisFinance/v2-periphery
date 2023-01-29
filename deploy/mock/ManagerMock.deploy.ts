@@ -1,40 +1,37 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { sleep } from "../src/utils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
     hre.network.name === "mainnet" ||
-    hre.network.name === "polygon" ||
-    hre.network.name === "optimism"
+    hre.network.name === "optimism" ||
+    hre.network.name === "polygon"
   ) {
     console.log(
-      `Deploying TempProxyAdmin to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2Router to ${hre.network.name}. Hit ctrl + c to abort`
     );
-    await sleep(10000);
+    await new Promise((r) => setTimeout(r, 20000));
   }
-
+  const { owner } = await getNamedAccounts();
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
 
-  await deploy("TempProxyAdmin", {
-    from: deployer,
-    args: [],
+  await deploy("ManagerMock", {
+    from: owner,
+    log: hre.network.name !== "hardhat",
+    gasPrice: hre.ethers.utils.parseUnits("50", "gwei"),
   });
 };
-
-export default func;
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
   const shouldSkip =
     hre.network.name === "mainnet" ||
-    hre.network.name === "goerli" ||
     hre.network.name === "polygon" ||
-    hre.network.name === "optimism";
-
+    hre.network.name === "optimism" ||
+    hre.network.name === "goerli";
   return shouldSkip ? true : false;
 };
 
-func.tags = ["TempProxyAdmin"];
+func.tags = ["ManagerMock"];
+
+export default func;

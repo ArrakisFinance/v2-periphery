@@ -2,16 +2,17 @@
 
 pragma solidity 0.8.13;
 
-import {IArrakisV2} from "./IArrakisV2.sol";
-
 import {
-    AddLiquidityData,
+    MintData,
     RemoveLiquidityData,
-    AddAndSwapData
+    SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
-interface IArrakisV2RouterWrapper {
-    function addLiquidity(AddLiquidityData memory _addData)
+interface IArrakisV2RouterExecutor {
+    event WhitelistRouter(address router);
+    event RemoveRouter(address router);
+
+    function addLiquidity(MintData memory _mintData)
         external
         payable
         returns (
@@ -24,7 +25,7 @@ interface IArrakisV2RouterWrapper {
         external
         returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(AddAndSwapData memory _swapData)
+    function swapAndAddLiquidity(SwapAndAddData memory _swapData)
         external
         payable
         returns (
@@ -34,4 +35,8 @@ interface IArrakisV2RouterWrapper {
             uint256 amount0Diff,
             uint256 amount1Diff
         );
+
+    function whitelistRouter(address router_) external;
+
+    function removeRouter(address router_) external;
 }
