@@ -222,9 +222,7 @@ export const swapAndAddTest = async (
     amountSharesMin: 0,
     receiver: signerAddress,
     useETH: useETH,
-    gaugeAddress: stRakisToken
-      ? stRakisToken.address
-      : ethers.constants.AddressZero,
+    gauge: stRakisToken ? stRakisToken.address : ethers.constants.AddressZero,
   };
   const swapData = {
     amountInSwap: swapAmountIn.toString(),
@@ -232,8 +230,6 @@ export const swapAndAddTest = async (
     zeroForOne: zeroForOne,
     swapRouter: swapParams.to,
     swapPayload: swapParams.data,
-
-    userToRefund: signerAddress,
   };
   const swapAndAddData = {
     addData: addData,

@@ -57,9 +57,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             addData_.amount0Max > 0 || addData_.amount1Max > 0,
             "Empty max amounts"
         );
-        if (addData_.gaugeAddress != address(0)) {
+        if (addData_.gauge != address(0)) {
             require(
-                addData_.vault == IGauge(addData_.gaugeAddress).staking_token(),
+                addData_.vault == IGauge(addData_.gauge).staking_token(),
                 "Incorrect gauge!"
             );
         }
@@ -114,7 +114,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount0,
             amount1,
             sharesReceived,
-            addData_.gaugeAddress,
+            addData_.gauge,
             addData_.receiver
         );
 
@@ -125,47 +125,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 payable(msg.sender).sendValue(msg.value - amount1);
             }
         }
-    }
-
-    /// @notice removeLiquidity removes liquidity from vault and burns LP tokens
-    /// @param removeData_ RemoveLiquidityData struct containing data for withdrawals
-    /// @return amount0 actual amount of token0 transferred to receiver for burning `burnAmount`
-    /// @return amount1 actual amount of token1 transferred to receiver for burning `burnAmount`
-    // solhint-disable-next-line code-complexity, function-max-lines
-    function removeLiquidity(RemoveLiquidityData memory removeData_)
-        external
-        whenNotPaused
-        nonReentrant
-        returns (uint256 amount0, uint256 amount1)
-    {
-        require(removeData_.burnAmount > 0, "nothing to burn");
-        if (removeData_.gaugeAddress != address(0)) {
-            require(
-                removeData_.vault ==
-                    IGauge(removeData_.gaugeAddress).staking_token(),
-                "Incorrect gauge!"
-            );
-            IGauge(removeData_.gaugeAddress).claim_rewards(msg.sender);
-            IERC20(removeData_.gaugeAddress).safeTransferFrom(
-                msg.sender,
-                address(this),
-                removeData_.burnAmount
-            );
-
-            IGauge(removeData_.gaugeAddress).withdraw(removeData_.burnAmount);
-            IERC20(removeData_.vault).safeTransfer(
-                address(this),
-                removeData_.burnAmount
-            );
-        } else {
-            IERC20(removeData_.vault).safeTransferFrom(
-                msg.sender,
-                address(this),
-                removeData_.burnAmount
-            );
-        }
-
-        (amount0, amount1) = _removeLiquidity(removeData_);
     }
 
     /// @notice swapAndAddLiquidity transfer tokens to and calls ArrakisV2Router
@@ -194,11 +153,10 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 swapAndAddData_.addData.amount1Max > 0,
             "Empty max amounts"
         );
-        if (swapAndAddData_.addData.gaugeAddress != address(0)) {
+        if (swapAndAddData_.addData.gauge != address(0)) {
             require(
                 swapAndAddData_.addData.vault ==
-                    IGauge(swapAndAddData_.addData.gaugeAddress)
-                        .staking_token(),
+                    IGauge(swapAndAddData_.addData.gauge).staking_token(),
                 "Incorrect gauge!"
             );
         }
@@ -244,14 +202,54 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         ) = _swapAndAddLiquidity(swapAndAddData_);
     }
 
+    /// @notice removeLiquidity removes liquidity from vault and burns LP tokens
+    /// @param removeData_ RemoveLiquidityData struct containing data for withdrawals
+    /// @return amount0 actual amount of token0 transferred to receiver for burning `burnAmount`
+    /// @return amount1 actual amount of token1 transferred to receiver for burning `burnAmount`
+    // solhint-disable-next-line code-complexity, function-max-lines
+    function removeLiquidity(RemoveLiquidityData memory removeData_)
+        external
+        whenNotPaused
+        nonReentrant
+        returns (uint256 amount0, uint256 amount1)
+    {
+        require(removeData_.burnAmount > 0, "nothing to burn");
+        if (removeData_.gauge != address(0)) {
+            require(
+                removeData_.vault == IGauge(removeData_.gauge).staking_token(),
+                "Incorrect gauge!"
+            );
+            IGauge(removeData_.gauge).claim_rewards(msg.sender);
+            IERC20(removeData_.gauge).safeTransferFrom(
+                msg.sender,
+                address(this),
+                removeData_.burnAmount
+            );
+
+            IGauge(removeData_.gauge).withdraw(removeData_.burnAmount);
+            IERC20(removeData_.vault).safeTransfer(
+                address(this),
+                removeData_.burnAmount
+            );
+        } else {
+            IERC20(removeData_.vault).safeTransferFrom(
+                msg.sender,
+                address(this),
+                removeData_.burnAmount
+            );
+        }
+
+        (amount0, amount1) = _removeLiquidity(removeData_);
+    }
+
     // solhint-disable-next-line function-max-lines
     function _addLiquidity(
-        address vault,
-        uint256 amount0In,
-        uint256 amount1In,
-        uint256 mintAmount,
-        address gaugeAddress,
-        address receiver
+        address vault_,
+        uint256 amount0In_,
+        uint256 amount1In_,
+        uint256 mintAmount_,
+        address gauge_,
+        address receiver_
     )
         internal
         returns (
@@ -260,29 +258,32 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             uint256 sharesReceived
         )
     {
-        (amount0, amount1) = IArrakisV2(vault).mint(mintAmount, address(this));
+        (amount0, amount1) = IArrakisV2(vault_).mint(
+            mintAmount_,
+            address(this)
+        );
 
         require(
-            amount0 == amount0In && amount1 == amount1In,
+            amount0 == amount0In_ && amount1 == amount1In_,
             "unexpected amounts deposited"
         );
 
-        IERC20 token = IERC20(vault);
-        if (gaugeAddress != address(0)) {
-            token.safeIncreaseAllowance(gaugeAddress, mintAmount);
+        IERC20 token = IERC20(vault_);
+        if (gauge_ != address(0)) {
+            token.safeIncreaseAllowance(gauge_, mintAmount_);
 
-            IGauge(gaugeAddress).deposit(mintAmount, address(this));
-            token = IERC20(gaugeAddress);
+            IGauge(gauge_).deposit(mintAmount_, address(this));
+            token = IERC20(gauge_);
         }
 
         uint256 emolument = FullMath.mulDiv(
-            mintAmount,
+            mintAmount_,
             depositFeeBPS,
             hundredPercent
         );
-        sharesReceived = mintAmount - emolument;
+        sharesReceived = mintAmount_ - emolument;
 
-        token.safeTransfer(receiver, mintAmount);
+        token.safeTransfer(receiver_, sharesReceived);
         token.safeTransfer(feeCollector, emolument);
     }
 
@@ -343,7 +344,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount0,
             amount1,
             sharesReceived,
-            swapAndAddData_.addData.gaugeAddress,
+            swapAndAddData_.addData.gauge,
             swapAndAddData_.addData.receiver
         );
 
@@ -354,15 +355,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 address(IArrakisV2(swapAndAddData_.addData.vault).token1())
             );
             if (isToken0Weth && amount0Use > amount0) {
-                _refundETH(
-                    swapAndAddData_.swapData.userToRefund,
-                    amount0Use - amount0
-                );
+                _unwrapRefundETH(msg.sender, amount0Use - amount0);
             } else if (!isToken0Weth && amount1Use > amount1) {
-                _refundETH(
-                    swapAndAddData_.swapData.userToRefund,
-                    amount1Use - amount1
-                );
+                _unwrapRefundETH(msg.sender, amount1Use - amount1);
             }
         }
 
@@ -372,10 +367,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 (swapAndAddData_.addData.useETH && !isToken0Weth))
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
-                .safeTransfer(
-                    swapAndAddData_.swapData.userToRefund,
-                    amount0Use - amount0
-                );
+                .safeTransfer(msg.sender, amount0Use - amount0);
         }
         if (
             amount1Use > amount1 &&
@@ -383,10 +375,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 (swapAndAddData_.addData.useETH && isToken0Weth))
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
-                .safeTransfer(
-                    swapAndAddData_.swapData.userToRefund,
-                    amount1Use - amount1
-                );
+                .safeTransfer(msg.sender, amount1Use - amount1);
         }
     }
 
@@ -448,9 +437,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         weth.deposit{value: wethAmount}();
     }
 
-    function _refundETH(address userToRefund_, uint256 refundAmount_) internal {
+    function _unwrapRefundETH(address refund_, uint256 refundAmount_) internal {
         weth.withdraw(refundAmount_);
-        payable(userToRefund_).sendValue(refundAmount_);
+        payable(refund_).sendValue(refundAmount_);
     }
 
     // solhint-disable-next-line code-complexity

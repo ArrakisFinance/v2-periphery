@@ -25,7 +25,7 @@ struct AddLiquidityData {
     // bool indicating to use native ETH
     bool useETH;
     // address of gauge to stake tokens in
-    address gaugeAddress;
+    address gauge;
 }
 
 struct RemoveLiquidityData {
@@ -42,7 +42,7 @@ struct RemoveLiquidityData {
     // bool indicating if user wants to receive in native ETH
     bool receiveETH;
     // address of gauge to unstake from
-    address gaugeAddress;
+    address gauge;
 }
 
 struct SwapData {
@@ -56,8 +56,6 @@ struct SwapData {
     address swapRouter;
     // payload for swap call
     bytes swapPayload;
-    // address of the user to be refunded
-    address payable userToRefund;
 }
 
 struct SwapAndAddData {

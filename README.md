@@ -31,7 +31,7 @@ struct AddLiquidityData {
     // bool indicating to use native ETH
     bool useETH;
     // address of gauge to stake tokens in
-    address gaugeAddress;
+    address gauge;
 }
 ```
 
@@ -50,7 +50,7 @@ struct MintData {
     // account to receive minted tokens
     address receiver;
     // address of gauge to stake tokens in
-    address gaugeAddress;
+    address gauge;
 }
 ```
 
@@ -71,7 +71,7 @@ struct RemoveLiquidityData {
     // bool indicating if user wants to receive in native ETH
     bool receiveETH;
     // address of gauge to unstake from
-    address gaugeAddress;
+    address gauge;
 }
 ```
 
@@ -89,8 +89,6 @@ struct SwapData {
     address swapRouter;
     // payload for swap call
     bytes swapPayload;
-    // address of the user to be refunded
-    address payable userToRefund;
 }
 ```
 
@@ -121,7 +119,7 @@ function addLiquidity(
 ```
 
 - if AddLiquidityData.useETH is true, this function will wrap ETH into WETH and send non-used ether back to the user.
-- if AddLiquidityData.gaugeAddress is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
+- if AddLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
 
 ## removeLiquidity
 
@@ -137,7 +135,7 @@ function removeLiquidity(
     );
 ```
 
-- if RemoveLiquidityData.gaugeAddress is filled, this function will validate if the gauge's `staking_token()` matches the vault address, claim rewards for the user and unstake.
+- if RemoveLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address, claim rewards for the user and unstake.
 
 ## swapAndAddLiquidity
 
@@ -157,7 +155,7 @@ function swapAndAddLiquidity(
 ```
 
 - if AddLiquidityData.useETH is true, this function will wrap ETH into WETH and send non-used ether back to the user.
-- if AddLiquidityData.gaugeAddress is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
+- if AddLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
 - if the user is depositing 2 tokens and doing a swap => if token0 is being swapped for token1, AddLiquidityData.amount0Max should be the amount of token0 being deposited "normally" plus the amount to be swapped (SwapData.amountInSwap). (same applies for amount1Max on the inverse swap scenario)
 
 ### ArrakisV2SwapExecutor
@@ -179,7 +177,7 @@ function addLiquidity(
     )
 ```
 
-- if AddLiquidityData.gaugeAddress is filled, this function will stake the LP tokens in the gauge after depositing to the vault.
+- if AddLiquidityData.gauge is filled, this function will stake the LP tokens in the gauge after depositing to the vault.
 
 ## removeLiquidity
 
@@ -214,7 +212,7 @@ function swapAndAddLiquidity(
     )
 ```
 
-- if AddLiquidityData.gaugeAddress is filled, this function will stake LP tokens in the gauge after deposit.
+- if AddLiquidityData.gauge is filled, this function will stake LP tokens in the gauge after deposit.
 - if AddLiquidityData.useETH is true, this function will send unused ETH back to the user.
 
 ### Updates for additional security on swaps:

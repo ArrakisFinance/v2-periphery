@@ -124,7 +124,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
-      gaugeAddress: ethers.constants.AddressZero,
+      gauge: ethers.constants.AddressZero,
     };
 
     await genericRouter.addLiquidity(addLiquidityData);
@@ -199,7 +199,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
       rebalance: false,
     };
 
@@ -278,7 +278,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: false,
-      gaugeAddress: ethers.constants.AddressZero,
+      gauge: ethers.constants.AddressZero,
     };
     await genericRouter.removeLiquidity(removeLiquidity);
 
@@ -307,7 +307,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: false,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
     };
     await genericRouter.removeLiquidity(removeLiquidity);
 
@@ -345,7 +345,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: ethers.constants.AddressZero,
+      gauge: ethers.constants.AddressZero,
       rebalance: false,
     };
 
@@ -403,7 +403,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
     };
 
     await genericRouter.removeLiquidity(removeLiquidity);
@@ -471,7 +471,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
       rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
@@ -552,7 +552,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
     };
     await genericRouter.removeLiquidity(removeLiquidity);
 
@@ -627,7 +627,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
       rebalance: false,
     };
 
@@ -666,7 +666,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
       rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
@@ -731,7 +731,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
     };
     await genericRouter.removeLiquidity(removeLiquidity);
 
