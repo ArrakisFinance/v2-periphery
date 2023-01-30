@@ -17,12 +17,20 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   }
 
   const { deploy } = deployments;
-  const { owner } = await getNamedAccounts();
+  const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
   await deploy("ArrakisV2Router", {
-    from: owner,
-    args: [addresses.WETH, addresses.ArrakisV2Resolver, 0, owner],
+    from: deployer,
+    proxy: {
+      proxyContract: "OpenZeppelinTransparentProxy",
+      owner: arrakisMultiSig,
+      execute: {
+        methodName: "initialize",
+        args: [owner],
+      },
+    },
+    args: [addresses.WETH, addresses.ArrakisV2Resolver, 50, owner],
     log: hre.network.name !== "hardhat",
   });
 };

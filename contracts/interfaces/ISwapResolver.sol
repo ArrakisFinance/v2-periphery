@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.13;
+// solhint-disable-next-line compiler-version
+pragma solidity >=0.8.0;
 
 import {
     IArrakisV2

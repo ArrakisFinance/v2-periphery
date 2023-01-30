@@ -1,5 +1,7 @@
 # Vault V2 Router Spec
 
+TODO: refactor spec to latest. Leaving here as is for now.
+
 ## Router & Swap Executor
 
 **ArrakisV2Router** (aka router contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to ArrakisV2SwapExecutor.

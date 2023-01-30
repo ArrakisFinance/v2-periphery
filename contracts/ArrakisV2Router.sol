@@ -1,27 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-
 pragma solidity 0.8.13;
 
-import {IArrakisV2Router} from "./interfaces/IArrakisV2Router.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
-import {IArrakisV2SwapExecutor} from "./interfaces/IArrakisV2SwapExecutor.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
 import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {
-    ReentrancyGuard
-} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
-import {
-    IArrakisV2Resolver
-} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
 import {
     AddLiquidityData,
     RemoveLiquidityData,
@@ -31,48 +19,22 @@ import {
     hundredPercent
 } from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
+import {ArrakisV2RouterStorage} from "./abstract/ArrakisV2RouterStorage.sol";
 
-contract ArrakisV2Router is
-    IArrakisV2Router,
-    Pausable,
-    Ownable,
-    ReentrancyGuard
-{
+/// @title ArrakisV2 Public Vault Router
+/// @notice Smart contract for adding and removing liquidity from Public ArrakisV2 vaults
+/// @author Arrakis Finance
+/// @dev DO NOT ADD STATE VARIABLES - APPEND THEM TO ArrakisV2RouterStorage
+contract ArrakisV2Router is ArrakisV2RouterStorage {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
-    IWETH public immutable weth;
-    IArrakisV2Resolver public immutable resolver;
-    IArrakisV2SwapExecutor public swapper;
-    address public feeCollector;
-    uint16 public depositFeeBPS;
-
-    event Swapped(
-        bool zeroForOne,
-        uint256 amount0Diff,
-        uint256 amount1Diff,
-        uint256 amountOutSwap
-    );
-
     constructor(
-        IWETH weth_,
-        IArrakisV2Resolver resolver_,
+        address weth_,
+        address resolver_,
         uint16 depositFeeBPS_,
         address feeCollector_
-    ) {
-        weth = weth_;
-        resolver = resolver_;
-        depositFeeBPS = depositFeeBPS_;
-        feeCollector = feeCollector_;
-    }
-
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function unpause() external onlyOwner {
-        _unpause();
-    }
+    ) ArrakisV2RouterStorage(weth_, resolver_, depositFeeBPS_, feeCollector_) {} // solhint-disable-line
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param addData_ AddLiquidityData struct containing data for adding liquidity
@@ -83,7 +45,6 @@ contract ArrakisV2Router is
     function addLiquidity(AddLiquidityData memory addData_)
         external
         payable
-        override
         whenNotPaused
         nonReentrant
         returns (
@@ -173,7 +134,6 @@ contract ArrakisV2Router is
     // solhint-disable-next-line code-complexity, function-max-lines
     function removeLiquidity(RemoveLiquidityData memory removeData_)
         external
-        override
         whenNotPaused
         nonReentrant
         returns (uint256 amount0, uint256 amount1)
@@ -219,7 +179,6 @@ contract ArrakisV2Router is
     function swapAndAddLiquidity(SwapAndAddData memory swapAndAddData_)
         external
         payable
-        override
         whenNotPaused
         nonReentrant
         returns (
@@ -283,24 +242,6 @@ contract ArrakisV2Router is
             amount0Diff,
             amount1Diff
         ) = _swapAndAddLiquidity(swapAndAddData_);
-    }
-
-    /// @notice updates address of ArrakisV2SwaprExecutor used by this contract
-    /// @param swapper_ the ArrakisV2SwapExecutor address
-    function updateSwapExecutor(IArrakisV2SwapExecutor swapper_)
-        external
-        override
-        onlyOwner
-    {
-        swapper = swapper_;
-    }
-
-    function updateFeeCollector(address feeCollector_)
-        external
-        override
-        onlyOwner
-    {
-        feeCollector = feeCollector_;
     }
 
     // solhint-disable-next-line function-max-lines
@@ -406,8 +347,6 @@ contract ArrakisV2Router is
             swapAndAddData_.addData.receiver
         );
 
-        // now we send leftovers to user.
-        // if we can send leftovers in WETH, this logic would be much simpler
         bool isToken0Weth;
         if (swapAndAddData_.addData.useETH) {
             isToken0Weth = _isToken0Weth(
