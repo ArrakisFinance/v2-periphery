@@ -40,3 +40,8 @@ dist
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# vyper
+vyper/interfaces
+vyper/reports
+vyper/tests

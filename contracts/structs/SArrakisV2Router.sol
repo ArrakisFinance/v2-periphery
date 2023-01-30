@@ -2,11 +2,6 @@
 // solhint-disable-next-line compiler-version
 pragma solidity >=0.8.0;
 
-import {
-    IArrakisV2
-} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
-import {IGauge} from "../interfaces/IGauge.sol";
-
 struct AddLiquidityData {
     // address of ArrakisV2 vault
     address vault;

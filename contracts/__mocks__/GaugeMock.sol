@@ -19,7 +19,12 @@ contract GaugeMock is ERC20 {
     }
 
     // solhint-disable-next-line func-name-mixedcase
-    function add_reward(address rewardToken_, address treasury_) external {
+    function add_reward(
+        address rewardToken_,
+        address treasury_,
+        address,
+        address
+    ) external {
         treasuryByRewardTkn[rewardToken_] = treasury_;
         tokenRewards.push(rewardToken_);
     }
