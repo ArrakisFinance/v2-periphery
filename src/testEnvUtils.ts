@@ -4,7 +4,6 @@ import {
   ArrakisV2Router,
   SwapResolver,
   ERC20,
-  ManagerMock,
   IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
@@ -44,15 +43,6 @@ export const getPeripheryContracts = async (
   await router.connect(owner).updateSwapExecutor(swapExecutor.address);
 
   return [swapResolver, swapExecutor, router];
-};
-
-export const getManagerMock = async (): Promise<ManagerMock> => {
-  const managerAddress = (await deployments.get("ManagerMock")).address;
-  const managerMock = (await ethers.getContractAt(
-    "ManagerMock",
-    managerAddress
-  )) as ManagerMock;
-  return managerMock;
 };
 
 export const getArrakisResolver = async (

@@ -4,7 +4,6 @@ import {
   ArrakisV2SwapExecutor,
   ArrakisV2Router,
   ERC20,
-  ManagerMock,
   SwapResolver,
   IArrakisV2,
 } from "../typechain";
@@ -17,7 +16,6 @@ import {
   getFundsFromFaucet,
   createGauge,
   getArrakisResolver,
-  getManagerMock,
   getSwapResolver,
 } from "../src/testEnvUtils";
 import { swapAndAddTest } from "../src/swapAndAddTest";
@@ -41,8 +39,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
   let genericRouter: ArrakisV2Router;
   let swapResolver: SwapResolver;
 
-  let manager: ManagerMock;
-
   let vault: IArrakisV2;
 
   let gauge: Contract;
@@ -58,8 +54,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
 
     [, routerExecutor, genericRouter] = await getPeripheryContracts(owner);
 
-    manager = await getManagerMock();
-
     resolver = await getArrakisResolver(owner);
 
     swapResolver = await getSwapResolver();
@@ -70,7 +64,7 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       addresses.WETH,
       500,
       resolver,
-      manager.address
+      walletAddress
     );
 
     token0 = (await ethers.getContractAt(

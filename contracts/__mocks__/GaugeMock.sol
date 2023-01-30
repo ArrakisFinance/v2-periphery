@@ -67,7 +67,7 @@ contract GaugeMock is ERC20 {
     }
 
     // solhint-disable-next-line func-name-mixedcase, no-unused-vars
-    function claimable_reward(address account_, address rewardToken_)
+    function claimable_reward(address account_, address)
         external
         view
         returns (uint256)
