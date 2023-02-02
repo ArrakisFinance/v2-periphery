@@ -30,7 +30,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         args: [owner],
       },
     },
-    args: [addresses.WETH, addresses.ArrakisV2Resolver, 50, owner],
+    args: [addresses.WETH, addresses.ArrakisV2Resolver, 0, owner],
     log: hre.network.name !== "hardhat",
   });
 };

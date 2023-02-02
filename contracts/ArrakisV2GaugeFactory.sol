@@ -8,18 +8,18 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {
-    ArrakisGaugeFactoryStorage,
+    ArrakisV2GaugeFactoryStorage,
     EnumerableSet
-} from "./abstract/ArrakisGaugeFactoryStorage.sol";
-import {InitializeGauge} from "./structs/SArrakisGaugeFactory.sol";
+} from "./abstract/ArrakisV2GaugeFactoryStorage.sol";
+import {InitializeGauge} from "./structs/SArrakisV2GaugeFactory.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 
-/// @title ArrakisGaugeFactory factory for creating LiquidityGaugeV5 instances
-contract ArrakisGaugeFactory is ArrakisGaugeFactoryStorage {
+/// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV5 instances
+contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     constructor(address gaugeBeacon_)
-        ArrakisGaugeFactoryStorage(gaugeBeacon_)
+        ArrakisV2GaugeFactoryStorage(gaugeBeacon_)
     {} // solhint-disable-line no-empty-blocks
 
     /// @notice Deploys an instance of LiquidityGaugeV5 using BeaconProxy or TransparentProxy.

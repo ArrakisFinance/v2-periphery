@@ -63,11 +63,8 @@ abstract contract ArrakisV2RouterStorage is
 
     /// @notice updates address of ArrakisV2SwaprExecutor used by this contract
     /// @param swapper_ the ArrakisV2SwapExecutor address
-    function updateSwapExecutor(IArrakisV2SwapExecutor swapper_)
-        external
-        onlyOwner
-    {
-        swapper = swapper_;
+    function updateSwapExecutor(address swapper_) external onlyOwner {
+        swapper = IArrakisV2SwapExecutor(swapper_);
     }
 
     /// @notice updates address of feeCollector, which collects deposit fees from this contract

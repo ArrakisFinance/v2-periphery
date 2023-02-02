@@ -258,9 +258,11 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             uint256 sharesReceived
         )
     {
+        bool depositFee = depositFeeBPS > 0;
+        bool hasGauge = gauge_ != address(0);
         (amount0, amount1) = IArrakisV2(vault_).mint(
             mintAmount_,
-            address(this)
+            (depositFee || hasGauge) ? address(this) : receiver_
         );
 
         require(
@@ -268,23 +270,26 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             "unexpected amounts deposited"
         );
 
-        IERC20 token = IERC20(vault_);
-        if (gauge_ != address(0)) {
-            token.safeIncreaseAllowance(gauge_, mintAmount_);
+        if (hasGauge) {
+            IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
 
-            IGauge(gauge_).deposit(mintAmount_, address(this));
-            token = IERC20(gauge_);
+            IGauge(gauge_).deposit(
+                mintAmount_,
+                depositFee ? address(this) : receiver_
+            );
         }
 
-        uint256 emolument = FullMath.mulDiv(
-            mintAmount_,
-            depositFeeBPS,
-            hundredPercent
-        );
-        sharesReceived = mintAmount_ - emolument;
-
-        token.safeTransfer(receiver_, sharesReceived);
-        token.safeTransfer(feeCollector, emolument);
+        if (depositFee) {
+            uint256 emolument = FullMath.mulDiv(
+                mintAmount_,
+                depositFeeBPS,
+                hundredPercent
+            );
+            sharesReceived = mintAmount_ - emolument;
+            IERC20 token = hasGauge ? IERC20(vault_) : IERC20(gauge_);
+            token.safeTransfer(receiver_, sharesReceived);
+            token.safeTransfer(feeCollector, emolument);
+        }
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity

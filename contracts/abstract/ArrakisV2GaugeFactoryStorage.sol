@@ -16,7 +16,7 @@ import {
 
 /// @title Arrakis Factory Storage Smart Contract
 // solhint-disable-next-line max-states-count
-abstract contract ArrakisGaugeFactoryStorage is OwnableUpgradeable {
+abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     IArrakisV2Beacon public immutable arrakisGaugeBeacon;
