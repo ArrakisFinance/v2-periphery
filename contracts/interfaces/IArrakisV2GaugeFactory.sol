@@ -8,7 +8,7 @@ import {
 import {InitializeGauge} from "../structs/SArrakisV2GaugeFactory.sol";
 
 interface IArrakisV2GaugeFactory {
-    function deployGauge(InitializeGauge calldata params)
+    function deployGauge(InitializeGauge calldata, bool)
         external
         returns (address);
 }

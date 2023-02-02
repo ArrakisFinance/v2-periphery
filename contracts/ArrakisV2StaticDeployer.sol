@@ -102,7 +102,8 @@ contract ArrakisV2StaticDeployer is ArrakisV2StaticDeployerStorage {
                     rewardDistributor: params_.rewardDistributor,
                     rewardVE: params_.rewardVE,
                     rewardVEBoost: params_.rewardVEBoost
-                })
+                }),
+                true
             );
         }
 
