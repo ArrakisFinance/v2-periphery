@@ -15,9 +15,6 @@ import {
     RemoveLiquidityData,
     SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
-import {
-    hundredPercent
-} from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
 import {ArrakisV2RouterStorage} from "./abstract/ArrakisV2RouterStorage.sol";
 
