@@ -29,12 +29,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
-    constructor(
-        address weth_,
-        address resolver_,
-        uint16 depositFeeBPS_,
-        address feeCollector_
-    ) ArrakisV2RouterStorage(weth_, resolver_, depositFeeBPS_, feeCollector_) {} // solhint-disable-line
+    constructor(address weth_, address resolver_)
+        ArrakisV2RouterStorage(weth_, resolver_)
+    {} // solhint-disable-line
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param addData_ AddLiquidityData struct containing data for adding liquidity
@@ -258,11 +255,10 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             uint256 sharesReceived
         )
     {
-        bool depositFee = depositFeeBPS > 0;
         bool hasGauge = gauge_ != address(0);
         (amount0, amount1) = IArrakisV2(vault_).mint(
             mintAmount_,
-            (depositFee || hasGauge) ? address(this) : receiver_
+            hasGauge ? address(this) : receiver_
         );
 
         require(
@@ -273,23 +269,10 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         if (hasGauge) {
             IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
 
-            IGauge(gauge_).deposit(
-                mintAmount_,
-                depositFee ? address(this) : receiver_
-            );
+            IGauge(gauge_).deposit(mintAmount_, receiver_);
         }
 
-        if (depositFee) {
-            uint256 emolument = FullMath.mulDiv(
-                mintAmount_,
-                depositFeeBPS,
-                hundredPercent
-            );
-            sharesReceived = mintAmount_ - emolument;
-            IERC20 token = hasGauge ? IERC20(vault_) : IERC20(gauge_);
-            token.safeTransfer(receiver_, sharesReceived);
-            token.safeTransfer(feeCollector, emolument);
-        }
+        sharesReceived = mintAmount_;
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity

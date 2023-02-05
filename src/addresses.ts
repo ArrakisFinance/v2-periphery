@@ -20,10 +20,10 @@ export const getAddresses = (network: string): Addresses => {
     case "hardhat":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -36,10 +36,10 @@ export const getAddresses = (network: string): Addresses => {
     case "mainnet":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -52,13 +52,13 @@ export const getAddresses = (network: string): Addresses => {
     case "polygon":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-        WETH: "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+        WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", /// IMPORTANT: must be WMATIC
         DAI: "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
         USDC: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
@@ -68,10 +68,10 @@ export const getAddresses = (network: string): Addresses => {
     case "optimism":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "0x4200000000000000000000000000000000000006",
@@ -84,10 +84,10 @@ export const getAddresses = (network: string): Addresses => {
     case "arbitrum":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "",
@@ -100,10 +100,10 @@ export const getAddresses = (network: string): Addresses => {
     case "local":
       return {
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "",
+        ArrakisV2: "0xAf0f96e8702cB1b8160e43c8c020C608cD7B134d",
+        ArrakisV2Resolver: "0xb11bb8ad710579Cc5ED16b1C8587808109c1f193",
+        ArrakisV2Helper: "0x07d2CeB4869DFE17e8D48c92A71eDC3AE564449f",
+        ArrakisV2Factory: "0xECb8Ffcb2369EF188A082a662F496126f66c8288",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
