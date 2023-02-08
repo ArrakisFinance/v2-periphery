@@ -16,7 +16,6 @@ import {
   getFundsFromFaucet,
   createGauge,
   getArrakisResolver,
-  getSwapResolver,
 } from "../src/testEnvUtils";
 import { swapAndAddTest } from "../src/swapAndAddTest";
 
@@ -52,11 +51,11 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
     [wallet, , owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
-    [, routerExecutor, genericRouter] = await getPeripheryContracts(owner);
+    [swapResolver, routerExecutor, genericRouter] = await getPeripheryContracts(
+      owner
+    );
 
     resolver = await getArrakisResolver(owner);
-
-    swapResolver = await getSwapResolver();
 
     [vault] = await deployArrakisV2(
       wallet,
@@ -172,9 +171,15 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
 
     await gauge
       .connect(wallet)
-      .add_reward(token0.address, await wallet.getAddress(), {
-        gasLimit: 6000000,
-      });
+      .add_reward(
+        token0.address,
+        await wallet.getAddress(),
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        {
+          gasLimit: 6000000,
+        }
+      );
 
     const rewardAmount = ethers.BigNumber.from("100").mul(
       ethers.BigNumber.from("10").pow("6")

@@ -253,6 +253,16 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         )
     {
         bool hasGauge = gauge_ != address(0);
+
+        IERC20(IArrakisV2(vault_).token0()).safeIncreaseAllowance(
+            vault_,
+            amount0In_
+        );
+        IERC20(IArrakisV2(vault_).token1()).safeIncreaseAllowance(
+            vault_,
+            amount1In_
+        );
+
         (amount0, amount1) = IArrakisV2(vault_).mint(
             mintAmount_,
             hasGauge ? address(this) : receiver_

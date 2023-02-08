@@ -244,6 +244,7 @@ export const swapAndAddTest = async (
     zeroForOne: false,
     amount0Diff: ethers.BigNumber.from(0),
     amount1Diff: ethers.BigNumber.from(0),
+    amountOutSwap: ethers.BigNumber.from(0),
   };
 
   // object to be filled with "Minted" event data
@@ -256,12 +257,18 @@ export const swapAndAddTest = async (
   };
 
   // listener for getting data from "Swapped" event
-  routerExecutor.on(
+  genericRouter.on(
     "Swapped",
-    (zeroForOne: boolean, amount0Diff: BigNumber, amount1Diff: BigNumber) => {
+    (
+      zeroForOne: boolean,
+      amount0Diff: BigNumber,
+      amount1Diff: BigNumber,
+      amountOutSwap: BigNumber
+    ) => {
       swapppedEventData.zeroForOne = zeroForOne;
-      swapppedEventData.amount0Diff = ethers.BigNumber.from(amount0Diff);
-      swapppedEventData.amount1Diff = ethers.BigNumber.from(amount1Diff);
+      swapppedEventData.amount0Diff = amount0Diff;
+      swapppedEventData.amount1Diff = amount1Diff;
+      swapppedEventData.amountOutSwap = amountOutSwap;
       hasSwapped = true;
     }
   );
