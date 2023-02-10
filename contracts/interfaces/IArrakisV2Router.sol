@@ -6,8 +6,6 @@ import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 
-import {IArrakisV2SwapExecutor} from "./IArrakisV2SwapExecutor.sol";
-
 import {
     AddLiquidityData,
     RemoveLiquidityData,
@@ -39,7 +37,7 @@ interface IArrakisV2Router {
             uint256 amount1Diff
         );
 
-    function updateSwapExecutor(IArrakisV2SwapExecutor router_) external;
+    function updateSwapExecutor(address swapper_) external;
 
     function updateFeeCollector(address feeCollector_) external;
 }

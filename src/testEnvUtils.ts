@@ -56,15 +56,6 @@ export const getArrakisResolver = async (
   return resolver;
 };
 
-export const getSwapResolver = async (): Promise<SwapResolver> => {
-  const swapResolverAddress = (await deployments.get("SwapResolver")).address;
-  const swapResolver = (await ethers.getContractAt(
-    "SwapResolver",
-    swapResolverAddress
-  )) as SwapResolver;
-  return swapResolver;
-};
-
 export const deployArrakisV2 = async (
   signer: SignerWithAddress,
   token0Address: string,

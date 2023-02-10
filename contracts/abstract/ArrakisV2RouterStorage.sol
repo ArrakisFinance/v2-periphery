@@ -23,10 +23,8 @@ abstract contract ArrakisV2RouterStorage is
 {
     IWETH public immutable weth;
     IArrakisV2Resolver public immutable resolver;
-    uint16 public immutable depositFeeBPS;
 
     IArrakisV2SwapExecutor public swapper;
-    address public feeCollector;
 
     event Swapped(
         bool zeroForOne,
@@ -35,17 +33,12 @@ abstract contract ArrakisV2RouterStorage is
         uint256 amountOutSwap
     );
 
-    constructor(
-        address weth_,
-        address resolver_,
-        uint16 depositFeeBPS_,
-        address feeCollector_
-    ) {
+    constructor(address weth_, address resolver_) {
         weth = IWETH(weth_);
         resolver = IArrakisV2Resolver(resolver_);
-        depositFeeBPS = depositFeeBPS_;
-        feeCollector = feeCollector_;
     }
+
+    receive() external payable {} // solhint-disable-line no-empty-blocks
 
     function initialize(address owner_) external initializer {
         __Pausable_init();
@@ -63,16 +56,7 @@ abstract contract ArrakisV2RouterStorage is
 
     /// @notice updates address of ArrakisV2SwaprExecutor used by this contract
     /// @param swapper_ the ArrakisV2SwapExecutor address
-    function updateSwapExecutor(IArrakisV2SwapExecutor swapper_)
-        external
-        onlyOwner
-    {
-        swapper = swapper_;
-    }
-
-    /// @notice updates address of feeCollector, which collects deposit fees from this contract
-    /// @param feeCollector_ the new feeCollector address
-    function updateFeeCollector(address feeCollector_) external onlyOwner {
-        feeCollector = feeCollector_;
+    function updateSwapExecutor(address swapper_) external onlyOwner {
+        swapper = IArrakisV2SwapExecutor(swapper_);
     }
 }
