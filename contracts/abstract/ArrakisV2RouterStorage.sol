@@ -38,6 +38,8 @@ abstract contract ArrakisV2RouterStorage is
         resolver = IArrakisV2Resolver(resolver_);
     }
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     function initialize(address owner_) external initializer {
         __Pausable_init();
         __ReentrancyGuard_init();
