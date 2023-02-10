@@ -21,7 +21,7 @@ import { swapAndAddTest } from "../src/swapAndAddTest";
 
 let addresses: Addresses;
 
-describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
+describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   this.timeout(0);
   let wallet: SignerWithAddress;
   let walletAddress: string;
@@ -199,7 +199,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       receiver: walletAddress,
       useETH: false,
       gauge: gauge.address,
-      rebalance: false,
     };
 
     await genericRouter.addLiquidity(addLiquidityData);
@@ -345,7 +344,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: ethers.constants.AddressZero,
-      rebalance: false,
     };
 
     await genericRouter.addLiquidity(addLiquidityData, {
@@ -471,7 +469,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: gauge.address,
-      rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -627,7 +624,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
     };
 
     await expect(
@@ -666,7 +662,6 @@ describe("ArrakisV2SwapExecutor tests on USDC/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: transactionEthValue,

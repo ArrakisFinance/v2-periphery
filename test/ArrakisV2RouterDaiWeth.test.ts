@@ -189,7 +189,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       receiver: walletAddress,
       useETH: false,
       gauge: gauge.address,
-      rebalance: false,
     };
 
     await genericRouter.addLiquidity(addLiquidityData);
@@ -380,7 +379,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
     };
 
     await genericRouter.addLiquidity(addLiquidityData, {
@@ -504,7 +502,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: gauge.address,
-      rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -658,7 +655,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
     };
 
     await expect(
@@ -695,7 +691,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       receiver: walletAddress,
       useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: transactionEthValue,

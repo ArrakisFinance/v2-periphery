@@ -28,7 +28,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
     constructor(address weth_, address resolver_)
         ArrakisV2RouterStorage(weth_, resolver_)
-    {} // solhint-disable-line
+    {} // solhint-disable-line no-empty-blocks
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param addData_ AddLiquidityData struct containing data for adding liquidity
