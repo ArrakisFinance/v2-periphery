@@ -28,7 +28,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
     constructor(address weth_, address resolver_)
         ArrakisV2RouterStorage(weth_, resolver_)
-    {} // solhint-disable-line
+    {} // solhint-disable-line no-empty-blocks
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param addData_ AddLiquidityData struct containing data for adding liquidity
@@ -253,6 +253,16 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         )
     {
         bool hasGauge = gauge_ != address(0);
+
+        IERC20(IArrakisV2(vault_).token0()).safeIncreaseAllowance(
+            vault_,
+            amount0In_
+        );
+        IERC20(IArrakisV2(vault_).token1()).safeIncreaseAllowance(
+            vault_,
+            amount1In_
+        );
+
         (amount0, amount1) = IArrakisV2(vault_).mint(
             mintAmount_,
             hasGauge ? address(this) : receiver_
