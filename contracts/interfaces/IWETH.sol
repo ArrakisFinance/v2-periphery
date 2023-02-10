@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.13;
+// SPDX-License-Identifier: UNLICENSED
+// solhint-disable-next-line compiler-version
+pragma solidity >=0.8.0;
 
 interface IWETH {
     function deposit() external payable;

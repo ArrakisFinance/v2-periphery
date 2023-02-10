@@ -1,15 +1,56 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: UNLICENSED
+// solhint-disable-next-line compiler-version
+pragma solidity >=0.8.0;
 
-pragma solidity 0.8.13;
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IGauge {
-    function deposit(uint256 amount, address account) external;
+// solhint-disable func-name-mixedcase
+interface IGauge is IERC20 {
+    function initialize(address stakingToken, address admin) external;
 
-    function withdraw(uint256 amount) external;
+    function deposit(uint256 value, address addr) external;
 
-    // solhint-disable-next-line func-name-mixedcase
-    function claim_rewards(address account) external;
+    function withdraw(uint256 value) external;
 
-    // solhint-disable-next-line func-name-mixedcase
-    function staking_token() external returns (address);
+    function add_reward(
+        address token,
+        address distributor,
+        address ve,
+        address boost
+    ) external;
+
+    function set_reward_distributor(address token, address distributor)
+        external;
+
+    function set_reward_voting_escrow(
+        address token,
+        address ve,
+        address boost
+    ) external;
+
+    function user_checkpoint(address addr) external returns (bool);
+
+    function claim_rewards(address addr) external;
+
+    function claimable_reward(address addr, address token)
+        external
+        view
+        returns (uint256);
+
+    function claimed_reward(address addr, address token)
+        external
+        view
+        returns (uint256);
+
+    function reward_count() external view returns (uint256);
+
+    function reward_tokens(uint256 index) external view returns (address);
+
+    function staking_token() external view returns (address);
+
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function decimals() external view returns (uint8);
 }

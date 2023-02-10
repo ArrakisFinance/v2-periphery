@@ -1,24 +1,25 @@
-// SPDX-License-Identifier: GPL-3.0
-
-pragma solidity 0.8.13;
+// SPDX-License-Identifier: UNLICENSED
+// solhint-disable-next-line compiler-version
+pragma solidity >=0.8.0;
 
 import {
-    MintData,
+    IArrakisV2
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
+
+import {
+    AddLiquidityData,
     RemoveLiquidityData,
     SwapAndAddData
 } from "../structs/SArrakisV2Router.sol";
 
-interface IArrakisV2RouterExecutor {
-    event WhitelistRouter(address router);
-    event RemoveRouter(address router);
-
-    function addLiquidity(MintData memory _mintData)
+interface IArrakisV2Router {
+    function addLiquidity(AddLiquidityData memory _addData)
         external
         payable
         returns (
             uint256 amount0,
             uint256 amount1,
-            uint256 mintAmount
+            uint256 sharesReceived
         );
 
     function removeLiquidity(RemoveLiquidityData memory _removeData)
@@ -31,12 +32,12 @@ interface IArrakisV2RouterExecutor {
         returns (
             uint256 amount0,
             uint256 amount1,
-            uint256 mintAmount,
+            uint256 sharesReceived,
             uint256 amount0Diff,
             uint256 amount1Diff
         );
 
-    function whitelistRouter(address router_) external;
+    function updateSwapExecutor(address swapper_) external;
 
-    function removeRouter(address router_) external;
+    function updateFeeCollector(address feeCollector_) external;
 }

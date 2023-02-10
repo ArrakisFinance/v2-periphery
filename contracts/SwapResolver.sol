@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
 
 import {ISwapResolver} from "./interfaces/ISwapResolver.sol";
@@ -18,11 +17,8 @@ import {
     IERC20Metadata
 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
-import {TickMath} from "@arrakisfi/v3-lib-0.8/contracts/TickMath.sol";
 
 contract SwapResolver is ISwapResolver {
-    using TickMath for int24;
-
     IArrakisV2Helper public immutable helper;
     IArrakisV2Resolver public immutable resolver;
 

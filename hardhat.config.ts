@@ -53,7 +53,7 @@ const config: HardhatUserConfig = {
       // timeout: 150000,
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
-        blockNumber: 16369630,
+        blockNumber: 16585769,
       },
     },
     mainnet: {
@@ -71,6 +71,11 @@ const config: HardhatUserConfig = {
       chainId: 10,
       url: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
     },
+    arbitrum: {
+      accounts: PK ? [PK] : [],
+      chainId: 42161,
+      url: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_ID}`,
+    },
     goerli: {
       accounts: PK_TEST ? [PK_TEST] : [],
       chainId: 5,
@@ -86,15 +91,9 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.4",
-        settings: {
-          optimizer: { enabled: true, runs: 10 },
-        },
-      },
-      {
         version: "0.8.13",
         settings: {
-          optimizer: { enabled: true, runs: 10 },
+          optimizer: { enabled: true, runs: 999999 },
         },
       },
     ],
@@ -106,10 +105,7 @@ const config: HardhatUserConfig = {
   },
 
   dependencyCompiler: {
-    paths: [
-      "@arrakisfi/v2-core/contracts/ArrakisV2.sol",
-      "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol",
-    ],
+    paths: ["@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol"],
   },
 };
 

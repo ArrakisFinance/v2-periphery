@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import { getAddresses as getCoreAddresses } from "@arrakisfi/v2-core";
+
 export interface Addresses {
   UniswapV3Factory: string;
   ArrakisV2: string;
   ArrakisV2Resolver: string;
   ArrakisV2Helper: string;
   ArrakisV2Factory: string;
-  ArrakisDevAdmin: string;
-  ArrakisDevOwner: string;
-  ArrakisFeeTreasury: string;
   OneInchRouter: string;
   SwapRouter: string;
   DAI: string;
@@ -19,17 +18,18 @@ export interface Addresses {
 }
 
 export const getAddresses = (network: string): Addresses => {
+  const coreAddresses =
+    network == "local" || network == "hardhat"
+      ? getCoreAddresses("mainnet")
+      : getCoreAddresses(network);
   switch (network) {
     case "hardhat":
       return {
-        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "0xb5C3B286dD591282Fe87Dfab0613488e1b6B09Ba",
-        ArrakisV2Resolver: "0x4bc385b1dDf0121CC40A0715CfD3beFE52f905f5",
-        ArrakisV2Helper: "0xccEe73eA4c7a42491c68FEa78B1BDDD1A35C8d9C",
-        ArrakisV2Factory: "0x055B6d3919042Be29C5F044A55529933e1273A88",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -41,14 +41,11 @@ export const getAddresses = (network: string): Addresses => {
       };
     case "mainnet":
       return {
-        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "0xb5C3B286dD591282Fe87Dfab0613488e1b6B09Ba",
-        ArrakisV2Resolver: "0x4bc385b1dDf0121CC40A0715CfD3beFE52f905f5",
-        ArrakisV2Helper: "0xccEe73eA4c7a42491c68FEa78B1BDDD1A35C8d9C",
-        ArrakisV2Factory: "0x055B6d3919042Be29C5F044A55529933e1273A88",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -60,17 +57,14 @@ export const getAddresses = (network: string): Addresses => {
       };
     case "polygon":
       return {
-        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "0xd481437282B488abC9c6971e59f0737f391EBd17",
-        ArrakisV2Resolver: "0x475BD9BF87d3B0580BE8BDD0CDBcF0c2B4865fF9",
-        ArrakisV2Helper: "0x5B84571bf47E60FB35C467C65887aA853265bFeF",
-        ArrakisV2Factory: "0xAA8af27C661618825C58b93Ea40d55bAcd005D25",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0xDEb4C33D5C3E7e32F55a9D6336FE06010E40E3AB",
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
         OneInchRouter: "",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-        WETH: "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619",
+        WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", // IMPORTANT: must be WMATIC
         DAI: "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
         USDC: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
@@ -79,14 +73,11 @@ export const getAddresses = (network: string): Addresses => {
       };
     case "optimism":
       return {
-        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "",
-        ArrakisV2Resolver: "0xd2Bb190dD88e7Af5DF176064Ec42f6dfA8672F40",
-        ArrakisV2Helper: "",
-        ArrakisV2Factory: "0x2845c6929d621e32B7596520C8a1E5a37e616F09",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "",
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "0x4200000000000000000000000000000000000006",
@@ -96,16 +87,29 @@ export const getAddresses = (network: string): Addresses => {
         faucetUSDC: "",
         faucetWeth: "",
       };
+    case "arbitrum":
+      return {
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        OneInchRouter: "",
+        SwapRouter: "",
+        WETH: "",
+        DAI: "",
+        USDC: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
+      };
     case "local":
       return {
-        UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        ArrakisV2: "0xb5C3B286dD591282Fe87Dfab0613488e1b6B09Ba",
-        ArrakisV2Resolver: "0x4bc385b1dDf0121CC40A0715CfD3beFE52f905f5",
-        ArrakisV2Helper: "0xccEe73eA4c7a42491c68FEa78B1BDDD1A35C8d9C",
-        ArrakisV2Factory: "0x055B6d3919042Be29C5F044A55529933e1273A88",
-        ArrakisDevAdmin: "",
-        ArrakisDevOwner: "0xAa2E0c5c85ACb7717e58060AB3c96d2B184EE07C",
-        ArrakisFeeTreasury: "0x2FF5D1da4985113F467BBBFF015e76ce8aB05F29",
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2: coreAddresses.ArrakisV2Implementation,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",

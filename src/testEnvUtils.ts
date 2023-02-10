@@ -1,11 +1,10 @@
 import { ethers, network, deployments } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2SwapExecutor,
+  ArrakisV2Router,
   SwapResolver,
   ERC20,
-  ManagerMock,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
@@ -17,7 +16,7 @@ const addresses: Addresses = getAddresses(network.name);
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[SwapResolver, ArrakisV2RouterExecutor, ArrakisV2GenericRouter]> => {
+): Promise<[SwapResolver, ArrakisV2SwapExecutor, ArrakisV2Router]> => {
   // getting resolver contract
   const resolverAddress = (await deployments.get("SwapResolver")).address;
   const swapResolver = (await ethers.getContractAt(
@@ -26,37 +25,24 @@ export const getPeripheryContracts = async (
   )) as SwapResolver;
 
   // getting router executor contract
-  const routerExecutorAddress = (
-    await deployments.get("ArrakisV2RouterExecutor")
-  ).address;
-  const routerExecutor = (await ethers.getContractAt(
-    "ArrakisV2RouterExecutor",
-    routerExecutorAddress
-  )) as ArrakisV2RouterExecutor;
+  const swapExecutorAddress = (await deployments.get("ArrakisV2SwapExecutor"))
+    .address;
+  const swapExecutor = (await ethers.getContractAt(
+    "ArrakisV2SwapExecutor",
+    swapExecutorAddress
+  )) as ArrakisV2SwapExecutor;
 
   // getting generic router contract
-  const genericRouterAddress = (await deployments.get("ArrakisV2GenericRouter"))
-    .address;
-  const genericRouter = (await ethers.getContractAt(
-    "ArrakisV2GenericRouter",
-    genericRouterAddress
-  )) as ArrakisV2GenericRouter;
+  const routerAddress = (await deployments.get("ArrakisV2Router")).address;
+  const router = (await ethers.getContractAt(
+    "ArrakisV2Router",
+    routerAddress
+  )) as ArrakisV2Router;
 
-  // updating genericRouter's executor
-  await genericRouter
-    .connect(owner)
-    .updateRouterExecutor(routerExecutor.address);
+  // updating router's swap executor
+  await router.connect(owner).updateSwapExecutor(swapExecutor.address);
 
-  return [swapResolver, routerExecutor, genericRouter];
-};
-
-export const getManagerMock = async (): Promise<ManagerMock> => {
-  const managerAddress = (await deployments.get("ManagerMock")).address;
-  const managerMock = (await ethers.getContractAt(
-    "ManagerMock",
-    managerAddress
-  )) as ManagerMock;
-  return managerMock;
+  return [swapResolver, swapExecutor, router];
 };
 
 export const getArrakisResolver = async (
@@ -70,15 +56,6 @@ export const getArrakisResolver = async (
   return resolver;
 };
 
-export const getSwapResolver = async (): Promise<SwapResolver> => {
-  const swapResolverAddress = (await deployments.get("SwapResolver")).address;
-  const swapResolver = (await ethers.getContractAt(
-    "SwapResolver",
-    swapResolverAddress
-  )) as SwapResolver;
-  return swapResolver;
-};
-
 export const deployArrakisV2 = async (
   signer: SignerWithAddress,
   token0Address: string,
@@ -86,7 +63,7 @@ export const deployArrakisV2 = async (
   fee: number,
   resolver: Contract,
   managerAddress: string
-): Promise<[ArrakisV2]> => {
+): Promise<[IArrakisV2]> => {
   const signerAddress = await signer.getAddress();
 
   // getting vault factory
@@ -142,7 +119,6 @@ export const deployArrakisV2 = async (
       init1: res.amount1,
       manager: managerAddress,
       routers: [addresses.SwapRouter],
-      burnBuffer: 1000,
     },
     true
   );
@@ -156,10 +132,10 @@ export const deployArrakisV2 = async (
 
   // getting vault
   const vault = (await ethers.getContractAt(
-    "ArrakisV2",
+    "IArrakisV2",
     result?.vault,
     signer
-  )) as ArrakisV2;
+  )) as IArrakisV2;
 
   return [vault];
 };

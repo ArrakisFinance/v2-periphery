@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.13;
 
 import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -19,7 +19,12 @@ contract GaugeMock is ERC20 {
     }
 
     // solhint-disable-next-line func-name-mixedcase
-    function add_reward(address rewardToken_, address treasury_) external {
+    function add_reward(
+        address rewardToken_,
+        address treasury_,
+        address,
+        address
+    ) external {
         treasuryByRewardTkn[rewardToken_] = treasury_;
         tokenRewards.push(rewardToken_);
     }
@@ -67,7 +72,7 @@ contract GaugeMock is ERC20 {
     }
 
     // solhint-disable-next-line func-name-mixedcase, no-unused-vars
-    function claimable_reward(address account_, address rewardToken_)
+    function claimable_reward(address account_, address)
         external
         view
         returns (uint256)

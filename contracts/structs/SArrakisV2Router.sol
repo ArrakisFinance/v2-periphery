@@ -1,15 +1,6 @@
-// SPDX-License-Identifier: GPL-3.0
-
-pragma solidity 0.8.13;
-
-import {
-    BurnLiquidity
-} from "@arrakisfi/v2-core/contracts/structs/SArrakisV2.sol";
-
-import {
-    IArrakisV2
-} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
-import {IGauge} from "../interfaces/IGauge.sol";
+// SPDX-License-Identifier: UNLICENSED
+// solhint-disable-next-line compiler-version
+pragma solidity >=0.8.0;
 
 struct AddLiquidityData {
     // address of ArrakisV2 vault
@@ -22,34 +13,19 @@ struct AddLiquidityData {
     uint256 amount0Min;
     // the minimum amount of token1 actually deposited (slippage protection)
     uint256 amount1Min;
+    // the minimum amount of shares actually minted (slippage protection)
+    uint256 amountSharesMin;
     // account to receive minted tokens
     address receiver;
     // bool indicating to use native ETH
     bool useETH;
     // address of gauge to stake tokens in
-    address gaugeAddress;
-}
-
-struct MintData {
-    // address of ArrakisV2 vault
-    address vault;
-    // amount of token0 to deposit
-    uint256 amount0In;
-    // amount of token1 to deposit
-    uint256 amount1In;
-    // amount of LP tokens to mint
-    uint256 mintAmount;
-    // account to receive minted tokens
-    address receiver;
-    // address of gauge to stake tokens in
-    address gaugeAddress;
+    address gauge;
 }
 
 struct RemoveLiquidityData {
     // address of ArrakisV2 vault
     address vault;
-    // array of BurnLiquidity
-    BurnLiquidity[] burns;
     // amount of LP tokens to burn
     uint256 burnAmount;
     // minimum amount of token0 to receive
@@ -61,7 +37,7 @@ struct RemoveLiquidityData {
     // bool indicating if user wants to receive in native ETH
     bool receiveETH;
     // address of gauge to unstake from
-    address gaugeAddress;
+    address gauge;
 }
 
 struct SwapData {
@@ -71,12 +47,10 @@ struct SwapData {
     uint256 amountOutSwap;
     // bool indicating swap direction
     bool zeroForOne;
-    // address for swap calls
+    // address for swap call
     address swapRouter;
     // payload for swap call
     bytes swapPayload;
-    // address of the user to be refunded
-    address payable userToRefund;
 }
 
 struct SwapAndAddData {

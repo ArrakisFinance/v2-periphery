@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2SwapExecutor,
+  ArrakisV2Router,
   SwapResolver,
   ERC20,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
@@ -22,13 +22,13 @@ const addresses: Addresses = getAddresses(network.name);
 export const swapAndAddTest = async (
   signer: SignerWithAddress,
 
-  genericRouter: ArrakisV2GenericRouter,
-  routerExecutor: ArrakisV2RouterExecutor,
+  genericRouter: ArrakisV2Router,
+  routerExecutor: ArrakisV2SwapExecutor,
   swapResolver: SwapResolver,
 
   resolver: Contract,
 
-  vault: ArrakisV2,
+  vault: IArrakisV2,
   token0: ERC20,
   token1: ERC20,
   rakisToken: ERC20,
@@ -219,11 +219,10 @@ export const swapAndAddTest = async (
     amount1Max: amount1Max,
     amount0Min: 0,
     amount1Min: 0,
+    amountSharesMin: 0,
     receiver: signerAddress,
     useETH: useETH,
-    gaugeAddress: stRakisToken
-      ? stRakisToken.address
-      : ethers.constants.AddressZero,
+    gauge: stRakisToken ? stRakisToken.address : ethers.constants.AddressZero,
   };
   const swapData = {
     amountInSwap: swapAmountIn.toString(),
@@ -231,8 +230,6 @@ export const swapAndAddTest = async (
     zeroForOne: zeroForOne,
     swapRouter: swapParams.to,
     swapPayload: swapParams.data,
-
-    userToRefund: signerAddress,
   };
   const swapAndAddData = {
     addData: addData,
@@ -247,6 +244,7 @@ export const swapAndAddTest = async (
     zeroForOne: false,
     amount0Diff: ethers.BigNumber.from(0),
     amount1Diff: ethers.BigNumber.from(0),
+    amountOutSwap: ethers.BigNumber.from(0),
   };
 
   // object to be filled with "Minted" event data
@@ -259,12 +257,18 @@ export const swapAndAddTest = async (
   };
 
   // listener for getting data from "Swapped" event
-  routerExecutor.on(
+  genericRouter.on(
     "Swapped",
-    (zeroForOne: boolean, amount0Diff: BigNumber, amount1Diff: BigNumber) => {
+    (
+      zeroForOne: boolean,
+      amount0Diff: BigNumber,
+      amount1Diff: BigNumber,
+      amountOutSwap: BigNumber
+    ) => {
       swapppedEventData.zeroForOne = zeroForOne;
-      swapppedEventData.amount0Diff = ethers.BigNumber.from(amount0Diff);
-      swapppedEventData.amount1Diff = ethers.BigNumber.from(amount1Diff);
+      swapppedEventData.amount0Diff = amount0Diff;
+      swapppedEventData.amount1Diff = amount1Diff;
+      swapppedEventData.amountOutSwap = amountOutSwap;
       hasSwapped = true;
     }
   );

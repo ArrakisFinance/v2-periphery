@@ -1,12 +1,11 @@
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
-  ArrakisV2RouterExecutor,
-  ArrakisV2GenericRouter,
+  ArrakisV2SwapExecutor,
+  ArrakisV2Router,
   ERC20,
-  ManagerMock,
   SwapResolver,
-  ArrakisV2,
+  IArrakisV2,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
@@ -17,8 +16,6 @@ import {
   getFundsFromFaucet,
   createGauge,
   getArrakisResolver,
-  getManagerMock,
-  getSwapResolver,
 } from "../src/testEnvUtils";
 import { swapAndAddTest } from "../src/swapAndAddTest";
 
@@ -37,12 +34,11 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
   let stRakisToken: ERC20;
 
   let resolver: Contract;
-  let genericRouter: ArrakisV2GenericRouter;
-  let routerExecutor: ArrakisV2RouterExecutor;
+  let genericRouter: ArrakisV2Router;
+  let routerExecutor: ArrakisV2SwapExecutor;
   let swapResolver: SwapResolver;
-  let manager: ManagerMock;
 
-  let vault: ArrakisV2;
+  let vault: IArrakisV2;
 
   let gauge: Contract;
   let routerExecutorBalanceEth: BigNumber | undefined;
@@ -55,13 +51,11 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     [wallet, , owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
-    [, routerExecutor, genericRouter] = await getPeripheryContracts(owner);
-
-    manager = await getManagerMock();
+    [swapResolver, routerExecutor, genericRouter] = await getPeripheryContracts(
+      owner
+    );
 
     resolver = await getArrakisResolver(owner);
-
-    swapResolver = await getSwapResolver();
 
     [vault] = await deployArrakisV2(
       wallet,
@@ -69,7 +63,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       addresses.WETH,
       3000,
       resolver,
-      manager.address
+      walletAddress
     );
 
     token0 = (await ethers.getContractAt(
@@ -87,7 +81,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     [gauge, stRakisToken] = await createGauge(vault.address);
 
-    await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
+    // await routerExecutor.connect(owner).whitelistRouter(genericRouter.address);
 
     routerExecutorBalanceEth = await wallet.provider?.getBalance(
       routerExecutor.address
@@ -114,9 +108,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
-      gaugeAddress: ethers.constants.AddressZero,
+      gauge: ethers.constants.AddressZero,
     };
 
     await genericRouter.addLiquidity(addLiquidityData);
@@ -168,9 +163,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     await gauge
       .connect(wallet)
-      .add_reward(token0.address, await wallet.getAddress(), {
-        gasLimit: 6000000,
-      });
+      .add_reward(
+        token0.address,
+        await wallet.getAddress(),
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        {
+          gasLimit: 6000000,
+        }
+      );
 
     const rewardAmount = ethers.utils.parseEther("1000");
     await token0.connect(wallet).approve(gauge.address, rewardAmount);
@@ -184,10 +185,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: false,
-      gaugeAddress: gauge.address,
-      rebalance: false,
+      gauge: gauge.address,
     };
 
     await genericRouter.addLiquidity(addLiquidityData);
@@ -257,14 +258,13 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     const balance1Before = await token1.balanceOf(walletAddress);
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before.div(2),
       amount0Min: 0,
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: false,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
     };
     await genericRouter.removeLiquidity(removeLiquidity);
     const balance0After = await token0.balanceOf(walletAddress);
@@ -308,14 +308,13 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     const balance1Before = await token1.balanceOf(walletAddress);
     await stRakisToken.approve(genericRouter.address, balanceStakedBefore);
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceStakedBefore,
       amount0Min: 0,
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: false,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
     };
     await genericRouter.removeLiquidity(removeLiquidity);
     const balance0After = await token0.balanceOf(walletAddress);
@@ -376,10 +375,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
+      gauge: "0x0000000000000000000000000000000000000000",
     };
 
     await genericRouter.addLiquidity(addLiquidityData, {
@@ -430,14 +429,13 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before,
       amount0Min: 0,
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
     };
 
     await genericRouter.removeLiquidity(removeLiquidity);
@@ -500,10 +498,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: gauge.address,
-      rebalance: false,
+      gauge: gauge.address,
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -577,14 +575,13 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     await stRakisToken.approve(genericRouter.address, balanceStakedBefore);
 
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceStakedBefore,
       amount0Min: 0,
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: gauge.address,
+      gauge: gauge.address,
     };
     await genericRouter.removeLiquidity(removeLiquidity);
 
@@ -654,10 +651,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
+      gauge: "0x0000000000000000000000000000000000000000",
     };
 
     await expect(
@@ -690,10 +687,10 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
+      amountSharesMin: 0,
       receiver: walletAddress,
       useETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
-      rebalance: false,
+      gauge: "0x0000000000000000000000000000000000000000",
     };
     await genericRouter.addLiquidity(addLiquidityData, {
       value: transactionEthValue,
@@ -750,14 +747,13 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     await rakisToken.approve(genericRouter.address, balanceArrakisV2Before);
     const removeLiquidity = {
-      burns: [],
       vault: vault.address,
       burnAmount: balanceArrakisV2Before,
       amount0Min: 0,
       amount1Min: 0,
       receiver: walletAddress,
       receiveETH: true,
-      gaugeAddress: "0x0000000000000000000000000000000000000000",
+      gauge: "0x0000000000000000000000000000000000000000",
     };
     await genericRouter.removeLiquidity(removeLiquidity);
     balance0After = await token0.balanceOf(walletAddress);
