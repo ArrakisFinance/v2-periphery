@@ -15,9 +15,6 @@ import {
     RemoveLiquidityData,
     SwapAndAddData
 } from "./structs/SArrakisV2Router.sol";
-import {
-    hundredPercent
-} from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
 import {ArrakisV2RouterStorage} from "./abstract/ArrakisV2RouterStorage.sol";
 
@@ -29,12 +26,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
-    constructor(
-        address weth_,
-        address resolver_,
-        uint16 depositFeeBPS_,
-        address feeCollector_
-    ) ArrakisV2RouterStorage(weth_, resolver_, depositFeeBPS_, feeCollector_) {} // solhint-disable-line
+    constructor(address weth_, address resolver_)
+        ArrakisV2RouterStorage(weth_, resolver_)
+    {} // solhint-disable-line no-empty-blocks
 
     /// @notice addLiquidity adds liquidity to ArrakisV2 vault of interest (mints LP tokens)
     /// @param addData_ AddLiquidityData struct containing data for adding liquidity
@@ -258,9 +252,20 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             uint256 sharesReceived
         )
     {
+        bool hasGauge = gauge_ != address(0);
+
+        IERC20(IArrakisV2(vault_).token0()).safeIncreaseAllowance(
+            vault_,
+            amount0In_
+        );
+        IERC20(IArrakisV2(vault_).token1()).safeIncreaseAllowance(
+            vault_,
+            amount1In_
+        );
+
         (amount0, amount1) = IArrakisV2(vault_).mint(
             mintAmount_,
-            address(this)
+            hasGauge ? address(this) : receiver_
         );
 
         require(
@@ -268,23 +273,13 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             "unexpected amounts deposited"
         );
 
-        IERC20 token = IERC20(vault_);
-        if (gauge_ != address(0)) {
-            token.safeIncreaseAllowance(gauge_, mintAmount_);
+        if (hasGauge) {
+            IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
 
-            IGauge(gauge_).deposit(mintAmount_, address(this));
-            token = IERC20(gauge_);
+            IGauge(gauge_).deposit(mintAmount_, receiver_);
         }
 
-        uint256 emolument = FullMath.mulDiv(
-            mintAmount_,
-            depositFeeBPS,
-            hundredPercent
-        );
-        sharesReceived = mintAmount_ - emolument;
-
-        token.safeTransfer(receiver_, sharesReceived);
-        token.safeTransfer(feeCollector, emolument);
+        sharesReceived = mintAmount_;
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
