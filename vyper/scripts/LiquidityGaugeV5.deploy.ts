@@ -9,7 +9,7 @@ const deploy = async () => {
     network.name === "arbitrum"
   ) {
     console.log(
-      `Deploying Vyper Contracts to ${network.name}. Hit ctrl + c to abort`
+      `Deploying Vyper LiquidityGaugeV5 to ${network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }

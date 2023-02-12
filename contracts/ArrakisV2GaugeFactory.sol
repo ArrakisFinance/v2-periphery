@@ -5,13 +5,9 @@ import {
     BeaconProxy
 } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {
-    TransparentUpgradeableProxy
-} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {
     ArrakisV2GaugeFactoryStorage,
     EnumerableSet
 } from "./abstract/ArrakisV2GaugeFactoryStorage.sol";
-import {InitializeGauge} from "./structs/SArrakisV2GaugeFactory.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 
 /// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV5 instances
@@ -23,19 +19,21 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
     {} // solhint-disable-line no-empty-blocks
 
     /// @notice Deploys an instance of LiquidityGaugeV5 using BeaconProxy or TransparentProxy.
-    /// @param params_ contains all data needed to create an instance of LiquidityGaugeV5.
-    /// @param isBeacon_ boolean, if true the instance will be BeaconProxy or TransparentProxy.
+    /// @param stakingToken_ ERC20 token address, stake to potentially earn rewards
+    /// @param rewardToken_ ERC20 token address, reward token for stakers
+    /// @param rewardDistributor_ address that distributes rewardToken_ rewards
     /// @return gauge the address of the LiquidityGaugeV5 instance created.
-    function deployGauge(InitializeGauge calldata params_, bool isBeacon_)
-        external
-        returns (address gauge)
-    {
-        gauge = _deploy(params_.stakingToken, isBeacon_);
+    function deployGauge(
+        address stakingToken_,
+        address rewardToken_,
+        address rewardDistributor_
+    ) external returns (address gauge) {
+        gauge = _deploy(stakingToken_);
         IGauge(gauge).add_reward(
-            params_.rewardToken,
-            params_.rewardDistributor,
-            params_.rewardVE,
-            params_.rewardVEBoost
+            rewardToken_,
+            rewardDistributor_,
+            address(0),
+            address(0)
         );
         _gauges.add(gauge);
         emit GaugeCreated(msg.sender, gauge);
@@ -127,10 +125,7 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
 
     // #region internal functions
 
-    function _deploy(address stakingToken_, bool isBeacon_)
-        internal
-        returns (address gauge)
-    {
+    function _deploy(address stakingToken_) internal returns (address gauge) {
         bytes memory data = abi.encodeWithSelector(
             IGauge.initialize.selector,
             stakingToken_,
@@ -141,17 +136,9 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
             abi.encodePacked(tx.origin, block.number, data)
         );
 
-        gauge = isBeacon_
-            ? address(
-                new BeaconProxy{salt: salt}(address(arrakisGaugeBeacon), data)
-            )
-            : address(
-                new TransparentUpgradeableProxy{salt: salt}(
-                    arrakisGaugeBeacon.implementation(),
-                    address(this),
-                    data
-                )
-            );
+        gauge = address(
+            new BeaconProxy{salt: salt}(address(arrakisGaugeBeacon), data)
+        );
     }
 
     // #endregion internal functions

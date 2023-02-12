@@ -5,9 +5,6 @@ import {
     IArrakisV2Beacon
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Beacon.sol";
 import {
-    ITransparentUpgradeableProxy
-} from "@arrakisfi/v2-core/contracts/interfaces/ITransparentUpgradeableProxy.sol";
-import {
     OwnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {
@@ -37,48 +34,6 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
         require(_owner_ != address(0), "owner is address zero");
         _transferOwnership(_owner_);
         emit InitFactory(_owner_);
-    }
-
-    // #region admin set functions
-    /// @notice upgrade gauges instance using transparent proxy
-    /// with the current implementation
-    /// @param gauges_ the list of gauge.
-    /// @dev only callable by owner
-    function upgradeGauges(address[] memory gauges_) external onlyOwner {
-        address implementation = arrakisGaugeBeacon.implementation();
-        require(implementation != address(0), "implementation is address zero");
-        for (uint256 i = 0; i < gauges_.length; i++) {
-            ITransparentUpgradeableProxy(gauges_[i]).upgradeTo(implementation);
-        }
-    }
-
-    /// @notice upgrade gauges instance using transparent proxy
-    /// with the current implementation and call the instance
-    /// @param gauges_ the list of gauge.
-    /// @param datas_ payloads of instances call.
-    /// @dev only callable by owner
-    function upgradeGaugesAndCall(
-        address[] memory gauges_,
-        bytes[] calldata datas_
-    ) external onlyOwner {
-        address implementation = arrakisGaugeBeacon.implementation();
-        require(implementation != address(0), "implementation is address zero");
-        require(gauges_.length == datas_.length, "mismatching array length");
-        for (uint256 i = 0; i < gauges_.length; i++) {
-            ITransparentUpgradeableProxy(gauges_[i]).upgradeToAndCall(
-                implementation,
-                datas_[i]
-            );
-        }
-    }
-
-    /// @notice make the gauge immutable
-    /// @param gauges_ the list of gauge.
-    /// @dev only callable by owner
-    function makeGaugesImmutable(address[] memory gauges_) external onlyOwner {
-        for (uint256 i = 0; i < gauges_.length; i++) {
-            ITransparentUpgradeableProxy(gauges_[i]).changeAdmin(address(1));
-        }
     }
 
     // #endregion admin set functions

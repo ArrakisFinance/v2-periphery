@@ -129,7 +129,7 @@ def initialize(_staking_token: address, _admin: address):
     """
     @notice Contract initializer
     @param _staking_token Liquidity Pool contract address
-    @param _admin Admin who can kill the gauge
+    @param _admin Admin who controls rewards
     """
     assert self.initialized == False #dev: contract is already initialized
     self.initialized = True

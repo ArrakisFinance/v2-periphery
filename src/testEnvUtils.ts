@@ -5,12 +5,14 @@ import {
   SwapResolver,
   ERC20,
   IArrakisV2,
+  IGauge,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "./addresses";
 import { Contract, Signer } from "ethers";
 import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
 import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
+import Gauge from "../vyper/build/contracts/LiquidityGaugeV5.json";
 
 const addresses: Addresses = getAddresses(network.name);
 
@@ -179,17 +181,36 @@ export const getFundsFromFaucet = async (
 };
 
 export const createGauge = async (
-  vaultAddress: string
-): Promise<[Contract, ERC20]> => {
-  const gaugeMockFactory = await ethers.getContractFactory("GaugeMock");
+  vaultAddress: string,
+  signer: SignerWithAddress,
+  owner: string
+): Promise<[IGauge, ERC20]> => {
+  const gaugeImplFactory = ethers.ContractFactory.fromSolidity(Gauge, signer);
 
-  const gauge = await gaugeMockFactory.deploy(vaultAddress, {
+  const gaugeImpl = await gaugeImplFactory.deploy({
     gasLimit: 6000000,
   });
+  const factory = await ethers.getContractFactory(
+    "TransparentUpgradeableProxy"
+  );
+  const encoded = gaugeImpl.interface.encodeFunctionData("initialize", [
+    vaultAddress,
+    signer.address,
+  ]);
+  const contract = await factory
+    .connect(signer)
+    .deploy(gaugeImpl.address, owner, encoded, {
+      gasLimit: 2000000,
+    });
+
+  const gauge = (await ethers.getContractAt(
+    "IGauge",
+    contract.address
+  )) as IGauge;
 
   const stRakisToken = (await ethers.getContractAt(
     "ERC20",
-    gauge.address
+    contract.address
   )) as ERC20;
 
   return [gauge, stRakisToken];

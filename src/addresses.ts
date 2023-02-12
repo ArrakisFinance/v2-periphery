@@ -3,10 +3,10 @@ import { getAddresses as getCoreAddresses } from "@arrakisfi/v2-core";
 
 export interface Addresses {
   UniswapV3Factory: string;
-  ArrakisV2: string;
   ArrakisV2Resolver: string;
   ArrakisV2Helper: string;
   ArrakisV2Factory: string;
+  GaugeImplementation: string;
   OneInchRouter: string;
   SwapRouter: string;
   DAI: string;
@@ -26,10 +26,10 @@ export const getAddresses = (network: string): Addresses => {
     case "hardhat":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -42,10 +42,10 @@ export const getAddresses = (network: string): Addresses => {
     case "mainnet":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "",
         OneInchRouter: "0x1111111254EEB25477B68fb85Ed929f73A960582",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -58,10 +58,10 @@ export const getAddresses = (network: string): Addresses => {
     case "polygon":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "",
         OneInchRouter: "",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", // IMPORTANT: must be WMATIC
@@ -74,10 +74,10 @@ export const getAddresses = (network: string): Addresses => {
     case "optimism":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "",
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "0x4200000000000000000000000000000000000006",
@@ -90,10 +90,10 @@ export const getAddresses = (network: string): Addresses => {
     case "arbitrum":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "",
         OneInchRouter: "",
         SwapRouter: "",
         WETH: "",
@@ -106,10 +106,10 @@ export const getAddresses = (network: string): Addresses => {
     case "local":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
-        ArrakisV2: coreAddresses.ArrakisV2Implementation,
         ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
         ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
         ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "",
         OneInchRouter: "0x1111111254fb6c44bac0bed2854e76f90643097d",
         SwapRouter: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",

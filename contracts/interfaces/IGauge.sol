@@ -32,6 +32,8 @@ interface IGauge is IERC20 {
 
     function claim_rewards(address addr) external;
 
+    function deposit_reward_token(address, uint256) external;
+
     function claimable_reward(address addr, address token)
         external
         view
