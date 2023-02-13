@@ -15,6 +15,9 @@ export interface Addresses {
   faucetDai: string;
   faucetUSDC: string;
   faucetWeth: string;
+  CRV: string;
+  veCRV: string;
+  veCRVBoost: string;
 }
 
 export const getAddresses = (network: string): Addresses => {
@@ -38,6 +41,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x075e72a5edf65f0a5f44699c7654c1a76941ddc8",
         faucetUSDC: "0x0a59649758aa4d66e25f08dd01271e891fe52199",
         faucetWeth: "0xf04a5cc80b1e94c69b48f5ee68a08cd2f09a7c3e",
+        CRV: "0xD533a949740bb3306d119CC777fa900bA034cd52",
+        veCRV: "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
+        veCRVBoost: "0x8E0c00ed546602fD9927DF742bbAbF726D5B0d16",
       };
     case "mainnet":
       return {
@@ -54,6 +60,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x075e72a5edf65f0a5f44699c7654c1a76941ddc8",
         faucetUSDC: "0x0a59649758aa4d66e25f08dd01271e891fe52199",
         faucetWeth: "0xf04a5cc80b1e94c69b48f5ee68a08cd2f09a7c3e",
+        CRV: "0xD533a949740bb3306d119CC777fa900bA034cd52",
+        veCRV: "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
+        veCRVBoost: "0x8E0c00ed546602fD9927DF742bbAbF726D5B0d16",
       };
     case "polygon":
       return {
@@ -70,6 +79,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
         faucetUSDC: "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
         faucetWeth: "0x28424507fefb6f7f8e9d3860f56504e4e5f5f390",
+        CRV: "",
+        veCRV: "",
+        veCRVBoost: "",
       };
     case "optimism":
       return {
@@ -86,6 +98,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "",
         faucetUSDC: "",
         faucetWeth: "",
+        CRV: "",
+        veCRV: "",
+        veCRVBoost: "",
       };
     case "arbitrum":
       return {
@@ -102,6 +117,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "",
         faucetUSDC: "",
         faucetWeth: "",
+        CRV: "",
+        veCRV: "",
+        veCRVBoost: "",
       };
     case "local":
       return {
@@ -118,6 +136,9 @@ export const getAddresses = (network: string): Addresses => {
         faucetDai: "0x075e72a5edf65f0a5f44699c7654c1a76941ddc8",
         faucetUSDC: "0x0a59649758aa4d66e25f08dd01271e891fe52199",
         faucetWeth: "0xf04a5cc80b1e94c69b48f5ee68a08cd2f09a7c3e",
+        CRV: "",
+        veCRV: "",
+        veCRVBoost: "",
       };
     default:
       throw new Error(`No addresses for Network: ${network}`);
