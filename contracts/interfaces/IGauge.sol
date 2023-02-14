@@ -46,6 +46,14 @@ interface IGauge is IERC20 {
 
     function deposit_reward_token(address, uint256) external;
 
+    function commit_transfer_ownership(address) external;
+
+    function accept_transfer_ownership() external;
+
+    function admin() external view returns(address);
+
+    function future_admin() external view returns(address); 
+
     function claimable_reward(address addr, address token)
         external
         view
