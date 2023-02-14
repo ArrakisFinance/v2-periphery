@@ -50,9 +50,9 @@ interface IGauge is IERC20 {
 
     function accept_transfer_ownership() external;
 
-    function admin() external view returns(address);
+    function admin() external view returns (address);
 
-    function future_admin() external view returns(address); 
+    function future_admin() external view returns (address);
 
     function claimable_reward(address addr, address token)
         external

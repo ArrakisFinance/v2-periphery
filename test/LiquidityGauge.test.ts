@@ -126,7 +126,7 @@ describe("LiquidityGauge tests", function () {
     expect(rewardData.ve).to.be.eq(ethers.constants.AddressZero);
     expect(rewardData.veBoost_proxy).to.be.eq(ethers.constants.AddressZero);
   });
-  it("#5 : Gets veCrv for user1", async function () {
+  it("#3 : Gets veCrv for user1", async function () {
     const userAddress = await user1.getAddress();
     const crvBalanceBefore = await crv.balanceOf(userAddress);
     expect(crvBalanceBefore).to.be.eq(0);
@@ -153,7 +153,7 @@ describe("LiquidityGauge tests", function () {
     const veCrvBalanceAfter = await vecrv.balanceOf(userAddress);
     expect(veCrvBalanceAfter).to.be.gt(0);
   });
-  it("#6 : Stake LP token (user1 with veCrv)", async function () {
+  it("#4 : Stake LP token (user1 with veCrv)", async function () {
     const userAddress = await user1.getAddress();
 
     const userBalance = await vault.balanceOf(userAddress);
@@ -186,7 +186,7 @@ describe("LiquidityGauge tests", function () {
     const newUserStakedBalance = await stToken.balanceOf(userAddress);
     expect(newUserStakedBalance).to.be.gt(userStakedBalance);
   });
-  it("#7 : Stake LP token (user2 without vecrv)", async function () {
+  it("#5 : Stake LP token (user2 without vecrv)", async function () {
     const userAddress = await user2.getAddress();
 
     const balanceVeCrvBefore = await vecrv.balanceOf(userAddress);
@@ -222,7 +222,7 @@ describe("LiquidityGauge tests", function () {
     const newUserStakedBalance = await stToken.balanceOf(userAddress);
     expect(newUserStakedBalance).to.be.gt(userStakedBalance);
   });
-  it("#3 : Deposit reward tokens with boost", async function () {
+  it("#6 : Deposit reward tokens with boost", async function () {
     const rewardData = await gauge.reward_data(crv.address);
 
     const amount = ethers.utils.parseEther("10000");
@@ -234,7 +234,7 @@ describe("LiquidityGauge tests", function () {
     expect(newRewardData.last_update).to.be.gt(rewardData.last_update);
     expect(newRewardData.rate).to.be.gt(rewardData.rate);
   });
-  it("#4 : Deposit reward token without boost", async function () {
+  it("#7 : Deposit reward token without boost", async function () {
     const rewardData = await gauge.reward_data(usdc.address);
 
     const amount = ethers.utils.parseUnits("10000", 6);
@@ -246,7 +246,7 @@ describe("LiquidityGauge tests", function () {
     expect(newRewardData.last_update).to.be.gt(rewardData.last_update);
     expect(newRewardData.rate).to.be.gt(rewardData.rate);
   });
-  it("#9 : Fast forward time", async function () {
+  it("#8 : Fast forward time", async function () {
     const currentBlockNumber = await ethers.provider.getBlockNumber();
     const currentBlock = await ethers.provider.getBlock(currentBlockNumber);
     const day = 60 * 60 * 24; // in s
@@ -259,7 +259,7 @@ describe("LiquidityGauge tests", function () {
 
     expect(newBlock.timestamp).to.be.gt(currentBlock.timestamp);
   });
-  it("#10 : Check users crv rewards", async function () {
+  it("#9 : Check users crv rewards", async function () {
     const user1Address = await user1.getAddress();
     const user2Address = await user2.getAddress();
 
@@ -275,7 +275,7 @@ describe("LiquidityGauge tests", function () {
 
     expect(crvRewardUser1).to.be.gt(crvRewardUser2);
   });
-  it("#11 : Check users usdc rewards", async function () {
+  it("#10 : Check users usdc rewards", async function () {
     const user1Address = await user1.getAddress();
     const user2Address = await user2.getAddress();
 
@@ -305,25 +305,41 @@ describe("LiquidityGauge tests", function () {
     expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
     expect(crvBalanceAfter).to.be.gt(crvBalanceBefore);
   });
-  it("#12 : Admin changes reward token proxy boost data", async function () {
+  it("#12 : Withdraws user1", async function () {
+    const balanceBefore = await stToken.balanceOf(user1.address);
+
+    await gauge.connect(user1).withdraw(balanceBefore.div(2));
+
+    const balanceAfter = await stToken.balanceOf(user1.address);
+    expect(balanceAfter).to.be.eq(balanceBefore.div(2));
+  });
+  it("#13 : Admin changes reward token proxy boost data", async function () {
     await gauge.set_reward_voting_escrow(
       crv.address,
-      token0.address,
-      token0.address
+      addresses.ArrakisV2Resolver,
+      addresses.ArrakisV2Resolver
     );
 
     const rewardData = await gauge.reward_data(crv.address);
     expect(rewardData.distributor).to.be.eq(walletAddress);
-    expect(rewardData.ve).to.be.eq(token0.address);
-    expect(rewardData.veBoost_proxy).to.be.eq(token0.address);
+    expect(rewardData.ve).to.be.eq(addresses.ArrakisV2Resolver);
+    expect(rewardData.veBoost_proxy).to.be.eq(addresses.ArrakisV2Resolver);
   });
-  it("#13 : Set reward distributor", async function () {
+  it("#14 : Withdraws user1 again", async function () {
+    const balanceBefore = await stToken.balanceOf(user1.address);
+
+    await gauge.connect(user1).withdraw(balanceBefore);
+
+    const balanceAfter = await stToken.balanceOf(user1.address);
+    expect(balanceAfter).to.be.eq(0);
+  });
+  it("#15 : Set reward distributor", async function () {
     await gauge.set_reward_distributor(crv.address, owner.address);
 
     const rewardData = await gauge.reward_data(crv.address);
     expect(rewardData.distributor).to.be.eq(owner.address);
   });
-  it("#14 : Revert when depositing reward token", async function () {
+  it("#16 : Revert when depositing reward token", async function () {
     const amount = ethers.utils.parseEther("10000");
     await crv.approve(gauge.address, amount);
 
@@ -331,7 +347,7 @@ describe("LiquidityGauge tests", function () {
       gauge.connect(wallet).deposit_reward_token(crv.address, amount)
     ).to.be.reverted;
   });
-  it("#15 : Claim user2 rewards", async function () {
+  it("#17 : Claim user2 rewards", async function () {
     const userAddress = await user2.getAddress();
 
     const usdcBalanceBefore = await usdc.balanceOf(userAddress);
@@ -348,27 +364,26 @@ describe("LiquidityGauge tests", function () {
     expect(crvBalanceAfter).to.be.gt(crvBalanceBefore);
     expect(token0BalanceBefore).to.be.eq(token0BalanceAfter);
   });
-  it("#16 Revert commit transfer ownership", async function () {
-    await expect(gauge.connect(owner).commit_transfer_ownership(owner.address))
+  it("#18 : Revert commit transfer ownership", async function () {
+    await expect(gauge.connect(owner).commit_transfer_ownership(user1.address))
       .to.be.reverted;
   });
-  it("#17 Commit transfer ownership", async function () {
-    const ownerAddress = await owner.getAddress();
-    await gauge.commit_transfer_ownership(ownerAddress);
+  it("#19 : Commit transfer ownership", async function () {
+    await gauge.commit_transfer_ownership(user1.address);
 
     const futureAdmin = await gauge.future_admin();
     const admin = await gauge.admin();
 
-    expect(futureAdmin).to.be.eq(ownerAddress);
+    expect(futureAdmin).to.be.eq(user1.address);
     expect(admin).to.be.eq(walletAddress);
   });
-  it("#18 Revert accept transfer ownership", async function () {
+  it("#20 : Revert accept transfer ownership", async function () {
     await expect(gauge.accept_transfer_ownership()).to.be.reverted;
   });
-  it("#19 Accept transfer ownership", async function () {
-    await gauge.connect(owner).accept_transfer_ownership();
+  it("#21 : Accept transfer ownership", async function () {
+    await gauge.connect(user1).accept_transfer_ownership();
 
     const admin = await gauge.admin();
-    expect(admin).to.be.eq(owner.address);
+    expect(admin).to.be.eq(user1.address);
   });
 });
