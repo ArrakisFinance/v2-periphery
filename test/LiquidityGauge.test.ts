@@ -19,11 +19,16 @@ describe("LiquidityGauge tests", function () {
   let walletAddress: string;
 
   let user1: SignerWithAddress;
+  let user2: SignerWithAddress;
   let owner: SignerWithAddress;
 
-  let token0: ERC20;
-  let token1: ERC20;
+  let token0: ERC20; // dai
+  let token1: ERC20; // weth
   let crv: ERC20;
+  let vecrv: ERC20;
+  let usdc: ERC20;
+
+  let vecrvContract: Contract;
 
   let resolver: Contract;
 
@@ -36,7 +41,7 @@ describe("LiquidityGauge tests", function () {
     await deployments.fixture();
 
     addresses = getAddresses(network.name);
-    [wallet, user1, owner] = await ethers.getSigners();
+    [wallet, user1, user2, owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
 
     resolver = await getArrakisResolver(owner);
@@ -59,10 +64,17 @@ describe("LiquidityGauge tests", function () {
       await vault.token1()
     )) as ERC20;
     crv = (await ethers.getContractAt("ERC20", addresses.CRV)) as ERC20;
+    usdc = (await ethers.getContractAt("ERC20", addresses.USDC)) as ERC20;
+    vecrv = (await ethers.getContractAt("ERC20", addresses.veCRV)) as ERC20;
+    vecrvContract = await ethers.getContractAt(
+      ["function create_lock(uint256 _value, uint256 _unlock_time) external"],
+      addresses.veCRV
+    );
 
     await getFundsFromFaucet(addresses.faucetDai, token0, walletAddress);
     await getFundsFromFaucet(addresses.faucetWeth, token1, walletAddress);
     await getFundsFromFaucet(addresses.veCRV, crv, walletAddress);
+    await getFundsFromFaucet(addresses.faucetUSDC, usdc, walletAddress);
 
     [gauge, stToken] = await createGauge(vault.address, wallet, owner.address);
   });
@@ -82,7 +94,7 @@ describe("LiquidityGauge tests", function () {
     const vaultDecimals = await vault.decimals();
     expect(gaugeDecimals).to.be.eq(vaultDecimals);
   });
-  it("#1 : Adds reward", async function () {
+  it("#1 : Adds reward with boost", async function () {
     const rewardCount = await gauge.reward_count();
     await gauge.add_reward(
       crv.address,
@@ -98,7 +110,23 @@ describe("LiquidityGauge tests", function () {
     expect(rewardData.ve).to.be.eq(addresses.veCRV);
     expect(rewardData.veBoost_proxy).to.be.eq(addresses.veCRVBoost);
   });
-  it("#2 : Deposit reward token", async function () {
+  it("#2 : Adds reward without boost", async function () {
+    const rewardCount = await gauge.reward_count();
+    await gauge.add_reward(
+      usdc.address,
+      walletAddress,
+      ethers.constants.AddressZero,
+      ethers.constants.AddressZero
+    );
+    const newRewardCount = await gauge.reward_count();
+    expect(rewardCount.add(1)).to.be.eq(newRewardCount);
+
+    const rewardData = await gauge.reward_data(usdc.address);
+    expect(rewardData.distributor).to.be.eq(walletAddress);
+    expect(rewardData.ve).to.be.eq(ethers.constants.AddressZero);
+    expect(rewardData.veBoost_proxy).to.be.eq(ethers.constants.AddressZero);
+  });
+  it("#3 : Deposit reward tokens with boost", async function () {
     const rewardData = await gauge.reward_data(crv.address);
 
     const amount = ethers.utils.parseEther("10000");
@@ -110,10 +138,49 @@ describe("LiquidityGauge tests", function () {
     expect(newRewardData.last_update).to.be.gt(rewardData.last_update);
     expect(newRewardData.rate).to.be.gt(rewardData.rate);
   });
-  it("#3 : Stake LP token", async function () {
-    const user1Address = await user1.getAddress();
+  it("#4 : Deposit reward token without boost", async function () {
+    const rewardData = await gauge.reward_data(usdc.address);
 
-    const userBalance = await vault.balanceOf(user1Address);
+    const amount = ethers.utils.parseUnits("10000", 6);
+    await usdc.approve(gauge.address, amount);
+    await gauge.connect(wallet).deposit_reward_token(usdc.address, amount);
+
+    const newRewardData = await gauge.reward_data(usdc.address);
+    expect(newRewardData.period_finish).to.be.gt(rewardData.period_finish);
+    expect(newRewardData.last_update).to.be.gt(rewardData.last_update);
+    expect(newRewardData.rate).to.be.gt(rewardData.rate);
+  });
+  it("#5 : Gets veCrv for user1", async function () {
+    const userAddress = await user1.getAddress();
+    const crvBalanceBefore = await crv.balanceOf(userAddress);
+    expect(crvBalanceBefore).to.be.eq(0);
+
+    const amount = ethers.utils.parseEther("100");
+    await crv.transfer(userAddress, amount);
+
+    const crvBalanceAfter = await crv.balanceOf(userAddress);
+    expect(crvBalanceAfter).to.be.eq(amount);
+
+    const veCrvBalanceBefore = await vecrv.balanceOf(userAddress);
+    expect(veCrvBalanceBefore).to.be.eq(0);
+
+    const blockNumber = await ethers.provider.getBlockNumber();
+    const block = await ethers.provider.getBlock(blockNumber);
+    const week = 60 * 60 * 24 * 7; // in s
+
+    await crv.connect(user1).approve(vecrvContract.address, amount);
+
+    await vecrvContract
+      .connect(user1)
+      .create_lock(amount, block.timestamp + week);
+
+    const veCrvBalanceAfter = await vecrv.balanceOf(userAddress);
+    expect(veCrvBalanceAfter).to.be.gt(0);
+  });
+  it("#6 : Stake LP token (user1 with veCrv)", async function () {
+    const userAddress = await user1.getAddress();
+
+    const userBalance = await vault.balanceOf(userAddress);
     expect(userBalance).to.be.eq(0);
 
     const amount0In = ethers.utils.parseEther("1600");
@@ -128,19 +195,100 @@ describe("LiquidityGauge tests", function () {
       amount1In
     );
 
-    await vault.mint(mintAmount, user1Address);
+    await vault.mint(mintAmount, userAddress);
+    const newUserBalance = await vault.balanceOf(userAddress);
 
-    const newUserBalance = await vault.balanceOf(user1Address);
     expect(newUserBalance).to.be.gt(userBalance);
 
-    const userStakedBalance = await stToken.balanceOf(user1Address);
+    const userStakedBalance = await stToken.balanceOf(userAddress);
     expect(userStakedBalance).to.be.eq(0);
 
-    await vault.connect(user1).approve(gauge.address, userStakedBalance);
+    await vault.connect(user1).approve(gauge.address, newUserBalance);
 
-    await gauge.connect(user1).deposit(newUserBalance, user1Address);
+    await gauge.connect(user1).deposit(newUserBalance, userAddress);
 
-    const newUserStakedBalance = await stToken.balanceOf(user1Address);
+    const newUserStakedBalance = await stToken.balanceOf(userAddress);
     expect(newUserStakedBalance).to.be.gt(userStakedBalance);
+  });
+  it("#7 : Stake LP token (user2 without vecrv)", async function () {
+    const userAddress = await user2.getAddress();
+
+    const balanceVeCrvBefore = await vecrv.balanceOf(userAddress);
+    expect(balanceVeCrvBefore).to.be.eq(0);
+
+    const userBalance = await vault.balanceOf(userAddress);
+    expect(userBalance).to.be.eq(0);
+
+    const amount0In = ethers.utils.parseEther("1600");
+    const amount1In = ethers.utils.parseEther("1");
+
+    await token0.approve(vault.address, amount0In);
+    await token1.approve(vault.address, amount1In);
+
+    const { mintAmount } = await resolver.getMintAmounts(
+      vault.address,
+      amount0In,
+      amount1In
+    );
+
+    await vault.mint(mintAmount, userAddress);
+
+    const newUserBalance = await vault.balanceOf(userAddress);
+    expect(newUserBalance).to.be.gt(userBalance);
+
+    const userStakedBalance = await stToken.balanceOf(userAddress);
+    expect(userStakedBalance).to.be.eq(0);
+
+    await vault.connect(user2).approve(gauge.address, newUserBalance);
+
+    await gauge.connect(user2).deposit(newUserBalance, userAddress);
+
+    const newUserStakedBalance = await stToken.balanceOf(userAddress);
+    expect(newUserStakedBalance).to.be.gt(userStakedBalance);
+  });
+  it("#9 : Fast forward time", async function () {
+    const currentBlockNumber = await ethers.provider.getBlockNumber();
+    const currentBlock = await ethers.provider.getBlock(currentBlockNumber);
+    const day = 60 * 60 * 24; // in s
+
+    await network.provider.send("evm_increaseTime", [day]);
+    await network.provider.send("evm_mine");
+
+    const newBlockNumber = await ethers.provider.getBlockNumber();
+    const newBlock = await ethers.provider.getBlock(newBlockNumber);
+
+    expect(newBlock.timestamp).to.be.gt(currentBlock.timestamp);
+  });
+  it("#10 : Check users crv rewards", async function () {
+    const user1Address = await user1.getAddress();
+    const user2Address = await user2.getAddress();
+
+    const crvRewardUser1 = await gauge.claimable_reward(
+      user1Address,
+      crv.address
+    );
+
+    const crvRewardUser2 = await gauge.claimable_reward(
+      user2Address,
+      crv.address
+    );
+
+    expect(crvRewardUser1).to.be.gt(crvRewardUser2);
+  });
+  it("#11 : Check users usdc rewards", async function () {
+    const user1Address = await user1.getAddress();
+    const user2Address = await user2.getAddress();
+
+    const usdcRewardUser1 = await gauge.claimable_reward(
+      user1Address,
+      usdc.address
+    );
+
+    const usdcRewardUser2 = await gauge.claimable_reward(
+      user2Address,
+      usdc.address
+    );
+
+    expect(usdcRewardUser1).to.be.eq(usdcRewardUser2);
   });
 });
