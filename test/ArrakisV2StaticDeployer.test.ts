@@ -15,7 +15,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 import { Addresses, getAddresses } from "../src/addresses";
 import { BigNumber, Contract } from "ethers";
 import { getFundsFromFaucet, getArrakisResolver } from "../src/testEnvUtils";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV5.json";
+import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
 
 let addresses: Addresses;
 

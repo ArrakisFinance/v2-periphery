@@ -10,7 +10,7 @@ import {
 } from "./abstract/ArrakisV2GaugeFactoryStorage.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 
-/// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV5 instances
+/// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV4Multi instances
 contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -18,11 +18,11 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
         ArrakisV2GaugeFactoryStorage(gaugeBeacon_)
     {} // solhint-disable-line no-empty-blocks
 
-    /// @notice Deploys an instance of LiquidityGaugeV5 using BeaconProxy or TransparentProxy.
+    /// @notice Deploys an instance of LiquidityGaugeV4Multi using BeaconProxy or TransparentProxy.
     /// @param stakingToken_ ERC20 token address, stake to potentially earn rewards
     /// @param rewardToken_ ERC20 token address, reward token for stakers
     /// @param rewardDistributor_ address that distributes rewardToken_ rewards
-    /// @return gauge the address of the LiquidityGaugeV5 instance created.
+    /// @return gauge the address of the LiquidityGaugeV4Multi instance created.
     function deployGauge(
         address stakingToken_,
         address rewardToken_,
