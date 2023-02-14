@@ -1,6 +1,6 @@
-# @version 0.2.16
+# @version 0.3.7
 """
-@title Liquidity Gauge v5
+@title Liquidity Gauge v4 Multi
 @author Arrakis Finance
 @license MIT
 """
@@ -170,8 +170,25 @@ def _update_liquidity_limit(addr: address, l: uint256, L: uint256, token: addres
     # To be called after totalSupply is updated
     veBoost: address = self.reward_data[token].veBoost_proxy
     ve: address = self.reward_data[token].ve
-    voting_balance: uint256 = VotingEscrowBoost(veBoost).adjusted_balance_of(addr)
-    voting_total: uint256 = ERC20(ve).totalSupply()
+    success: bool = False
+    response: Bytes[32] = b""
+    voting_balance: uint256 = 0
+    voting_total: uint256 = 0
+    success, response = raw_call(
+        veBoost,
+        concat(
+            method_id("adjusted_balance_of(address)"),
+            convert(addr, bytes32)
+        ),
+        max_outsize=32,
+        revert_on_failure=False,
+    )
+    if success:
+        voting_balance = convert(response, uint256)
+    success = False
+    success, response = raw_call(ve, method_id("totalSupply()"), max_outsize=32, revert_on_failure=False)
+    if success:
+        voting_total = convert(response, uint256)
 
     lim: uint256 = l * TOKENLESS_PRODUCTION / 100
     if voting_total > 0:
@@ -353,14 +370,55 @@ def kick(addr: address, token: address):
     @param token Reward token to kick
     """
     ve: address = self.reward_data[token].ve
-    assert ve != ZERO_ADDRESS
     t_last: uint256 = self.integrate_checkpoint_of[token][addr]
-    t_ve: uint256 = VotingEscrow(ve).user_point_history__ts(
-        addr, VotingEscrow(ve).user_point_epoch(addr)
+    
+    success: bool = False
+    response: Bytes[32] = b""
+    success, response = raw_call(
+        ve,
+        concat(
+            method_id("user_point_epoch(address)"),
+            convert(addr, bytes32)
+        ),
+        max_outsize=32,
+        revert_on_failure=False,
     )
+    epoch: uint256 = 0
+    if success:
+        epoch = convert(response, uint256)
+
+    success = False
+    success, response = raw_call(
+        ve,
+        concat(
+            method_id("user_point_history__ts(address,uint256)"),
+            convert(addr, bytes32),
+            convert(epoch, bytes32)
+        ),
+        max_outsize=32,
+        revert_on_failure=False,
+    )
+    t_ve: uint256 = t_last+1
+    if success:
+        t_ve = convert(response, uint256)
+
     _balance: uint256 = self.balanceOf[addr]
 
-    assert ERC20(ve).balanceOf(addr) == 0 or t_ve > t_last # dev: kick not allowed
+    success = False
+    success, response = raw_call(
+        ve,
+        concat(
+            method_id("balanceOf(address)"),
+            convert(addr, bytes32)
+        ),
+        max_outsize=32,
+        revert_on_failure=False,
+    )
+    ve_bal: uint256 = 0
+    if success:
+        ve_bal = convert(response, uint256)
+
+    assert ve_bal == 0 or t_ve > t_last # dev: kick not allowed
     assert self.working_balances[token][addr] > _balance * TOKENLESS_PRODUCTION / 100  # dev: kick not needed
 
     total_supply: uint256 = self.totalSupply

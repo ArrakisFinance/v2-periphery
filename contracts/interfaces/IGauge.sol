@@ -6,6 +6,18 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // solhint-disable func-name-mixedcase
 interface IGauge is IERC20 {
+    // solhint-disable var-name-mixedcase
+    struct Reward {
+        address token;
+        address distributor;
+        address ve;
+        address veBoost_proxy;
+        uint256 period_finish;
+        uint256 rate;
+        uint256 last_update;
+        uint256 integral;
+    }
+
     function initialize(address stakingToken, address admin) external;
 
     function deposit(uint256 value, address addr) external;
@@ -34,6 +46,14 @@ interface IGauge is IERC20 {
 
     function deposit_reward_token(address, uint256) external;
 
+    function commit_transfer_ownership(address) external;
+
+    function accept_transfer_ownership() external;
+
+    function admin() external view returns (address);
+
+    function future_admin() external view returns (address);
+
     function claimable_reward(address addr, address token)
         external
         view
@@ -47,6 +67,8 @@ interface IGauge is IERC20 {
     function reward_count() external view returns (uint256);
 
     function reward_tokens(uint256 index) external view returns (address);
+
+    function reward_data(address) external view returns (Reward memory);
 
     function staking_token() external view returns (address);
 

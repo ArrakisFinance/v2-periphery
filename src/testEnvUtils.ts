@@ -12,7 +12,7 @@ import { Addresses, getAddresses } from "./addresses";
 import { Contract, Signer } from "ethers";
 import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
 import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV5.json";
+import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
 
 const addresses: Addresses = getAddresses(network.name);
 

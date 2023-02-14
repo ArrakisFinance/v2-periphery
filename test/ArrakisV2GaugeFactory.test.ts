@@ -15,7 +15,7 @@ import {
   getFundsFromFaucet,
   getArrakisResolver,
 } from "../src/testEnvUtils";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV5.json";
+import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
 
 let addresses: Addresses;
 
