@@ -19,7 +19,6 @@ import {SetStaticVault, StaticVaultInfo} from "./structs/SStaticManager.sol";
 import {
     hundredPercent
 } from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
-import "hardhat/console.sol";
 
 contract StaticManager is StaticManagerStorage {
     using SafeERC20 for IERC20;
