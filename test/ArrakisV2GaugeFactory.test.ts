@@ -144,13 +144,7 @@ describe("ArrakisV2GaugeFactory tests", function () {
     await expect(
       gaugeFactory
         .connect(wallet)
-        .addGaugeReward(
-          gauge.address,
-          token1.address,
-          walletAddress,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero
-        )
+        .addGaugeReward(gauge.address, token1.address, walletAddress)
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
     const nRewards = await gauge.reward_count();
@@ -159,13 +153,7 @@ describe("ArrakisV2GaugeFactory tests", function () {
 
     await gaugeFactory
       .connect(owner)
-      .addGaugeReward(
-        gauge.address,
-        token1.address,
-        walletAddress,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero
-      );
+      .addGaugeReward(gauge.address, token1.address, walletAddress);
 
     const nRewardsAfter = await gauge.reward_count();
 
@@ -179,19 +167,33 @@ describe("ArrakisV2GaugeFactory tests", function () {
     await expect(
       gaugeFactory
         .connect(wallet)
-        .setGaugeRewardVotingEscrow(
+        .addGaugeRewardBoostable(
           gauge.address,
           token1.address,
+          walletAddress,
           token1.address,
           token1.address
         )
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
+    await expect(
+      gaugeFactory
+        .connect(owner)
+        .addGaugeRewardBoostable(
+          gauge.address,
+          token1.address,
+          walletAddress,
+          token1.address,
+          token1.address
+        )
+    ).to.be.revertedWith("AE");
+
     await gaugeFactory
       .connect(owner)
-      .setGaugeRewardVotingEscrow(
+      .addGaugeRewardBoostable(
         gauge.address,
-        token1.address,
+        vault.address,
+        walletAddress,
         token1.address,
         token1.address
       );

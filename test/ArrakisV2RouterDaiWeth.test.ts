@@ -158,15 +158,9 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     await gauge
       .connect(wallet)
-      .add_reward(
-        token0.address,
-        await wallet.getAddress(),
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        {
-          gasLimit: 6000000,
-        }
-      );
+      .add_reward(token0.address, await wallet.getAddress(), {
+        gasLimit: 6000000,
+      });
 
     const rewardAmount = ethers.utils.parseEther("1000");
     await token0.connect(wallet).approve(gauge.address, rewardAmount);
