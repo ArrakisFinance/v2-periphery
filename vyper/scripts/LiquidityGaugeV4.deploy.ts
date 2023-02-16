@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import Gauge from "../build/contracts/LiquidityGaugeV5.json";
+import Gauge from "../build/contracts/LiquidityGaugeV4Multi.json";
 
 const deploy = async () => {
   if (
@@ -9,7 +9,7 @@ const deploy = async () => {
     network.name === "arbitrum"
   ) {
     console.log(
-      `Deploying Vyper Contracts to ${network.name}. Hit ctrl + c to abort`
+      `Deploying Vyper LiquidityGaugeV4Multi to ${network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -18,7 +18,7 @@ const deploy = async () => {
   const gaugeImpl = await gaugeImplFactory
     .connect(signer)
     .deploy({ gasLimit: 6000000 });
-  console.log("GAUGE V5 IMPLEMENTATION DEPLOYED:", gaugeImpl.address);
+  console.log("GAUGE V4 MULTI IMPLEMENTATION DEPLOYED:", gaugeImpl.address);
 };
 
 (async () => {

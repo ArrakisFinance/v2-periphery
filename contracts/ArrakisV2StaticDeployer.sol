@@ -13,8 +13,16 @@ import {
     IUniswapV3Pool
 } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {
+    IUniswapV3Factory
+} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
+import {
+    IArrakisV2Factory
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol";
+import {IArrakisV2GaugeFactory} from "./interfaces/IArrakisV2GaugeFactory.sol";
+import {IStaticManager} from "./interfaces/IStaticManager.sol";
 import {
     PositionLiquidity,
     InitializePayload,
@@ -22,32 +30,38 @@ import {
 } from "@arrakisfi/v2-core/contracts/structs/SArrakisV2.sol";
 import {InitializeStatic} from "./structs/SArrakisV2StaticDeployer.sol";
 import {SetStaticVault} from "./structs/SStaticManager.sol";
-import {InitializeGauge} from "./structs/SArrakisV2GaugeFactory.sol";
-import {
-    ArrakisV2StaticDeployerStorage
-} from "./abstract/ArrakisV2StaticDeployerStorage.sol";
 
-contract ArrakisV2StaticDeployer is ArrakisV2StaticDeployerStorage {
+contract ArrakisV2StaticDeployer {
     using SafeERC20 for IERC20;
+
+    IUniswapV3Factory public immutable uniswapFactory;
+    IArrakisV2Factory public immutable arrakisFactory;
+    IArrakisV2GaugeFactory public immutable gaugeFactory;
+    IStaticManager public immutable staticManager;
+
+    event CreateStaticVault(
+        address vault,
+        address gauge,
+        address caller,
+        uint256 amount0,
+        uint256 amount1
+    );
 
     constructor(
         address uniswapFactory_,
         address arrakisFactory_,
         address gaugeFactory_,
         address staticManager_
-    )
-        ArrakisV2StaticDeployerStorage(
-            uniswapFactory_,
-            arrakisFactory_,
-            gaugeFactory_,
-            staticManager_
-        )
-    {} // solhint-disable-line no-empty-blocks
+    ) {
+        uniswapFactory = IUniswapV3Factory(uniswapFactory_);
+        arrakisFactory = IArrakisV2Factory(arrakisFactory_);
+        gaugeFactory = IArrakisV2GaugeFactory(gaugeFactory_);
+        staticManager = IStaticManager(staticManager_);
+    }
 
     // solhint-disable-next-line function-max-lines
     function deployStaticVault(InitializeStatic calldata params_)
         external
-        whenNotPaused
         returns (address vault, address gauge)
     {
         (uint256 init0, uint256 init1) = _getInits(
@@ -76,34 +90,39 @@ contract ArrakisV2StaticDeployer is ArrakisV2StaticDeployerStorage {
         );
 
         IERC20(params_.token0).safeApprove(vault, init0);
-        IERC20(params_.token0).safeApprove(vault, init1);
+        IERC20(params_.token1).safeApprove(vault, init1);
+
+        if (init0 > 0)
+            IERC20(params_.token0).safeTransferFrom(
+                msg.sender,
+                address(this),
+                init0
+            );
+        if (init1 > 0)
+            IERC20(params_.token1).safeTransferFrom(
+                msg.sender,
+                address(this),
+                init1
+            );
+
         IArrakisV2(vault).mint(1 ether, params_.receiver);
 
         Rebalance memory rebalance;
         rebalance.mints = params_.positions;
+
         IArrakisV2(vault).rebalance(rebalance);
 
         IArrakisV2(vault).setManager(address(staticManager));
 
         staticManager.setStaticVault(
-            SetStaticVault({
-                vault: vault,
-                twapDeviation: params_.twapDeviation,
-                twapDuration: params_.twapDuration,
-                compoundEnabled: params_.compoundEnabled
-            })
+            SetStaticVault({vault: vault, vaultInfo: params_.vaultInfo})
         );
 
-        if (params_.hasGauge) {
+        if (params_.rewardToken != address(0)) {
             gauge = gaugeFactory.deployGauge(
-                InitializeGauge({
-                    stakingToken: vault,
-                    rewardToken: params_.rewardToken,
-                    rewardDistributor: params_.rewardDistributor,
-                    rewardVE: params_.rewardVE,
-                    rewardVEBoost: params_.rewardVEBoost
-                }),
-                true
+                vault,
+                params_.rewardToken,
+                params_.rewardDistributor
             );
         }
 
@@ -135,8 +154,8 @@ contract ArrakisV2StaticDeployer is ArrakisV2StaticDeployerStorage {
                     TickMath.getSqrtRatioAtTick(positions_[i].range.upperTick),
                     positions_[i].liquidity
                 );
-            init0 += in0;
-            init1 += in1;
+            if (in0 > 0) init0 += in0 + 1;
+            if (in1 > 0) init1 += in1 + 1;
         }
     }
 }

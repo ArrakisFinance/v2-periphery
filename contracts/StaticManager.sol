@@ -28,10 +28,11 @@ contract StaticManager is StaticManagerStorage {
     {} // solhint-disable-line no-empty-blocks
 
     function setStaticVault(SetStaticVault calldata params_) external {
-        if (params_.compoundEnabled) {
+        if (params_.vaultInfo.compoundEnabled) {
             // must have non-zero deviation and duration
             require(
-                params_.twapDeviation > 0 && params_.twapDuration > 0,
+                params_.vaultInfo.twapDeviation > 0 &&
+                    params_.vaultInfo.twapDuration > 0,
                 "DN"
             );
         }
@@ -39,27 +40,17 @@ contract StaticManager is StaticManagerStorage {
         require(msg.sender == IArrakisV2(params_.vault).owner(), "NO");
         // must be manager
         require(address(this) == IArrakisV2(params_.vault).manager(), "NM");
-        // must not be vault already
-        require(!vaults[params_.vault].isVault, "AV");
         // set fee take rate
         IArrakisV2(params_.vault).setManagerFeeBPS(managerFeeBPS);
 
         // add vault
-        vaults[params_.vault] = StaticVaultInfo({
-            twapDeviation: params_.twapDeviation,
-            twapDuration: params_.twapDuration,
-            compoundEnabled: params_.compoundEnabled,
-            isVault: true
-        });
+        vaults[params_.vault] = params_.vaultInfo;
     }
 
     // solhint-disable-next-line function-max-lines
     function compoundFees(IArrakisV2 vault_) external whenNotPaused {
         StaticVaultInfo memory vaultInfo = vaults[address(vault_)];
-        require(
-            vaultInfo.isVault && vaultInfo.compoundEnabled,
-            "cannot rebalance"
-        );
+        require(vaultInfo.compoundEnabled, "cannot rebalance");
 
         // check TWAPs for manipulation
         _checkTWAPs(vault_, vaultInfo.twapDuration, vaultInfo.twapDeviation);

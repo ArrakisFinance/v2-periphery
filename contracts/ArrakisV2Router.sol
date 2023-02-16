@@ -103,7 +103,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             );
         }
 
-        (amount0, amount1, sharesReceived) = _addLiquidity(
+        _addLiquidity(
             addData_.vault,
             amount0,
             amount1,
@@ -236,7 +236,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         (amount0, amount1) = _removeLiquidity(removeData_);
     }
 
-    // solhint-disable-next-line function-max-lines
     function _addLiquidity(
         address vault_,
         uint256 amount0In_,
@@ -244,16 +243,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         uint256 mintAmount_,
         address gauge_,
         address receiver_
-    )
-        internal
-        returns (
-            uint256 amount0,
-            uint256 amount1,
-            uint256 sharesReceived
-        )
-    {
-        bool hasGauge = gauge_ != address(0);
-
+    ) internal {
         IERC20(IArrakisV2(vault_).token0()).safeIncreaseAllowance(
             vault_,
             amount0In_
@@ -263,23 +253,14 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount1In_
         );
 
-        (amount0, amount1) = IArrakisV2(vault_).mint(
-            mintAmount_,
-            hasGauge ? address(this) : receiver_
-        );
+        if (gauge_ == address(0)) {
+            IArrakisV2(vault_).mint(mintAmount_, receiver_);
+        } else {
+            IArrakisV2(vault_).mint(mintAmount_, address(this));
 
-        require(
-            amount0 == amount0In_ && amount1 == amount1In_,
-            "unexpected amounts deposited"
-        );
-
-        if (hasGauge) {
             IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
-
             IGauge(gauge_).deposit(mintAmount_, receiver_);
         }
-
-        sharesReceived = mintAmount_;
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
@@ -327,6 +308,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount1Use
         );
 
+        require(sharesReceived > 0, "nothing to mint");
         require(
             amount0 >= swapAndAddData_.addData.amount0Min &&
                 amount1 >= swapAndAddData_.addData.amount1Min &&
@@ -334,7 +316,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             "below min amounts"
         );
 
-        (amount0, amount1, sharesReceived) = _addLiquidity(
+        _addLiquidity(
             swapAndAddData_.addData.vault,
             amount0,
             amount1,

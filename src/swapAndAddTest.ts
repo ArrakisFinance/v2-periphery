@@ -22,8 +22,8 @@ const addresses: Addresses = getAddresses(network.name);
 export const swapAndAddTest = async (
   signer: SignerWithAddress,
 
-  genericRouter: ArrakisV2Router,
-  routerExecutor: ArrakisV2SwapExecutor,
+  router: ArrakisV2Router,
+  swapExecutor: ArrakisV2SwapExecutor,
   swapResolver: SwapResolver,
 
   resolver: Contract,
@@ -62,10 +62,10 @@ export const swapAndAddTest = async (
 
   // approve the generic router for user's max amounts
   if (amount0Max.gt(0)) {
-    await token0.connect(signer).approve(genericRouter.address, amount0Max);
+    await token0.connect(signer).approve(router.address, amount0Max);
   }
   if (amount1Max.gt(0)) {
-    await token1.connect(signer).approve(genericRouter.address, amount1Max);
+    await token1.connect(signer).approve(router.address, amount1Max);
   }
 
   // get before balances
@@ -192,7 +192,7 @@ export const swapAndAddTest = async (
       zeroForOne ? token0.address : token1.address,
       zeroForOne ? token1.address : token0.address,
       swapAmountIn.toString(),
-      routerExecutor.address,
+      swapExecutor.address,
       slippage.toString()
     );
 
@@ -257,7 +257,7 @@ export const swapAndAddTest = async (
   };
 
   // listener for getting data from "Swapped" event
-  genericRouter.on(
+  router.on(
     "Swapped",
     (
       zeroForOne: boolean,
@@ -309,13 +309,12 @@ export const swapAndAddTest = async (
     if (isToken0Weth) {
       const value = transactionEthValue || swapAndAddData.addData.amount0Max;
       if (value == swapAndAddData.addData.amount0Max) {
-        swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-          swapAndAddData,
-          { value: value }
-        );
+        swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData, {
+          value: value,
+        });
       } else {
         await expect(
-          genericRouter.swapAndAddLiquidity(swapAndAddData, {
+          router.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
@@ -324,13 +323,12 @@ export const swapAndAddTest = async (
     } else {
       const value = transactionEthValue || swapAndAddData.addData.amount1Max;
       if (value == swapAndAddData.addData.amount1Max) {
-        swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-          swapAndAddData,
-          { value: value }
-        );
+        swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData, {
+          value: value,
+        });
       } else {
         await expect(
-          genericRouter.swapAndAddLiquidity(swapAndAddData, {
+          router.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
         ).to.be.revertedWith("Invalid amount of ETH forwarded");
@@ -339,14 +337,11 @@ export const swapAndAddTest = async (
     }
   } else {
     if (transactionEthValue) {
-      swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-        swapAndAddData,
-        { value: transactionEthValue }
-      );
+      swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData, {
+        value: transactionEthValue,
+      });
     } else {
-      swapAndAddTxPending = await genericRouter.swapAndAddLiquidity(
-        swapAndAddData
-      );
+      swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData);
     }
   }
 
@@ -440,45 +435,41 @@ export const swapAndAddTest = async (
   }
 
   // validate router balances
-  const routerBalance0 = await token0.balanceOf(routerExecutor.address);
-  const routerBalance1 = await token1.balanceOf(routerExecutor.address);
-  const routerBalanceRakis = await rakisToken.balanceOf(routerExecutor.address);
-  expect(routerBalance0).to.equal(ethers.constants.Zero);
-  expect(routerBalance1).to.equal(ethers.constants.Zero);
-  expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+  const swapperBalance0 = await token0.balanceOf(swapExecutor.address);
+  const swapperBalance1 = await token1.balanceOf(swapExecutor.address);
+  const swapperBalanceRakis = await rakisToken.balanceOf(swapExecutor.address);
+  expect(swapperBalance0).to.equal(ethers.constants.Zero);
+  expect(swapperBalance1).to.equal(ethers.constants.Zero);
+  expect(swapperBalanceRakis).to.equal(ethers.constants.Zero);
   if (stRakisToken) {
     const routerBalanceStRakis = await stRakisToken.balanceOf(
-      routerExecutor.address
+      swapExecutor.address
     );
     expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
   }
 
   // validate router - 1inch allowance
-  const routerExecutorAllowance0 = await token0.allowance(
-    routerExecutor.address,
+  const swapExecutorAllowance0 = await token0.allowance(
+    swapExecutor.address,
     addresses.OneInchRouter
   );
-  const routerExecutorAllowance1 = await token1.allowance(
-    routerExecutor.address,
+  const swapExecutorAllowance1 = await token1.allowance(
+    swapExecutor.address,
     addresses.OneInchRouter
   );
-  expect(routerExecutorAllowance0).to.equal(ethers.constants.Zero);
-  expect(routerExecutorAllowance1).to.equal(ethers.constants.Zero);
+  expect(swapExecutorAllowance0).to.equal(ethers.constants.Zero);
+  expect(swapExecutorAllowance1).to.equal(ethers.constants.Zero);
 
   // validate generic router balances
-  const genericRouterBalance0 = await token0.balanceOf(genericRouter.address);
-  const genericRouterBalance1 = await token1.balanceOf(genericRouter.address);
-  const genericRouterBalanceRakis = await rakisToken.balanceOf(
-    genericRouter.address
-  );
-  expect(genericRouterBalance0).to.equal(ethers.constants.Zero);
-  expect(genericRouterBalance1).to.equal(ethers.constants.Zero);
-  expect(genericRouterBalanceRakis).to.equal(ethers.constants.Zero);
+  const routerBalance0 = await token0.balanceOf(router.address);
+  const routerBalance1 = await token1.balanceOf(router.address);
+  const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+  expect(routerBalance0).to.equal(ethers.constants.Zero);
+  expect(routerBalance1).to.equal(ethers.constants.Zero);
+  expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
   if (stRakisToken) {
-    const genericRouterBalanceStRakis = await stRakisToken.balanceOf(
-      genericRouter.address
-    );
-    expect(genericRouterBalanceStRakis).to.equal(ethers.constants.Zero);
+    const routerBalanceStRakis = await stRakisToken.balanceOf(router.address);
+    expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
   }
 
   // validate we cannot mint with amounts refunded
