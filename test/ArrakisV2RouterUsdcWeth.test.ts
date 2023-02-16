@@ -166,15 +166,9 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
 
     await gauge
       .connect(wallet)
-      .add_reward(
-        token0.address,
-        await wallet.getAddress(),
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        {
-          gasLimit: 6000000,
-        }
-      );
+      .add_reward(token0.address, await wallet.getAddress(), {
+        gasLimit: 6000000,
+      });
 
     const rewardAmount = ethers.BigNumber.from("100").mul(
       ethers.BigNumber.from("10").pow("6")

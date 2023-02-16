@@ -11,9 +11,10 @@ import {
   IGauge,
   IUniswapV3Pool,
   IUniswapV3Factory,
-  //   SwapMock,
-  //   StaticManager,
+  SwapMock,
+  StaticManager,
   IArrakisV2Resolver,
+  IArrakisV2Helper,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
@@ -58,9 +59,11 @@ describe("ArrakisV2 Periphery integration test", function () {
 
   let gauge: IGauge;
 
-  //let swapper: SwapMock;
+  let swapper: SwapMock;
 
-  //let manager: StaticManager;
+  let manager: StaticManager;
+
+  let helper: IArrakisV2Helper;
 
   before(async function () {
     await deployments.fixture();
@@ -131,16 +134,21 @@ describe("ArrakisV2 Periphery integration test", function () {
       await staticDeployer.arrakisFactory()
     )) as IArrakisV2Factory;
 
-    // const swapperFactory = await ethers.getContractFactory("SwapMock", wallet);
+    const swapperFactory = await ethers.getContractFactory("SwapMock", wallet);
 
-    // swapper = (await swapperFactory.deploy()) as SwapMock;
+    swapper = (await swapperFactory.deploy()) as SwapMock;
 
-    // manager = (await ethers.getContractAt(
-    //   "StaticManager",
-    //   (
-    //     await deployments.get("StaticManager")
-    //   ).address
-    // )) as StaticManager;
+    manager = (await ethers.getContractAt(
+      "StaticManager",
+      (
+        await deployments.get("StaticManager")
+      ).address
+    )) as StaticManager;
+
+    helper = (await ethers.getContractAt(
+      "IArrakisV2Helper",
+      addresses.ArrakisV2Helper
+    )) as IArrakisV2Helper;
 
     const tokenUSDC = (await ethers.getContractAt(
       "ERC20",
@@ -336,15 +344,15 @@ describe("ArrakisV2 Periphery integration test", function () {
       amount1In
     );
 
+    // THIS SECTION IS BECAUSE OF AN ERROR I FOUND IN THE CORE AND
+    // WONT BE NEEDED IF WE MAKE AN UPDATE TO CORE TO FIX ROUNDING ISSUES
+    // START:
     await expect(vault.connect(admin).mint(mintAmount, admin.address)).to.be
       .reverted;
 
-    await token0
-      .connect(wallet)
-      .transfer(vault.address, ethers.utils.parseEther("1"));
-    await token1
-      .connect(wallet)
-      .transfer(vault.address, ethers.utils.parseEther("1"));
+    await token0.connect(wallet).transfer(vault.address, 2);
+    await token1.connect(wallet).transfer(vault.address, 2);
+    // END
 
     const balanceGaugeBefore = await gauge.balanceOf(admin.address);
     expect(balanceGaugeBefore).to.be.eq(0);
@@ -361,13 +369,89 @@ describe("ArrakisV2 Periphery integration test", function () {
       balanceGaugeAfter
     );
 
-    // TODO: complete integration test
+    await token0
+      .connect(wallet)
+      .approve(swapper.address, await token0.balanceOf(walletAddress));
+    await token1
+      .connect(wallet)
+      .approve(swapper.address, await token1.balanceOf(walletAddress));
 
-    // await token0
-    //   .connect(wallet)
-    //   .approve(swapper.address, await token0.balanceOf(walletAddress));
-    // await token1
-    //   .connect(wallet)
-    //   .approve(swapper.address, await token1.balanceOf(walletAddress));
+    for (let i = 0; i < 2; i++) {
+      const slot0 = await pool05.slot0();
+      const slot0B = await pool3.slot0();
+      await swapper.swap(
+        pool05.address,
+        true,
+        ethers.utils.parseEther("1650000"),
+        slot0.sqrtPriceX96.div(2)
+      );
+      await swapper.swap(
+        pool05.address,
+        false,
+        ethers.utils.parseEther("1000"),
+        slot0.sqrtPriceX96.mul(2)
+      );
+      await swapper.swap(
+        pool3.address,
+        true,
+        ethers.utils.parseEther("1650000"),
+        slot0B.sqrtPriceX96.div(2)
+      );
+      await swapper.swap(
+        pool3.address,
+        false,
+        ethers.utils.parseEther("1000"),
+        slot0B.sqrtPriceX96.mul(2)
+      );
+    }
+
+    const vaultInfo = await manager.vaults(vault.address);
+    expect(vaultInfo.compoundEnabled).to.be.true;
+    expect(vaultInfo.twapDeviation).to.be.eq(250);
+    expect(vaultInfo.twapDuration).to.be.eq(2000);
+
+    const balBefore0 = await token0.balanceOf(vault.address);
+    const balBefore1 = await token1.balanceOf(vault.address);
+
+    const feesBefore = await helper.totalUnderlyingWithFees(vault.address);
+    expect(feesBefore.fee0).to.be.gt(0);
+    expect(feesBefore.fee1).to.be.gt(0);
+
+    await manager.compoundFees(vault.address);
+
+    const balAfter0 = await token0.balanceOf(vault.address);
+    const balAfter1 = await token1.balanceOf(vault.address);
+
+    const feesAfter = await helper.totalUnderlyingWithFees(vault.address);
+    expect(feesAfter.fee0).to.be.eq(0);
+    expect(feesAfter.fee1).to.be.eq(0);
+
+    expect(balAfter0).to.not.be.eq(balBefore0);
+    expect(balAfter1).to.not.be.eq(balBefore1);
+
+    const managerBalBefore0 = await token0.balanceOf(admin.address);
+    const managerBalBefore1 = await token1.balanceOf(admin.address);
+
+    await expect(
+      manager.withdrawAndCollectFees(
+        [vault.address],
+        [token0.address, token1.address],
+        admin.address
+      )
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+
+    await manager
+      .connect(owner)
+      .withdrawAndCollectFees(
+        [vault.address],
+        [token0.address, token1.address],
+        admin.address
+      );
+
+    const managerBalAfter0 = await token0.balanceOf(admin.address);
+    const managerBalAfter1 = await token1.balanceOf(admin.address);
+
+    expect(managerBalAfter0).to.be.gt(managerBalBefore0);
+    expect(managerBalAfter1).to.be.gt(managerBalBefore1);
   });
 });
