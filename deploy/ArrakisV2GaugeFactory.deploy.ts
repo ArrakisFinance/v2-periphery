@@ -1,6 +1,7 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -17,6 +18,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const { deploy } = deployments;
   const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
+  const addresses = getAddresses(hre.network.name);
 
   await deploy("ArrakisV2GaugeFactory", {
     from: deployer,
@@ -25,7 +27,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       owner: arrakisMultiSig,
       execute: {
         methodName: "initialize",
-        args: [owner],
+        args: [owner, addresses.CRV, addresses.veCRV, addresses.veCRVBoost],
       },
     },
     args: [(await deployments.get("ArrakisV2GaugeBeacon")).address],

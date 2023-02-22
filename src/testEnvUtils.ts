@@ -12,7 +12,7 @@ import { Addresses, getAddresses } from "./addresses";
 import { Contract, Signer } from "ethers";
 import UniswapV3Factory from "@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json";
 import UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
+import Gauge from "../src/LiquidityGaugeV4.json";
 
 const addresses: Addresses = getAddresses(network.name);
 
@@ -195,6 +195,10 @@ export const createGauge = async (
   );
   const encoded = gaugeImpl.interface.encodeFunctionData("initialize", [
     vaultAddress,
+    signer.address,
+    addresses.CRV,
+    addresses.veCRV,
+    addresses.veCRVBoost,
     signer.address,
   ]);
   const contract = await factory

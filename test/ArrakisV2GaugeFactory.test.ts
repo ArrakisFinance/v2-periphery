@@ -15,7 +15,7 @@ import {
   getFundsFromFaucet,
   getArrakisResolver,
 } from "../src/testEnvUtils";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
+import Gauge from "../src/LiquidityGaugeV4.json";
 
 let addresses: Addresses;
 
@@ -113,10 +113,12 @@ describe("ArrakisV2GaugeFactory tests", function () {
     expect(stakingToken).to.be.eq(vault.address);
 
     const nRewards = await gauge.reward_count();
-    expect(nRewards).to.be.eq(1);
+    expect(nRewards).to.be.eq(2);
 
     const reward0 = await gauge.reward_tokens(0);
-    expect(reward0).to.be.eq(token0.address);
+    expect(reward0).to.be.eq(addresses.CRV);
+    const reward1 = await gauge.reward_tokens(1);
+    expect(reward1).to.be.eq(token0.address);
   });
   it("#1 : should deposit reward token", async function () {
     await token0.connect(wallet).approve(gauge.address, 1);
@@ -147,9 +149,15 @@ describe("ArrakisV2GaugeFactory tests", function () {
         .addGaugeReward(gauge.address, token1.address, walletAddress)
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
+    await expect(
+      gaugeFactory
+        .connect(owner)
+        .addGaugeReward(gauge.address, token0.address, walletAddress)
+    ).to.be.revertedWith("AE");
+
     const nRewards = await gauge.reward_count();
 
-    expect(nRewards).to.be.eq(1);
+    expect(nRewards).to.be.eq(2);
 
     await gaugeFactory
       .connect(owner)
@@ -157,45 +165,11 @@ describe("ArrakisV2GaugeFactory tests", function () {
 
     const nRewardsAfter = await gauge.reward_count();
 
-    expect(nRewardsAfter).to.be.eq(2);
+    expect(nRewardsAfter).to.be.eq(3);
 
-    const reward0 = await gauge.reward_tokens(0);
+    const reward0 = await gauge.reward_tokens(1);
     expect(reward0).to.be.eq(token0.address);
-    const reward1 = await gauge.reward_tokens(1);
+    const reward1 = await gauge.reward_tokens(2);
     expect(reward1).to.be.eq(token1.address);
-
-    await expect(
-      gaugeFactory
-        .connect(wallet)
-        .addGaugeRewardBoostable(
-          gauge.address,
-          token1.address,
-          walletAddress,
-          token1.address,
-          token1.address
-        )
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-
-    await expect(
-      gaugeFactory
-        .connect(owner)
-        .addGaugeRewardBoostable(
-          gauge.address,
-          token1.address,
-          walletAddress,
-          token1.address,
-          token1.address
-        )
-    ).to.be.revertedWith("AE");
-
-    await gaugeFactory
-      .connect(owner)
-      .addGaugeRewardBoostable(
-        gauge.address,
-        vault.address,
-        walletAddress,
-        token1.address,
-        token1.address
-      );
   });
 });
