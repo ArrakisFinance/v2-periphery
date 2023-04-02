@@ -1,8 +1,8 @@
 import { ethers, network, deployments } from "hardhat";
 import {
-  ArrakisV2SwapExecutor,
+  RouterSwapExecutor,
   ArrakisV2Router,
-  SwapResolver,
+  RouterSwapResolver,
   ERC20,
   IArrakisV2,
   IGauge,
@@ -18,21 +18,21 @@ const addresses: Addresses = getAddresses(network.name);
 
 export const getPeripheryContracts = async (
   owner: Signer
-): Promise<[SwapResolver, ArrakisV2SwapExecutor, ArrakisV2Router]> => {
+): Promise<[RouterSwapResolver, RouterSwapExecutor, ArrakisV2Router]> => {
   // getting resolver contract
-  const resolverAddress = (await deployments.get("SwapResolver")).address;
+  const resolverAddress = (await deployments.get("RouterSwapResolver")).address;
   const swapResolver = (await ethers.getContractAt(
-    "SwapResolver",
+    "RouterSwapResolver",
     resolverAddress
-  )) as SwapResolver;
+  )) as RouterSwapResolver;
 
   // getting router executor contract
-  const swapExecutorAddress = (await deployments.get("ArrakisV2SwapExecutor"))
+  const swapExecutorAddress = (await deployments.get("RouterSwapExecutor"))
     .address;
   const swapExecutor = (await ethers.getContractAt(
-    "ArrakisV2SwapExecutor",
+    "RouterSwapExecutor",
     swapExecutorAddress
-  )) as ArrakisV2SwapExecutor;
+  )) as RouterSwapExecutor;
 
   // getting generic router contract
   const routerAddress = (await deployments.get("ArrakisV2Router")).address;

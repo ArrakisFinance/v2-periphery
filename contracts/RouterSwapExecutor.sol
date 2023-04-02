@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
 
-import {IArrakisV2SwapExecutor} from "./interfaces/IArrakisV2SwapExecutor.sol";
+import {IRouterSwapExecutor} from "./interfaces/IRouterSwapExecutor.sol";
 import {SwapAndAddData} from "./structs/SArrakisV2Router.sol";
 import {
     IArrakisV2
@@ -13,7 +13,7 @@ import {
 
 /// @notice External function of this contract can only be called by ArrakisV2Router
 /// @notice do not give approvals to this contract's address
-contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
+contract RouterSwapExecutor is IRouterSwapExecutor {
     using SafeERC20 for IERC20;
 
     address public immutable router;

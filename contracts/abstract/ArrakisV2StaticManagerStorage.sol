@@ -12,7 +12,7 @@ import {
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Helper.sol";
 import {StaticVaultInfo} from "../structs/SStaticManager.sol";
 
-abstract contract StaticManagerStorage is
+abstract contract ArrakisV2StaticManagerStorage is
     OwnableUpgradeable,
     PausableUpgradeable
 {

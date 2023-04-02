@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
 
-import {ISwapResolver} from "./interfaces/ISwapResolver.sol";
+import {IRouterSwapResolver} from "./interfaces/IRouterSwapResolver.sol";
 
 import {
     IArrakisV2Resolver
@@ -18,7 +18,7 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
 
-contract SwapResolver is ISwapResolver {
+contract RouterSwapResolver is IRouterSwapResolver {
     IArrakisV2Helper public immutable helper;
     IArrakisV2Resolver public immutable resolver;
 

@@ -12,7 +12,7 @@ import {
   IUniswapV3Pool,
   IUniswapV3Factory,
   SwapMock,
-  StaticManager,
+  ArrakisV2StaticManager,
   IArrakisV2Resolver,
   IArrakisV2Helper,
 } from "../typechain";
@@ -61,7 +61,7 @@ describe("ArrakisV2 Periphery integration test", function () {
 
   let swapper: SwapMock;
 
-  let manager: StaticManager;
+  let manager: ArrakisV2StaticManager;
 
   let helper: IArrakisV2Helper;
 
@@ -139,11 +139,11 @@ describe("ArrakisV2 Periphery integration test", function () {
     swapper = (await swapperFactory.deploy()) as SwapMock;
 
     manager = (await ethers.getContractAt(
-      "StaticManager",
+      "ArrakisV2StaticManager",
       (
-        await deployments.get("StaticManager")
+        await deployments.get("ArrakisV2StaticManager")
       ).address
-    )) as StaticManager;
+    )) as ArrakisV2StaticManager;
 
     helper = (await ethers.getContractAt(
       "IArrakisV2Helper",

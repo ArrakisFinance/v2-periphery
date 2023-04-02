@@ -11,7 +11,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "arbitrum"
   ) {
     console.log(
-      `!! Deploying SwapResolver to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying RouterSwapResolver to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -20,7 +20,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
 
-  await deploy("SwapResolver", {
+  await deploy("RouterSwapResolver", {
     from: deployer,
     args: [addresses.ArrakisV2Helper, addresses.ArrakisV2Resolver],
     log: hre.network.name !== "hardhat",
@@ -37,6 +37,6 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
   return shouldSkip;
 };
 
-func.tags = ["SwapResolver"];
+func.tags = ["RouterSwapResolver"];
 
 export default func;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
 
-import {IArrakisV2SwapExecutor} from "../interfaces/IArrakisV2SwapExecutor.sol";
+import {IRouterSwapExecutor} from "../interfaces/IRouterSwapExecutor.sol";
 import {IWETH} from "../interfaces/IWETH.sol";
 import {
     IArrakisV2Resolver
@@ -24,7 +24,7 @@ abstract contract ArrakisV2RouterStorage is
     IWETH public immutable weth;
     IArrakisV2Resolver public immutable resolver;
 
-    IArrakisV2SwapExecutor public swapper;
+    IRouterSwapExecutor public swapper;
 
     event Swapped(
         bool zeroForOne,
@@ -55,8 +55,8 @@ abstract contract ArrakisV2RouterStorage is
     }
 
     /// @notice updates address of ArrakisV2SwaprExecutor used by this contract
-    /// @param swapper_ the ArrakisV2SwapExecutor address
+    /// @param swapper_ the RouterSwapExecutor address
     function updateSwapExecutor(address swapper_) external onlyOwner {
-        swapper = IArrakisV2SwapExecutor(swapper_);
+        swapper = IRouterSwapExecutor(swapper_);
     }
 }

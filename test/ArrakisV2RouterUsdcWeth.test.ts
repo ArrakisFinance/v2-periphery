@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
-  ArrakisV2SwapExecutor,
+  RouterSwapExecutor,
   ArrakisV2Router,
   ERC20,
-  SwapResolver,
+  RouterSwapResolver,
   IArrakisV2,
   IGauge,
 } from "../typechain";
@@ -35,9 +35,9 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   let stRakisToken: ERC20;
 
   let resolver: Contract;
-  let swapExecutor: ArrakisV2SwapExecutor;
+  let swapExecutor: RouterSwapExecutor;
   let router: ArrakisV2Router;
-  let swapResolver: SwapResolver;
+  let swapResolver: RouterSwapResolver;
 
   let vault: IArrakisV2;
 
