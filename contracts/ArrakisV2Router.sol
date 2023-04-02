@@ -220,10 +220,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             );
 
             IGauge(removeData_.gauge).withdraw(removeData_.burnAmount);
-            IERC20(removeData_.vault).safeTransfer(
-                address(this),
-                removeData_.burnAmount
-            );
         } else {
             IERC20(removeData_.vault).safeTransferFrom(
                 msg.sender,
