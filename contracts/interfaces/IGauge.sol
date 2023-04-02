@@ -15,7 +15,14 @@ interface IGauge is IERC20 {
         uint256 integral;
     }
 
-    function initialize(address stakingToken, address admin) external;
+    function initialize(
+        address stakingToken,
+        address admin,
+        address reward,
+        address ve,
+        address veBoost,
+        address distributor
+    ) external;
 
     function deposit(uint256 value, address addr) external;
 
@@ -23,21 +30,8 @@ interface IGauge is IERC20 {
 
     function add_reward(address token, address distributor) external;
 
-    function add_boostable_reward(
-        address token,
-        address distributor,
-        address ve,
-        address boost
-    ) external;
-
     function set_reward_distributor(address token, address distributor)
         external;
-
-    function set_reward_voting_escrow(
-        address token,
-        address ve,
-        address boost
-    ) external;
 
     function user_checkpoint(address addr) external returns (bool);
 
@@ -70,10 +64,6 @@ interface IGauge is IERC20 {
     function reward_data(address) external view returns (Reward memory);
 
     function staking_token() external view returns (address);
-
-    function voting_escrows(address) external view returns (address);
-
-    function veBoost_proxies(address) external view returns (address);
 
     function name() external view returns (string memory);
 

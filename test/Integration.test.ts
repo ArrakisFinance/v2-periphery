@@ -24,7 +24,7 @@ import {
   getArrakisResolver,
   getPeripheryContracts,
 } from "../src/testEnvUtils";
-import Gauge from "../vyper/build/contracts/LiquidityGaugeV4Multi.json";
+import Gauge from "../src/LiquidityGaugeV4.json";
 
 let addresses: Addresses;
 

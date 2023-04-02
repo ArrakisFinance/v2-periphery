@@ -18,9 +18,13 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
 
     IArrakisV2Beacon public immutable arrakisGaugeBeacon;
     EnumerableSet.AddressSet internal _gauges;
+    address public defaultRewardToken;
+    address public ve;
+    address public veBoost;
 
     event InitFactory(address owner);
     event GaugeCreated(address deployer, address gauge);
+    event DefaultRewardSet(address token, address ve, address veBoost);
 
     // #region constructor.
 
@@ -30,10 +34,42 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
 
     // #endregion constructor.
 
-    function initialize(address _owner_) external initializer {
-        require(_owner_ != address(0), "owner is address zero");
-        _transferOwnership(_owner_);
-        emit InitFactory(_owner_);
+    function initialize(
+        address owner_,
+        address rewardToken_,
+        address ve_,
+        address veBoost_
+    ) external initializer {
+        require(
+            owner_ != address(0) ||
+                rewardToken_ != address(0) ||
+                ve_ != address(0) ||
+                veBoost_ != address(0),
+            "address zero"
+        );
+        _transferOwnership(owner_);
+        defaultRewardToken = rewardToken_;
+        ve = ve_;
+        veBoost = veBoost_;
+        emit DefaultRewardSet(rewardToken_, ve_, veBoost_);
+        emit InitFactory(owner_);
+    }
+
+    function setDefaultReward(
+        address rewardToken_,
+        address ve_,
+        address veBoost_
+    ) external onlyOwner {
+        require(
+            rewardToken_ != address(0) ||
+                ve_ != address(0) ||
+                veBoost_ != address(0),
+            "address zero"
+        );
+        defaultRewardToken = rewardToken_;
+        ve = ve_;
+        veBoost = veBoost_;
+        emit DefaultRewardSet(rewardToken_, ve_, veBoost_);
     }
 
     // #endregion admin set functions

@@ -10,7 +10,7 @@ import {
 } from "./abstract/ArrakisV2GaugeFactoryStorage.sol";
 import {IGauge} from "./interfaces/IGauge.sol";
 
-/// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV4Multi instances
+/// @title ArrakisV2GaugeFactory factory for creating LiquidityGaugeV4 instances
 contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -18,18 +18,20 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
         ArrakisV2GaugeFactoryStorage(gaugeBeacon_)
     {} // solhint-disable-line no-empty-blocks
 
-    /// @notice Deploys an instance of LiquidityGaugeV4Multi using BeaconProxy
+    /// @notice Deploys an instance of LiquidityGaugeV4 using BeaconProxy
     /// @param stakingToken_ ERC20 token address, stake to potentially earn rewards
-    /// @param rewardToken_ ERC20 token address, reward token for stakers
+    /// @param rewardToken_ ERC20 token address, reward token for stakers (skip with address(0))
     /// @param rewardDistributor_ address that distributes rewardToken_ rewards
-    /// @return gauge the address of the LiquidityGaugeV4Multi instance created.
+    /// @return gauge the address of the LiquidityGaugeV4 instance created.
     function deployGauge(
         address stakingToken_,
         address rewardToken_,
         address rewardDistributor_
     ) external returns (address gauge) {
         gauge = _deploy(stakingToken_);
-        IGauge(gauge).add_reward(rewardToken_, rewardDistributor_);
+        if (rewardToken_ != address(0)) {
+            IGauge(gauge).add_reward(rewardToken_, rewardDistributor_);
+        }
         _gauges.add(gauge);
         emit GaugeCreated(msg.sender, gauge);
     }
@@ -49,27 +51,6 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
             require(gauge_.reward_tokens(i) != token_, "AE");
         }
         gauge_.add_reward(token_, distributor_);
-    }
-
-    /// @notice add boosted reward token to a gauge
-    /// @param gauge_ address of Gauge to add reward to
-    /// @param token_ address of reward token
-    /// @param distributor_ address of distributor of token_ to gauge
-    /// @param ve_ address of token_ "voting escrow"
-    /// @param boost_ address of token_ "veBoost"
-    /// @notice only owner can call
-    function addGaugeRewardBoostable(
-        IGauge gauge_,
-        address token_,
-        address distributor_,
-        address ve_,
-        address boost_
-    ) external onlyOwner {
-        uint256 len = gauge_.reward_count();
-        for (uint256 i; i < len; i++) {
-            require(gauge_.reward_tokens(i) != token_, "AE");
-        }
-        gauge_.add_boostable_reward(token_, distributor_, ve_, boost_);
     }
 
     /// @notice set reward distributor of a Gauge reward token
@@ -126,7 +107,11 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
         bytes memory data = abi.encodeWithSelector(
             IGauge.initialize.selector,
             stakingToken_,
-            address(this)
+            address(this),
+            defaultRewardToken,
+            ve,
+            veBoost,
+            owner()
         );
 
         bytes32 salt = keccak256(

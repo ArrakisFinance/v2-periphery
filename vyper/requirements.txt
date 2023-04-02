@@ -1,5 +1,0 @@
-black==22.10.0
-eth-brownie==1.19.3
-flake8==3.8.4
-isort==5.7.0
-brownie-token-tester==0.3.2
