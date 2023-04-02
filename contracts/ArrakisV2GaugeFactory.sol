@@ -87,7 +87,7 @@ contract ArrakisV2GaugeFactory is ArrakisV2GaugeFactoryStorage {
         );
         address[] memory vs = new address[](endIndex_ - startIndex_);
         for (uint256 i = startIndex_; i < endIndex_; i++) {
-            vs[i] = _gauges.at(i);
+            vs[i - startIndex_] = _gauges.at(i);
         }
 
         return vs;
