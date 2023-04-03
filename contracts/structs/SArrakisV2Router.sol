@@ -17,8 +17,6 @@ struct AddLiquidityData {
     uint256 amountSharesMin;
     // account to receive minted tokens
     address receiver;
-    // bool indicating to use native ETH
-    bool useETH;
     // address of gauge to stake tokens in
     address gauge;
 }

@@ -325,7 +325,6 @@ describe("ArrakisV2 Periphery integration test", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: admin.address,
-      useETH: false,
       gauge: gauge.address,
     };
 

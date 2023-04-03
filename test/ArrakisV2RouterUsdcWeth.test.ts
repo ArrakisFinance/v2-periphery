@@ -117,7 +117,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: false,
       gauge: ethers.constants.AddressZero,
     };
 
@@ -186,7 +185,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: false,
       gauge: gauge.address,
     };
 
@@ -323,7 +321,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: ethers.constants.AddressZero,
     };
 
@@ -438,7 +435,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: gauge.address,
     };
     await router.addLiquidity(addLiquidityData, {
@@ -562,12 +558,13 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     const token0Address = await vault.token0();
     expect(token0Address.toLowerCase()).to.equal(addresses.USDC.toLowerCase());
 
-    const amount0In = ethers.utils.parseEther("10");
-    const amount1In = ethers.BigNumber.from("10000").mul(
+    const amount1In = ethers.utils.parseEther("10");
+    const amount0In = ethers.BigNumber.from("10000").mul(
       ethers.BigNumber.from("10").pow("6")
     );
 
-    await token1.connect(wallet).approve(router.address, amount1In);
+    await token0.connect(wallet).approve(router.address, amount0In);
+    await token1.connect(wallet).approve(router.address, 0);
 
     const transactionEthValue = ethers.BigNumber.from("0");
 
@@ -579,7 +576,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
     };
 
@@ -587,7 +583,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       router.addLiquidity(addLiquidityData, {
         value: transactionEthValue,
       })
-    ).to.be.revertedWith("Not enough ETH forwarded");
+    ).to.be.reverted;
   });
 
   it("#7 : tests adding liquidity using native ETH passing double msg.value", async function () {
@@ -617,7 +613,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
     };
     await router.addLiquidity(addLiquidityData, {

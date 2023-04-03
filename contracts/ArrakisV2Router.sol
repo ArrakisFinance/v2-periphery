@@ -72,7 +72,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         );
 
         bool isToken0Weth;
-        if (addData_.useETH) {
+        if (msg.value > 0) {
             isToken0Weth = _wrapETH(
                 IArrakisV2(addData_.vault),
                 amount0,
@@ -81,20 +81,14 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             );
         }
 
-        if (
-            amount0 > 0 &&
-            (!addData_.useETH || (addData_.useETH && !isToken0Weth))
-        ) {
+        if (amount0 > 0 && (msg.value == 0 || !isToken0Weth)) {
             IERC20(IArrakisV2(addData_.vault).token0()).safeTransferFrom(
                 msg.sender,
                 address(this),
                 amount0
             );
         }
-        if (
-            amount1 > 0 &&
-            (!addData_.useETH || (addData_.useETH && isToken0Weth))
-        ) {
+        if (amount1 > 0 && (msg.value == 0 || isToken0Weth)) {
             IERC20(IArrakisV2(addData_.vault).token1()).safeTransferFrom(
                 msg.sender,
                 address(this),
@@ -111,7 +105,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             addData_.receiver
         );
 
-        if (addData_.useETH) {
+        if (msg.value > 0) {
             if (isToken0Weth && msg.value > amount0) {
                 payable(msg.sender).sendValue(msg.value - amount0);
             } else if (!isToken0Weth && msg.value > amount1) {
@@ -154,7 +148,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             );
         }
         bool isToken0Weth;
-        if (swapAndAddData_.addData.useETH) {
+        if (msg.value > 0) {
             isToken0Weth = _wrapETH(
                 IArrakisV2(swapAndAddData_.addData.vault),
                 swapAndAddData_.addData.amount0Max,
@@ -165,7 +159,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
         if (
             swapAndAddData_.addData.amount0Max > 0 &&
-            (!swapAndAddData_.addData.useETH || !isToken0Weth)
+            (msg.value == 0 || !isToken0Weth)
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
                 .safeTransferFrom(
@@ -176,7 +170,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         }
         if (
             swapAndAddData_.addData.amount1Max > 0 &&
-            (!swapAndAddData_.addData.useETH || isToken0Weth)
+            (msg.value == 0 || isToken0Weth)
         ) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
                 .safeTransferFrom(
@@ -321,7 +315,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         );
 
         bool isToken0Weth;
-        if (swapAndAddData_.addData.useETH) {
+        if (msg.value > 0) {
             isToken0Weth = _isToken0Weth(
                 address(IArrakisV2(swapAndAddData_.addData.vault).token0()),
                 address(IArrakisV2(swapAndAddData_.addData.vault).token1())
@@ -333,19 +327,11 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             }
         }
 
-        if (
-            amount0Use > amount0 &&
-            (!swapAndAddData_.addData.useETH ||
-                (swapAndAddData_.addData.useETH && !isToken0Weth))
-        ) {
+        if (amount0Use > amount0 && (msg.value == 0 || !isToken0Weth)) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token0())
                 .safeTransfer(msg.sender, amount0Use - amount0);
         }
-        if (
-            amount1Use > amount1 &&
-            (!swapAndAddData_.addData.useETH ||
-                (swapAndAddData_.addData.useETH && isToken0Weth))
-        ) {
+        if (amount1Use > amount1 && (msg.value == 0 || isToken0Weth)) {
             IERC20(IArrakisV2(swapAndAddData_.addData.vault).token1())
                 .safeTransfer(msg.sender, amount1Use - amount1);
         }

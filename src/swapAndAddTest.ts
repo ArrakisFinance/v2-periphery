@@ -69,9 +69,6 @@ export const swapAndAddTest = async (
   }
 
   // get before balances
-  const balance0Before = await token0.balanceOf(signerAddress);
-  const balance1Before = await token1.balanceOf(signerAddress);
-  const balanceEthBefore = await token0.provider.getBalance(signerAddress);
   const balanceRakisBefore = await rakisToken.balanceOf(signerAddress);
   const balanceStRakisBefore = stRakisToken
     ? await stRakisToken.balanceOf(signerAddress)
@@ -221,7 +218,6 @@ export const swapAndAddTest = async (
     amount1Min: 0,
     amountSharesMin: 0,
     receiver: signerAddress,
-    useETH: useETH,
     gauge: stRakisToken ? stRakisToken.address : ethers.constants.AddressZero,
   };
   const swapData = {
@@ -305,33 +301,55 @@ export const swapAndAddTest = async (
   let swapAndAddTxPending: ContractTransaction;
 
   // call swapAndAddLiquidity
+  const balance0Before = await token0.balanceOf(signerAddress);
+  const balance1Before = await token1.balanceOf(signerAddress);
+  const balanceEthBefore = await token0.provider.getBalance(signerAddress);
+  if (useETH) {
+    if (
+      isToken0Weth &&
+      swapAndAddData.addData.amount0Max.isZero() &&
+      (transactionEthValue == null || transactionEthValue.isZero())
+    ) {
+      useETH = false;
+    } else if (
+      !isToken0Weth &&
+      swapAndAddData.addData.amount1Max.isZero() &&
+      (transactionEthValue == null || transactionEthValue.isZero())
+    ) {
+      useETH = false;
+    }
+  }
   if (useETH) {
     if (isToken0Weth) {
       const value = transactionEthValue || swapAndAddData.addData.amount0Max;
+      // console.log(value.toString(), swapAndAddData.addData.amount0Max.toString());
       if (value == swapAndAddData.addData.amount0Max) {
         swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData, {
           value: value,
         });
       } else {
+        await token0.connect(signer).approve(router.address, 0);
         await expect(
           router.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
-        ).to.be.revertedWith("Invalid amount of ETH forwarded");
+        ).to.be.reverted;
         return;
       }
     } else {
       const value = transactionEthValue || swapAndAddData.addData.amount1Max;
+      // console.log(value.toString(), swapAndAddData.addData.amount1Max.toString());
       if (value == swapAndAddData.addData.amount1Max) {
         swapAndAddTxPending = await router.swapAndAddLiquidity(swapAndAddData, {
           value: value,
         });
       } else {
+        await token1.connect(signer).approve(router.address, 0);
         await expect(
           router.swapAndAddLiquidity(swapAndAddData, {
             value: value,
           })
-        ).to.be.revertedWith("Invalid amount of ETH forwarded");
+        ).to.be.reverted;
         return;
       }
     }
@@ -471,6 +489,8 @@ export const swapAndAddTest = async (
     const routerBalanceStRakis = await stRakisToken.balanceOf(router.address);
     expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
   }
+  const routerBalETH = await signer.provider?.getBalance(router.address);
+  expect(routerBalETH).to.equal(ethers.constants.Zero);
 
   // validate we cannot mint with amounts refunded
   await expect(

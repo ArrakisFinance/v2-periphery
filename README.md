@@ -28,8 +28,6 @@ struct AddLiquidityData {
     uint256 amount1Min;
     // account to receive minted tokens
     address receiver;
-    // bool indicating to use native ETH
-    bool useETH;
     // address of gauge to stake tokens in
     address gauge;
 }
@@ -118,7 +116,7 @@ function addLiquidity(
     );
 ```
 
-- if AddLiquidityData.useETH is true, this function will wrap ETH into WETH and send non-used ether back to the user.
+- if msg.value is greater than 0, this function will wrap ETH into WETH and send non-used ether back to the user.
 - if AddLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
 
 ## removeLiquidity
@@ -154,7 +152,7 @@ function swapAndAddLiquidity(
     );
 ```
 
-- if AddLiquidityData.useETH is true, this function will wrap ETH into WETH and send non-used ether back to the user.
+- if msg.value is larger than 0, this function will wrap ETH into WETH and send non-used ether back to the user.
 - if AddLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
 - if the user is depositing 2 tokens and doing a swap => if token0 is being swapped for token1, AddLiquidityData.amount0Max should be the amount of token0 being deposited "normally" plus the amount to be swapped (SwapData.amountInSwap). (same applies for amount1Max on the inverse swap scenario)
 
@@ -213,7 +211,7 @@ function swapAndAddLiquidity(
 ```
 
 - if AddLiquidityData.gauge is filled, this function will stake LP tokens in the gauge after deposit.
-- if AddLiquidityData.useETH is true, this function will send unused ETH back to the user.
+- if msg.value is greater than 0, this function will send unused ETH back to the user.
 
 ### Updates for additional security on swaps:
 
