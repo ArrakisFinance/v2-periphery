@@ -1011,50 +1011,51 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#20 : should use only A and swap A for B using native ETH", async function () {
-    await swapAndAddTest(
-      wallet,
-      router,
-      swapExecutor,
-      swapResolver,
-      resolver,
+  // THE FOLLOWIING TESTS ARE NOW REDUNDANT !! (since A is not WETH, and only inputting A, no "use native ETH" option exists)
+  // it("#20 : should use only A and swap A for B using native ETH", async function () {
+  //   await swapAndAddTest(
+  //     wallet,
+  //     router,
+  //     swapExecutor,
+  //     swapResolver,
+  //     resolver,
 
-      vault,
-      token0,
-      token1,
-      rakisToken,
+  //     vault,
+  //     token0,
+  //     token1,
+  //     rakisToken,
 
-      ethers.BigNumber.from("100000"),
-      ethers.BigNumber.from("0"),
-      true,
-      50,
-      true,
-      "scenario3"
-    );
-  });
+  //     ethers.BigNumber.from("100000"),
+  //     ethers.BigNumber.from("0"),
+  //     true,
+  //     50,
+  //     true,
+  //     "scenario3"
+  //   );
+  // });
 
-  it("#21 : should use only A and swap A for B and stake using nativeETH", async function () {
-    await swapAndAddTest(
-      wallet,
-      router,
-      swapExecutor,
-      swapResolver,
-      resolver,
+  // it("#21 : should use only A and swap A for B and stake using nativeETH", async function () {
+  //   await swapAndAddTest(
+  //     wallet,
+  //     router,
+  //     swapExecutor,
+  //     swapResolver,
+  //     resolver,
 
-      vault,
-      token0,
-      token1,
-      rakisToken,
+  //     vault,
+  //     token0,
+  //     token1,
+  //     rakisToken,
 
-      ethers.BigNumber.from("100000"),
-      ethers.BigNumber.from("0"),
-      true,
-      50,
-      true,
-      "scenario3",
-      stRakisToken
-    );
-  });
+  //     ethers.BigNumber.from("100000"),
+  //     ethers.BigNumber.from("0"),
+  //     true,
+  //     50,
+  //     true,
+  //     "scenario3",
+  //     stRakisToken
+  //   );
+  // });
 
   it("#22 : should use only A and swap A for B with different msg.value and nativeETH", async function () {
     await swapAndAddTest(

@@ -304,21 +304,21 @@ export const swapAndAddTest = async (
   const balance0Before = await token0.balanceOf(signerAddress);
   const balance1Before = await token1.balanceOf(signerAddress);
   const balanceEthBefore = await token0.provider.getBalance(signerAddress);
-  if (useETH) {
-    if (
-      isToken0Weth &&
-      swapAndAddData.addData.amount0Max.isZero() &&
-      (transactionEthValue == null || transactionEthValue.isZero())
-    ) {
-      useETH = false;
-    } else if (
-      !isToken0Weth &&
-      swapAndAddData.addData.amount1Max.isZero() &&
-      (transactionEthValue == null || transactionEthValue.isZero())
-    ) {
-      useETH = false;
-    }
-  }
+  // if (useETH) {
+  //   if (
+  //     isToken0Weth &&
+  //     swapAndAddData.addData.amount0Max.isZero() &&
+  //     (transactionEthValue == null || transactionEthValue.isZero())
+  //   ) {
+  //     useETH = false;
+  //   } else if (
+  //     !isToken0Weth &&
+  //     swapAndAddData.addData.amount1Max.isZero() &&
+  //     (transactionEthValue == null || transactionEthValue.isZero())
+  //   ) {
+  //     useETH = false;
+  //   }
+  // }
   if (useETH) {
     if (isToken0Weth) {
       const value = transactionEthValue || swapAndAddData.addData.amount0Max;
