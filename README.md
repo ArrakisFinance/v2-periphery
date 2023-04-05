@@ -33,25 +33,6 @@ struct AddLiquidityData {
 }
 ```
 
-- MintData is created by `ArrakisV2Router.addLiquidity` and passed as parameter to `RouterSwapExecutor.addLiquidity`.
-
-```
-struct MintData {
-    // Arrakis vault
-    IVaultV2 vault;
-    // amount of token0 to deposit
-    uint256 amount0In;
-    // amount of token1 to deposit
-    uint256 amount1In;
-    // amount of LP tokens to mint
-    uint256 mintAmount;
-    // account to receive minted tokens
-    address receiver;
-    // address of gauge to stake tokens in
-    address gauge;
-}
-```
-
 - RemoveLiquidityData is used `removeLiquidity` function on both generic and executor contracts.
 
 ```

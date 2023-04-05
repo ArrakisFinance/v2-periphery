@@ -10,7 +10,7 @@ import {
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { Addresses, getAddresses } from "../src/addresses";
-import { BigNumber, Contract } from "ethers";
+import { BigNumber, Contract, Wallet } from "ethers";
 import {
   getPeripheryContracts,
   deployArrakisV2,
@@ -19,8 +19,17 @@ import {
   getArrakisResolver,
 } from "../src/testEnvUtils";
 import { swapAndAddTest } from "../src/swapAndAddTest";
+import { ecsign } from "ethereumjs-util";
+import { SignatureTransfer, MaxSigDeadline } from "@uniswap/permit2-sdk";
+import { mockPayloads, OneInchDataType } from "../src/oneInchApiIntegration";
 
 let addresses: Addresses;
+
+const sign = (msgHash: string, privKey: string): any => {
+  const hash = Buffer.alloc(32, msgHash.slice(2), "hex");
+  const priv = Buffer.alloc(32, privKey.slice(2), "hex");
+  return ecsign(hash, priv);
+};
 
 describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   this.timeout(0);
@@ -44,6 +53,7 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   let gauge: IGauge;
   let swapExecutorBalanceEth: BigNumber | undefined;
   let routerBalanceEth: BigNumber | undefined;
+  let randomWallet: Wallet;
 
   before(async function () {
     await deployments.fixture();
@@ -91,6 +101,16 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       swapExecutor.address
     );
     routerBalanceEth = await wallet.provider?.getBalance(router.address);
+
+    randomWallet = new ethers.Wallet(
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf",
+      wallet.provider
+    );
+
+    await wallet.sendTransaction({
+      to: randomWallet.address,
+      value: ethers.utils.parseEther("20"),
+    });
   });
 
   it("#0 : should deposit funds with addLiquidity", async function () {
@@ -1160,4 +1180,1149 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
   /** end of section depositing only B, swapping B for A */
 
   /**** end of swapAndAddLiquidity tests */
+  it("#27 : should deposit funds with addLiquidityPermit2", async function () {
+    const amount0In = ethers.BigNumber.from("10000").mul(
+      ethers.BigNumber.from("10").pow("6")
+    );
+    const amount1In = ethers.utils.parseEther("10");
+
+    await token0.connect(wallet).transfer(randomWallet.address, amount0In);
+    await token1.connect(wallet).transfer(randomWallet.address, amount1In);
+
+    await token0.connect(randomWallet).approve(router.address, 0);
+    await token1.connect(randomWallet).approve(router.address, 0);
+
+    await token0
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+    await token1
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await token1.balanceOf(randomWallet.address);
+    const balanceArrakisV2Before = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0In,
+          },
+          {
+            token: token1.address,
+            amount: amount1In,
+          },
+        ],
+        spender: router.address,
+        nonce: "100",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    const addLiquidityData = {
+      vault: vault.address,
+      amount0Max: amount0In,
+      amount1Max: amount1In,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      receiver: randomWallet.address,
+      gauge: ethers.constants.AddressZero,
+    };
+
+    const addLiquidityPermit2Data = {
+      addData: addLiquidityData,
+      permit: {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0In,
+          },
+          {
+            token: token1.address,
+            amount: amount1In,
+          },
+        ],
+        nonce: "100",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    await router
+      .connect(randomWallet)
+      .addLiquidityPermit2(addLiquidityPermit2Data);
+
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await token1.balanceOf(randomWallet.address);
+    const balanceArrakisV2After = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    expect(balance0Before).to.be.gt(balance0After);
+    expect(balance1Before).to.be.gt(balance1After);
+    expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
+
+    const swapExecutorBalance0 = await token0.balanceOf(swapExecutor.address);
+    const swapExecutorBalance1 = await token1.balanceOf(swapExecutor.address);
+    const swapExecutorBalanceRakis = await rakisToken.balanceOf(
+      swapExecutor.address
+    );
+
+    expect(swapExecutorBalance0).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalance1).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalanceRakis).to.equal(ethers.constants.Zero);
+
+    const routerBalance0 = await token0.balanceOf(router.address);
+    const routerBalance1 = await token1.balanceOf(router.address);
+    const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+
+    expect(routerBalance0).to.equal(ethers.constants.Zero);
+    expect(routerBalance1).to.equal(ethers.constants.Zero);
+    expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+  });
+
+  it("#28 : should deposit funds and stake", async function () {
+    const amount0In = ethers.BigNumber.from("100").mul(
+      ethers.BigNumber.from("10").pow("6")
+    );
+    const amount1In = ethers.utils.parseEther("1");
+    await token0.connect(wallet).transfer(randomWallet.address, amount0In);
+    await token1.connect(wallet).transfer(randomWallet.address, amount1In);
+    await token0.connect(randomWallet).approve(router.address, 0);
+    await token1.connect(randomWallet).approve(router.address, 0);
+
+    await token0
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+    await token1
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await token1.balanceOf(randomWallet.address);
+    const balanceArrakisV2Before = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+    const balanceStakedBefore = await stRakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0In,
+          },
+          {
+            token: token1.address,
+            amount: amount1In,
+          },
+        ],
+        spender: router.address,
+        nonce: "101",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    const addLiquidityData = {
+      vault: vault.address,
+      amount0Max: amount0In,
+      amount1Max: amount1In,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      receiver: randomWallet.address,
+      gauge: gauge.address,
+    };
+
+    const addLiquidityPermit2Data = {
+      addData: addLiquidityData,
+      permit: {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0In,
+          },
+          {
+            token: token1.address,
+            amount: amount1In,
+          },
+        ],
+        nonce: "101",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    await router
+      .connect(randomWallet)
+      .addLiquidityPermit2(addLiquidityPermit2Data);
+
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await token1.balanceOf(randomWallet.address);
+    const balanceStakedAfter = await stRakisToken.balanceOf(
+      randomWallet.address
+    );
+    const balanceArrakisV2After = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    expect(balance0Before).to.be.gt(balance0After);
+    expect(balance1Before).to.be.gt(balance1After);
+    expect(balanceArrakisV2Before).to.be.eq(balanceArrakisV2After);
+    expect(balanceStakedBefore).to.be.lt(balanceStakedAfter);
+
+    const swapExecutorBalance0 = await token0.balanceOf(swapExecutor.address);
+    const swapExecutorBalance1 = await token1.balanceOf(swapExecutor.address);
+    const swapExecutorBalanceRakis = await rakisToken.balanceOf(
+      swapExecutor.address
+    );
+    const swapExecutorBalanceStRakis = await stRakisToken.balanceOf(
+      swapExecutor.address
+    );
+
+    expect(swapExecutorBalance0).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalance1).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalanceRakis).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalanceStRakis).to.equal(ethers.constants.Zero);
+
+    const routerBalance0 = await token0.balanceOf(router.address);
+    const routerBalance1 = await token1.balanceOf(router.address);
+    const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+    const routerBalanceStRakis = await stRakisToken.balanceOf(router.address);
+
+    expect(routerBalance0).to.equal(ethers.constants.Zero);
+    expect(routerBalance1).to.equal(ethers.constants.Zero);
+    expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+    expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+
+    const newStartTime1 = (await wallet.provider?.getBlock("latest"))
+      ?.timestamp;
+    const dayLater1 = Number(newStartTime1?.toString()) + 86400;
+    await network.provider.request({
+      method: "evm_mine",
+      params: [dayLater1],
+    });
+
+    const claimable = await gauge.claimable_reward(
+      randomWallet.address,
+      token0.address
+    );
+    expect(claimable).to.be.gt(0);
+  });
+
+  it("#29 : should withdraw funds with removeLiquidityPermit2", async function () {
+    const balanceArrakisV2Before = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+    expect(balanceArrakisV2Before).to.be.gt(ethers.constants.Zero);
+
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await token1.balanceOf(randomWallet.address);
+
+    await rakisToken.connect(randomWallet).approve(router.address, 0);
+    await rakisToken
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: {
+          token: rakisToken.address,
+          amount: balanceArrakisV2Before.div(2),
+        },
+        spender: router.address,
+        nonce: "102",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    const removeLiquidity = {
+      vault: vault.address,
+      burnAmount: balanceArrakisV2Before.div(2),
+      amount0Min: 0,
+      amount1Min: 0,
+      receiver: randomWallet.address,
+      receiveETH: false,
+      gauge: ethers.constants.AddressZero,
+    };
+
+    const removeLiquidityPermit2Data = {
+      removeData: removeLiquidity,
+      permit: {
+        permitted: {
+          token: rakisToken.address,
+          amount: balanceArrakisV2Before.div(2),
+        },
+        nonce: "102",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+    await router
+      .connect(randomWallet)
+      .removeLiquidityPermit2(removeLiquidityPermit2Data);
+
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await token1.balanceOf(randomWallet.address);
+    const balanceArrakisV2After = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    expect(balance0After).to.be.gt(balance0Before);
+    expect(balance1After).to.be.gt(balance1Before);
+    expect(balanceArrakisV2Before).to.be.gt(balanceArrakisV2After);
+  });
+
+  it("#30 : should unstake and withdraw funds with removeLiquidityPermit2", async function () {
+    const balanceStakedBefore = await stRakisToken.balanceOf(
+      randomWallet.address
+    );
+    expect(balanceStakedBefore).to.be.gt(ethers.constants.Zero);
+
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await token1.balanceOf(randomWallet.address);
+
+    await stRakisToken.connect(randomWallet).approve(router.address, 0);
+    await stRakisToken
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: {
+          token: stRakisToken.address,
+          amount: balanceStakedBefore,
+        },
+        spender: router.address,
+        nonce: "103",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    const removeLiquidity = {
+      vault: vault.address,
+      burnAmount: balanceStakedBefore,
+      amount0Min: 0,
+      amount1Min: 0,
+      receiver: randomWallet.address,
+      receiveETH: false,
+      gauge: gauge.address,
+    };
+    const removeLiquidityPermit2Data = {
+      removeData: removeLiquidity,
+      permit: {
+        permitted: {
+          token: stRakisToken.address,
+          amount: balanceStakedBefore,
+        },
+        nonce: "103",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    await router
+      .connect(randomWallet)
+      .removeLiquidityPermit2(removeLiquidityPermit2Data);
+
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await token1.balanceOf(randomWallet.address);
+    const balanceStakedAfter = await stRakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    expect(balance0After).to.be.gt(balance0Before);
+    expect(balance1After).to.be.gt(balance1Before);
+    expect(balanceStakedBefore).to.be.gt(balanceStakedAfter);
+    expect(balanceStakedAfter).to.eq(0);
+  });
+
+  it("#31 : addLiquidityPermit2 using native ETH", async function () {
+    const token0Address = await vault.token0();
+    expect(token0Address.toLowerCase()).to.equal(addresses.USDC.toLowerCase());
+
+    const amount0In = ethers.BigNumber.from("1000").mul(
+      ethers.BigNumber.from("10").pow("6")
+    );
+    const amount1In = ethers.utils.parseEther("1");
+
+    await token0.connect(wallet).transfer(randomWallet.address, amount0In);
+
+    await token0.connect(randomWallet).approve(router.address, 0);
+    await token0
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await wallet.provider?.getBalance(
+      randomWallet.address
+    );
+    const balanceArrakisV2Before = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: {
+          token: token0.address,
+          amount: amount0In,
+        },
+        spender: router.address,
+        nonce: "700",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    const addLiquidityData = {
+      vault: vault.address,
+      amount0Max: amount0In,
+      amount1Max: amount1In,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      receiver: randomWallet.address,
+      gauge: ethers.constants.AddressZero,
+    };
+
+    const addLiquidityPermit2Data = {
+      addData: addLiquidityData,
+      permit: {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0In,
+          },
+        ],
+        nonce: "700",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    await router
+      .connect(randomWallet)
+      .addLiquidityPermit2(addLiquidityPermit2Data, {
+        value: amount1In,
+      });
+
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await wallet.provider?.getBalance(
+      randomWallet.address
+    );
+    const balanceArrakisV2After = await rakisToken.balanceOf(
+      randomWallet.address
+    );
+
+    expect(balance0Before).to.be.gt(balance0After);
+    expect(balance1Before).to.be.gt(balance1After);
+    expect(balanceArrakisV2Before).to.be.lt(balanceArrakisV2After);
+
+    const swapExecutorBalance0 = await token0.balanceOf(swapExecutor.address);
+    const swapExecutorBalance1 = await token1.balanceOf(swapExecutor.address);
+    const swapExecutorBalanceRakis = await rakisToken.balanceOf(
+      swapExecutor.address
+    );
+    const swapExecutorBalanceEthEnd = await wallet.provider?.getBalance(
+      swapExecutor.address
+    );
+
+    expect(swapExecutorBalance0).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalance1).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalanceRakis).to.equal(ethers.constants.Zero);
+    expect(swapExecutorBalanceEth).to.equal(swapExecutorBalanceEthEnd);
+
+    const routerBalance0 = await token0.balanceOf(router.address);
+    const routerBalance1 = await token1.balanceOf(router.address);
+    const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+    const routerBalanceEthEnd = await wallet.provider?.getBalance(
+      router.address
+    );
+
+    expect(routerBalance0).to.equal(ethers.constants.Zero);
+    expect(routerBalance1).to.equal(ethers.constants.Zero);
+    expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+    expect(routerBalanceEth).to.equal(routerBalanceEthEnd);
+  });
+  it("#32: adds liquidity with swapAndAddLiquidityPermit2", async function () {
+    // formatting amounts
+    const decimalsToken0 = await token0.decimals();
+    const decimalsToken1 = await token1.decimals();
+    const amount0Max = ethers.utils.parseUnits("10", decimalsToken0);
+    const amount1Max = ethers.utils.parseUnits("5", decimalsToken1);
+
+    // amounts used for getMintAmounts(), to be filled later depending on swap amounts
+    let amount0Use: BigNumber;
+    let amount1Use: BigNumber;
+
+    // PERMIT 2 STUFF GET RELEVANT APPROVALS FOR randomWallet
+    await token0.connect(wallet).transfer(randomWallet.address, amount0Max);
+    await token1.connect(wallet).transfer(randomWallet.address, amount1Max);
+
+    await token0.connect(randomWallet).approve(router.address, 0);
+    await token1.connect(randomWallet).approve(router.address, 0);
+    await token0
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+    await token1
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0Max,
+          },
+          {
+            token: token1.address,
+            amount: amount1Max,
+          },
+        ],
+        spender: router.address,
+        nonce: "1011",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    // get before balances
+    const balanceStRakisBefore = stRakisToken
+      ? await stRakisToken.balanceOf(randomWallet.address)
+      : ethers.BigNumber.from(0);
+
+    // we store working payloads from 1inch API for the swaps needed for tests and block number tests are pinned to
+    let swapParams: OneInchDataType;
+    let swapAmountIn: BigNumber;
+    let swapAmountOut: BigNumber;
+
+    const vaultName = (await token0.symbol()) + "/" + (await token1.symbol());
+    const mockPayloadScenario = "scenario2";
+    if (
+      mockPayloads[vaultName] &&
+      mockPayloads[vaultName][mockPayloadScenario]
+    ) {
+      // console.log("using mock payload...");
+      swapParams = {
+        to: addresses.OneInchRouter,
+        data: mockPayloads[vaultName][mockPayloadScenario].payload,
+      };
+      swapAmountIn = ethers.BigNumber.from(
+        mockPayloads[vaultName][mockPayloadScenario].swapIn
+      );
+      swapAmountOut = ethers.BigNumber.from(
+        mockPayloads[vaultName][mockPayloadScenario].swapOut
+      );
+    } else {
+      return Promise.reject(
+        "Mock payload of 1inch api not found for this scenario!"
+      );
+    }
+
+    // calculate minimum amount out on the swap considering slippage passed
+    const amountOut = swapAmountOut
+      .mul(ethers.BigNumber.from((100 - 50).toString()))
+      .div(ethers.BigNumber.from((100).toString()));
+
+    // preparing parameter structs for swapAndAddLiquidity()
+    const addData = {
+      vault: vault.address,
+      amount0Max: amount0Max,
+      amount1Max: amount1Max,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      receiver: randomWallet.address,
+      gauge: stRakisToken.address,
+    };
+    const swapData = {
+      amountInSwap: swapAmountIn.toString(),
+      amountOutSwap: amountOut,
+      zeroForOne: false,
+      swapRouter: swapParams.to,
+      swapPayload: swapParams.data,
+    };
+    const swapAndAddData = {
+      addData: addData,
+      swapData: swapData,
+    };
+
+    const swapAndAddPermit2Data = {
+      swapAndAddData: swapAndAddData,
+      permit: {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0Max,
+          },
+          {
+            token: token1.address,
+            amount: amount1Max,
+          },
+        ],
+        nonce: "1011",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    let hasSwapped = false; // flag indicating if "Swapped" event fired
+    let hasMinted = false; // flag indicating if "Minted" event fired
+
+    // object to be filled with "Swapped" event data
+    const swapppedEventData = {
+      zeroForOne: false,
+      amount0Diff: ethers.BigNumber.from(0),
+      amount1Diff: ethers.BigNumber.from(0),
+      amountOutSwap: ethers.BigNumber.from(0),
+    };
+
+    // object to be filled with "Minted" event data
+    const mintedEventData = {
+      receiver: "",
+      mintAmount: ethers.BigNumber.from(0),
+      amount0In: ethers.BigNumber.from(0),
+      amount1In: ethers.BigNumber.from(0),
+      liquidityMinted: ethers.BigNumber.from(0),
+    };
+
+    // listener for getting data from "Swapped" event
+    router.on(
+      "Swapped",
+      (
+        zeroForOne: boolean,
+        amount0Diff: BigNumber,
+        amount1Diff: BigNumber,
+        amountOutSwap: BigNumber
+      ) => {
+        swapppedEventData.zeroForOne = zeroForOne;
+        swapppedEventData.amount0Diff = amount0Diff;
+        swapppedEventData.amount1Diff = amount1Diff;
+        swapppedEventData.amountOutSwap = amountOutSwap;
+        hasSwapped = true;
+      }
+    );
+
+    // listener for getting data from "Minted" event
+    vault.on(
+      "LogMint",
+      (
+        receiver: string,
+        mintAmount: BigNumber,
+        amount0In: BigNumber,
+        amount1In: BigNumber
+      ) => {
+        mintedEventData.receiver = receiver;
+        mintedEventData.mintAmount = ethers.BigNumber.from(mintAmount);
+        mintedEventData.amount0In = ethers.BigNumber.from(amount0In);
+        mintedEventData.amount1In = ethers.BigNumber.from(amount1In);
+        hasMinted = true;
+      }
+    );
+
+    // function that returns a promise that resolves when "Swapped" and "Minted" are fired
+    const getEventsData = async () => {
+      return new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (hasSwapped && hasMinted) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 5000);
+      });
+    };
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await token1.balanceOf(randomWallet.address);
+
+    // call swapAndAddLiquidity
+    const swapAndAddTxPending = await router
+      .connect(randomWallet)
+      .swapAndAddLiquidityPermit2(swapAndAddPermit2Data);
+
+    // wait for tx
+    await swapAndAddTxPending.wait();
+
+    // wait for events to be fired so we have swap and deposit data
+    await getEventsData();
+
+    // get new balances
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await token1.balanceOf(randomWallet.address);
+    const balanceStRakisAfter = stRakisToken
+      ? await stRakisToken.balanceOf(randomWallet.address)
+      : ethers.BigNumber.from(0);
+
+    // calculate actual amounts used for mintAmounts after swap and validate swapAmountOut
+    if (swapppedEventData.zeroForOne) {
+      amount0Use = swapAndAddData.addData.amount0Max.sub(
+        swapppedEventData.amount0Diff
+      );
+      amount1Use = swapAndAddData.addData.amount1Max.add(
+        swapppedEventData.amount1Diff
+      );
+
+      expect(amountOut).to.be.lt(swapppedEventData.amount1Diff);
+    } else {
+      amount0Use = swapAndAddData.addData.amount0Max.add(
+        swapppedEventData.amount0Diff
+      );
+      amount1Use = swapAndAddData.addData.amount1Max.sub(
+        swapppedEventData.amount1Diff
+      );
+
+      expect(amountOut).to.be.lt(swapppedEventData.amount0Diff);
+    }
+
+    // calculate expected refunds
+    const refund0 = amount0Use.sub(mintedEventData.amount0In);
+    const refund1 = amount1Use.sub(mintedEventData.amount1In);
+
+    // validate balances
+    expect(balance0After).to.equal(
+      balance0Before.sub(swapAndAddData.addData.amount0Max).add(refund0)
+    );
+    expect(balance1After).to.equal(
+      balance1Before.sub(swapAndAddData.addData.amount1Max).add(refund1)
+    );
+    expect(balanceStRakisBefore).to.be.lt(balanceStRakisAfter);
+
+    // validate router balances
+    const swapperBalance0 = await token0.balanceOf(swapExecutor.address);
+    const swapperBalance1 = await token1.balanceOf(swapExecutor.address);
+    const swapperBalanceRakis = await rakisToken.balanceOf(
+      swapExecutor.address
+    );
+    expect(swapperBalance0).to.equal(ethers.constants.Zero);
+    expect(swapperBalance1).to.equal(ethers.constants.Zero);
+    expect(swapperBalanceRakis).to.equal(ethers.constants.Zero);
+    if (stRakisToken) {
+      const routerBalanceStRakis = await stRakisToken.balanceOf(
+        swapExecutor.address
+      );
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+    }
+
+    // validate router - 1inch allowance
+    const swapExecutorAllowance0 = await token0.allowance(
+      swapExecutor.address,
+      addresses.OneInchRouter
+    );
+    const swapExecutorAllowance1 = await token1.allowance(
+      swapExecutor.address,
+      addresses.OneInchRouter
+    );
+    expect(swapExecutorAllowance0).to.equal(ethers.constants.Zero);
+    expect(swapExecutorAllowance1).to.equal(ethers.constants.Zero);
+
+    // validate generic router balances
+    const routerBalance0 = await token0.balanceOf(router.address);
+    const routerBalance1 = await token1.balanceOf(router.address);
+    const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+    expect(routerBalance0).to.equal(ethers.constants.Zero);
+    expect(routerBalance1).to.equal(ethers.constants.Zero);
+    expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+    if (stRakisToken) {
+      const routerBalanceStRakis = await stRakisToken.balanceOf(router.address);
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+    }
+    const routerBalETH = await wallet.provider?.getBalance(router.address);
+    expect(routerBalETH).to.equal(ethers.constants.Zero);
+
+    // validate we cannot mint with amounts refunded
+    await expect(
+      resolver.getMintAmounts(vault.address, refund0, refund1)
+    ).to.be.revertedWith("ArrakisVaultV2: mint 0");
+  });
+
+  it("#33: adds liquidity with swapAndAddLiquidityPermit2", async function () {
+    // formatting amounts
+    const decimalsToken0 = await token0.decimals();
+    const decimalsToken1 = await token1.decimals();
+    const amount0Max = ethers.utils.parseUnits("10", decimalsToken0);
+    const amount1Max = ethers.utils.parseUnits("5", decimalsToken1);
+
+    // amounts used for getMintAmounts(), to be filled later depending on swap amounts
+    let amount0Use: BigNumber;
+    let amount1Use: BigNumber;
+
+    // PERMIT 2 STUFF GET RELEVANT APPROVALS FOR randomWallet
+    await token0.connect(wallet).transfer(randomWallet.address, amount0Max);
+
+    await token0.connect(randomWallet).approve(router.address, 0);
+
+    await token0
+      .connect(randomWallet)
+      .approve(addresses.Permit2, ethers.constants.MaxUint256);
+
+    const hashed = SignatureTransfer.hash(
+      {
+        permitted: {
+          token: token0.address,
+          amount: amount0Max,
+        },
+        spender: router.address,
+        nonce: "1012",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      addresses.Permit2,
+      network.config.chainId ? network.config.chainId : 1
+    );
+
+    const sig = sign(
+      hashed,
+      "0x36383cc9cfbf1dc87c78c2529ae2fcd4e3fc4e575e154b357ae3a8b2739113cf"
+    );
+
+    const encodedSig = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32"],
+      ["0x" + sig.r.toString("hex"), "0x" + sig.s.toString("hex")]
+    );
+
+    const finalSig = encodedSig + sig.v.toString(16);
+
+    // get before balances
+    const balanceStRakisBefore = stRakisToken
+      ? await stRakisToken.balanceOf(randomWallet.address)
+      : ethers.BigNumber.from(0);
+
+    // we store working payloads from 1inch API for the swaps needed for tests and block number tests are pinned to
+    let swapParams: OneInchDataType;
+    let swapAmountIn: BigNumber;
+    let swapAmountOut: BigNumber;
+
+    const vaultName = (await token0.symbol()) + "/" + (await token1.symbol());
+    const mockPayloadScenario = "scenario2";
+    if (
+      mockPayloads[vaultName] &&
+      mockPayloads[vaultName][mockPayloadScenario]
+    ) {
+      // console.log("using mock payload...");
+      swapParams = {
+        to: addresses.OneInchRouter,
+        data: mockPayloads[vaultName][mockPayloadScenario].payload,
+      };
+      swapAmountIn = ethers.BigNumber.from(
+        mockPayloads[vaultName][mockPayloadScenario].swapIn
+      );
+      swapAmountOut = ethers.BigNumber.from(
+        mockPayloads[vaultName][mockPayloadScenario].swapOut
+      );
+    } else {
+      return Promise.reject(
+        "Mock payload of 1inch api not found for this scenario!"
+      );
+    }
+
+    // calculate minimum amount out on the swap considering slippage passed
+    const amountOut = swapAmountOut
+      .mul(ethers.BigNumber.from((100 - 50).toString()))
+      .div(ethers.BigNumber.from((100).toString()));
+
+    // preparing parameter structs for swapAndAddLiquidity()
+    const addData = {
+      vault: vault.address,
+      amount0Max: amount0Max,
+      amount1Max: amount1Max,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      receiver: randomWallet.address,
+      gauge: stRakisToken.address,
+    };
+    const swapData = {
+      amountInSwap: swapAmountIn.toString(),
+      amountOutSwap: amountOut,
+      zeroForOne: false,
+      swapRouter: swapParams.to,
+      swapPayload: swapParams.data,
+    };
+    const swapAndAddData = {
+      addData: addData,
+      swapData: swapData,
+    };
+
+    const swapAndAddPermit2Data = {
+      swapAndAddData: swapAndAddData,
+      permit: {
+        permitted: [
+          {
+            token: token0.address,
+            amount: amount0Max,
+          },
+        ],
+        nonce: "1012",
+        deadline: MaxSigDeadline.sub(1).toString(),
+      },
+      signature: finalSig,
+    };
+
+    let hasSwapped = false; // flag indicating if "Swapped" event fired
+    let hasMinted = false; // flag indicating if "Minted" event fired
+
+    // object to be filled with "Swapped" event data
+    const swapppedEventData = {
+      zeroForOne: false,
+      amount0Diff: ethers.BigNumber.from(0),
+      amount1Diff: ethers.BigNumber.from(0),
+      amountOutSwap: ethers.BigNumber.from(0),
+    };
+
+    // object to be filled with "Minted" event data
+    const mintedEventData = {
+      receiver: "",
+      mintAmount: ethers.BigNumber.from(0),
+      amount0In: ethers.BigNumber.from(0),
+      amount1In: ethers.BigNumber.from(0),
+      liquidityMinted: ethers.BigNumber.from(0),
+    };
+
+    // listener for getting data from "Swapped" event
+    router.on(
+      "Swapped",
+      (
+        zeroForOne: boolean,
+        amount0Diff: BigNumber,
+        amount1Diff: BigNumber,
+        amountOutSwap: BigNumber
+      ) => {
+        swapppedEventData.zeroForOne = zeroForOne;
+        swapppedEventData.amount0Diff = amount0Diff;
+        swapppedEventData.amount1Diff = amount1Diff;
+        swapppedEventData.amountOutSwap = amountOutSwap;
+        hasSwapped = true;
+      }
+    );
+
+    // listener for getting data from "Minted" event
+    vault.on(
+      "LogMint",
+      (
+        receiver: string,
+        mintAmount: BigNumber,
+        amount0In: BigNumber,
+        amount1In: BigNumber
+      ) => {
+        mintedEventData.receiver = receiver;
+        mintedEventData.mintAmount = ethers.BigNumber.from(mintAmount);
+        mintedEventData.amount0In = ethers.BigNumber.from(amount0In);
+        mintedEventData.amount1In = ethers.BigNumber.from(amount1In);
+        hasMinted = true;
+      }
+    );
+
+    // function that returns a promise that resolves when "Swapped" and "Minted" are fired
+    const getEventsData = async () => {
+      return new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (hasSwapped && hasMinted) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 5000);
+      });
+    };
+    const balance0Before = await token0.balanceOf(randomWallet.address);
+    const balance1Before = await wallet.provider?.getBalance(
+      randomWallet.address
+    );
+
+    // call swapAndAddLiquidity
+    const swapAndAddTxPending = await router
+      .connect(randomWallet)
+      .swapAndAddLiquidityPermit2(swapAndAddPermit2Data, { value: amount1Max });
+
+    // wait for tx
+    const swapAndAddTx = await swapAndAddTxPending.wait();
+
+    const ethSpentForGas = swapAndAddTx.gasUsed.mul(
+      swapAndAddTx.effectiveGasPrice
+    );
+
+    // wait for events to be fired so we have swap and deposit data
+    await getEventsData();
+
+    // get new balances
+    const balance0After = await token0.balanceOf(randomWallet.address);
+    const balance1After = await wallet.provider?.getBalance(
+      randomWallet.address
+    );
+    const balanceStRakisAfter = stRakisToken
+      ? await stRakisToken.balanceOf(randomWallet.address)
+      : ethers.BigNumber.from(0);
+
+    // calculate actual amounts used for mintAmounts after swap and validate swapAmountOut
+    if (swapppedEventData.zeroForOne) {
+      amount0Use = swapAndAddData.addData.amount0Max.sub(
+        swapppedEventData.amount0Diff
+      );
+      amount1Use = swapAndAddData.addData.amount1Max.add(
+        swapppedEventData.amount1Diff
+      );
+
+      expect(amountOut).to.be.lt(swapppedEventData.amount1Diff);
+    } else {
+      amount0Use = swapAndAddData.addData.amount0Max.add(
+        swapppedEventData.amount0Diff
+      );
+      amount1Use = swapAndAddData.addData.amount1Max.sub(
+        swapppedEventData.amount1Diff
+      );
+
+      expect(amountOut).to.be.lt(swapppedEventData.amount0Diff);
+    }
+
+    // calculate expected refunds
+    const refund0 = amount0Use.sub(mintedEventData.amount0In);
+    const refund1 = amount1Use.sub(mintedEventData.amount1In);
+
+    // validate balances
+    expect(balance0After).to.equal(
+      balance0Before.sub(swapAndAddData.addData.amount0Max).add(refund0)
+    );
+    expect(balance1After).to.be.lt(
+      balance1Before
+        ?.sub(swapAndAddData.addData.amount1Max)
+        .add(refund1)
+        .add(ethSpentForGas)
+    );
+    expect(balance1After);
+    expect(balanceStRakisBefore).to.be.lt(balanceStRakisAfter);
+
+    // validate router balances
+    const swapperBalance0 = await token0.balanceOf(swapExecutor.address);
+    const swapperBalance1 = await token1.balanceOf(swapExecutor.address);
+    const swapperBalanceRakis = await rakisToken.balanceOf(
+      swapExecutor.address
+    );
+    expect(swapperBalance0).to.equal(ethers.constants.Zero);
+    expect(swapperBalance1).to.equal(ethers.constants.Zero);
+    expect(swapperBalanceRakis).to.equal(ethers.constants.Zero);
+    if (stRakisToken) {
+      const routerBalanceStRakis = await stRakisToken.balanceOf(
+        swapExecutor.address
+      );
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+    }
+
+    // validate router - 1inch allowance
+    const swapExecutorAllowance0 = await token0.allowance(
+      swapExecutor.address,
+      addresses.OneInchRouter
+    );
+    const swapExecutorAllowance1 = await token1.allowance(
+      swapExecutor.address,
+      addresses.OneInchRouter
+    );
+    expect(swapExecutorAllowance0).to.equal(ethers.constants.Zero);
+    expect(swapExecutorAllowance1).to.equal(ethers.constants.Zero);
+
+    // validate generic router balances
+    const routerBalance0 = await token0.balanceOf(router.address);
+    const routerBalance1 = await token1.balanceOf(router.address);
+    const routerBalanceRakis = await rakisToken.balanceOf(router.address);
+    expect(routerBalance0).to.equal(ethers.constants.Zero);
+    expect(routerBalance1).to.equal(ethers.constants.Zero);
+    expect(routerBalanceRakis).to.equal(ethers.constants.Zero);
+    if (stRakisToken) {
+      const routerBalanceStRakis = await stRakisToken.balanceOf(router.address);
+      expect(routerBalanceStRakis).to.equal(ethers.constants.Zero);
+    }
+    const routerBalETH = await wallet.provider?.getBalance(router.address);
+    expect(routerBalETH).to.equal(ethers.constants.Zero);
+
+    // validate we cannot mint with amounts refunded
+    await expect(
+      resolver.getMintAmounts(vault.address, refund0, refund1)
+    ).to.be.revertedWith("ArrakisVaultV2: mint 0");
+  });
 });

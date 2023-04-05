@@ -2,6 +2,8 @@
 // solhint-disable-next-line compiler-version
 pragma solidity >=0.8.0;
 
+import {PermitTransferFrom, PermitBatchTransferFrom} from "./SPermit2.sol";
+
 struct AddLiquidityData {
     // address of ArrakisV2 vault
     address vault;
@@ -54,4 +56,22 @@ struct SwapData {
 struct SwapAndAddData {
     SwapData swapData;
     AddLiquidityData addData;
+}
+
+struct AddLiquidityPermit2Data {
+    AddLiquidityData addData;
+    PermitBatchTransferFrom permit;
+    bytes signature;
+}
+
+struct RemoveLiquidityPermit2Data {
+    RemoveLiquidityData removeData;
+    PermitTransferFrom permit;
+    bytes signature;
+}
+
+struct SwapAndAddPermit2Data {
+    SwapAndAddData swapAndAddData;
+    PermitBatchTransferFrom permit;
+    bytes signature;
 }
