@@ -1,6 +1,7 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -10,19 +11,26 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "arbitrum"
   ) {
     console.log(
-      `!! Deploying ArrakisV2SwapExecutor to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ArrakisV2StaticManager to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
+  const addresses = getAddresses(hre.network.name);
 
-  const arrakisV2Router = await deployments.get("ArrakisV2Router");
-
-  await deploy("ArrakisV2SwapExecutor", {
+  await deploy("ArrakisV2StaticManager", {
     from: deployer,
-    args: [arrakisV2Router.address],
+    proxy: {
+      proxyContract: "OpenZeppelinTransparentProxy",
+      owner: arrakisMultiSig,
+      execute: {
+        methodName: "initialize",
+        args: [owner],
+      },
+    },
+    args: [addresses.ArrakisV2Helper, 500],
     log: hre.network.name !== "hardhat",
   });
 };
@@ -34,11 +42,8 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "optimism" ||
     hre.network.name === "arbitrum" ||
     hre.network.name === "goerli";
-  return shouldSkip ? true : false;
+  return shouldSkip;
 };
 
-func.tags = ["ArrakisV2SwapExecutor"];
-
-func.dependencies = ["ArrakisV2Router"];
-
+func.tags = ["ArrakisV2StaticManager"];
 export default func;

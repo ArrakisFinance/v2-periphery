@@ -6,7 +6,7 @@ import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 
-interface ISwapResolver {
+interface IRouterSwapResolver {
     function calculateSwapAmount(
         IArrakisV2 vault,
         uint256 amount0In,

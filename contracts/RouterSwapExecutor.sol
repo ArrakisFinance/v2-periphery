@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
 
-import {IArrakisV2SwapExecutor} from "./interfaces/IArrakisV2SwapExecutor.sol";
+import {IRouterSwapExecutor} from "./interfaces/IRouterSwapExecutor.sol";
 import {SwapAndAddData} from "./structs/SArrakisV2Router.sol";
 import {
     IArrakisV2
@@ -13,7 +13,7 @@ import {
 
 /// @notice External function of this contract can only be called by ArrakisV2Router
 /// @notice do not give approvals to this contract's address
-contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
+contract RouterSwapExecutor is IRouterSwapExecutor {
     using SafeERC20 for IERC20;
 
     address public immutable router;
@@ -27,7 +27,7 @@ contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
         router = _router;
     }
 
-    // solhint-disable-next-line function-max-lines
+    // solhint-disable-next-line function-max-lines, code-complexity
     function swap(SwapAndAddData memory swapAndAddData_)
         external
         onlyRouter
@@ -35,13 +35,15 @@ contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
     {
         IERC20 token0 = IArrakisV2(swapAndAddData_.addData.vault).token0();
         IERC20 token1 = IArrakisV2(swapAndAddData_.addData.vault).token1();
-
+        uint256 balanceBefore;
         if (swapAndAddData_.swapData.zeroForOne) {
+            balanceBefore = token0.balanceOf(address(this));
             token0.safeApprove(
                 swapAndAddData_.swapData.swapRouter,
                 swapAndAddData_.swapData.amountInSwap
             );
         } else {
+            balanceBefore = token1.balanceOf(address(this));
             token1.safeApprove(
                 swapAndAddData_.swapData.swapRouter,
                 swapAndAddData_.swapData.amountInSwap
@@ -62,7 +64,7 @@ contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
         uint256 balance0 = token0.balanceOf(address(this));
         uint256 balance1 = token1.balanceOf(address(this));
         if (swapAndAddData_.swapData.zeroForOne) {
-            amount0Diff = swapAndAddData_.swapData.amountInSwap - balance0;
+            amount0Diff = balanceBefore - balance0;
             amount1Diff = balance1;
             require(
                 amount1Diff >= swapAndAddData_.swapData.amountOutSwap,
@@ -70,14 +72,14 @@ contract ArrakisV2SwapExecutor is IArrakisV2SwapExecutor {
             );
         } else {
             amount0Diff = balance0;
-            amount1Diff = swapAndAddData_.swapData.amountInSwap - balance1;
+            amount1Diff = balanceBefore - balance1;
             require(
                 amount0Diff >= swapAndAddData_.swapData.amountOutSwap,
                 "swap: received below minimum"
             );
         }
 
-        token0.safeTransfer(router, balance0);
-        token1.safeTransfer(router, balance1);
+        if (balance0 > 0) token0.safeTransfer(router, balance0);
+        if (balance1 > 0) token1.safeTransfer(router, balance1);
     }
 }

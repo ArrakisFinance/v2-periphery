@@ -14,17 +14,19 @@ import {
     UnderlyingOutput
 } from "@arrakisfi/v2-core/contracts/structs/SArrakisV2.sol";
 import {FullMath, IUniswapV3Pool, Twap} from "./libraries/Twap.sol";
-import {StaticManagerStorage} from "./abstract/StaticManagerStorage.sol";
+import {
+    ArrakisV2StaticManagerStorage
+} from "./abstract/ArrakisV2StaticManagerStorage.sol";
 import {SetStaticVault, StaticVaultInfo} from "./structs/SStaticManager.sol";
 import {
     hundredPercent
 } from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 
-contract StaticManager is StaticManagerStorage {
+contract ArrakisV2StaticManager is ArrakisV2StaticManagerStorage {
     using SafeERC20 for IERC20;
 
     constructor(address helper_, uint16 managerFeeBPS_)
-        StaticManagerStorage(helper_, managerFeeBPS_)
+        ArrakisV2StaticManagerStorage(helper_, managerFeeBPS_)
     {} // solhint-disable-line no-empty-blocks
 
     function setStaticVault(SetStaticVault calldata params_) external {

@@ -119,6 +119,25 @@ describe("ArrakisV2GaugeFactory tests", function () {
     expect(reward0).to.be.eq(addresses.CRV);
     const reward1 = await gauge.reward_tokens(1);
     expect(reward1).to.be.eq(token0.address);
+
+    const tx = await gaugeFactory.deployGauge(
+      vault.address,
+      token0.address,
+      walletAddress
+    );
+    await tx.wait();
+    const n2 = await gaugeFactory.numGauges();
+    expect(n2).to.be.eq(2);
+    const gaugeAddressCheck = await gaugeFactory.gauges(0, 1);
+    const gauge2Address = await gaugeFactory.gauges(1, 2);
+    expect(gaugeAddressCheck.length).to.be.eq(1);
+    expect(gauge2Address.length).to.be.eq(1);
+    expect(gaugeAddressCheck[0]).to.be.eq(gaugeAddress);
+    expect(gauge2Address[0]).to.not.be.eq(gaugeAddress);
+    const gaugeAddresses = await gaugeFactory.gauges(0, 2);
+    expect(gaugeAddresses.length).to.be.eq(2);
+    expect(gaugeAddresses[0]).to.be.eq(gaugeAddress);
+    expect(gaugeAddresses[1]).to.be.eq(gauge2Address[0]);
   });
   it("#1 : should deposit reward token", async function () {
     await token0.connect(wallet).approve(gauge.address, 1);

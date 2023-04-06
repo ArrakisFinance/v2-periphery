@@ -22,7 +22,9 @@ import {
     IArrakisV2Factory
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol";
 import {IArrakisV2GaugeFactory} from "./interfaces/IArrakisV2GaugeFactory.sol";
-import {IStaticManager} from "./interfaces/IStaticManager.sol";
+import {
+    IArrakisV2StaticManager
+} from "./interfaces/IArrakisV2StaticManager.sol";
 import {
     PositionLiquidity,
     InitializePayload,
@@ -37,7 +39,7 @@ contract ArrakisV2StaticDeployer {
     IUniswapV3Factory public immutable uniswapFactory;
     IArrakisV2Factory public immutable arrakisFactory;
     IArrakisV2GaugeFactory public immutable gaugeFactory;
-    IStaticManager public immutable staticManager;
+    IArrakisV2StaticManager public immutable staticManager;
 
     event CreateStaticVault(
         address vault,
@@ -56,7 +58,7 @@ contract ArrakisV2StaticDeployer {
         uniswapFactory = IUniswapV3Factory(uniswapFactory_);
         arrakisFactory = IArrakisV2Factory(arrakisFactory_);
         gaugeFactory = IArrakisV2GaugeFactory(gaugeFactory_);
-        staticManager = IStaticManager(staticManager_);
+        staticManager = IArrakisV2StaticManager(staticManager_);
     }
 
     // solhint-disable-next-line function-max-lines

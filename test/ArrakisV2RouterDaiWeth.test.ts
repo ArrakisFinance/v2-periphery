@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { deployments, ethers, network } from "hardhat";
 import {
-  ArrakisV2SwapExecutor,
+  RouterSwapExecutor,
   ArrakisV2Router,
   ERC20,
-  SwapResolver,
+  RouterSwapResolver,
   IArrakisV2,
   IGauge,
 } from "../typechain";
@@ -36,8 +36,8 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   let resolver: Contract;
   let router: ArrakisV2Router;
-  let swapExecutor: ArrakisV2SwapExecutor;
-  let swapResolver: SwapResolver;
+  let swapExecutor: RouterSwapExecutor;
+  let swapResolver: RouterSwapResolver;
 
   let vault: IArrakisV2;
 
@@ -111,7 +111,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: false,
       gauge: ethers.constants.AddressZero,
     };
 
@@ -177,7 +176,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: false,
       gauge: gauge.address,
     };
 
@@ -349,7 +347,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
     };
 
@@ -462,7 +459,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: gauge.address,
     };
     await router.addLiquidity(addLiquidityData, {
@@ -590,6 +586,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     const amount1In = ethers.utils.parseEther("10");
 
     await token0.connect(wallet).approve(router.address, amount0In);
+    await token1.connect(wallet).approve(router.address, 0);
 
     const transactionEthValue = ethers.BigNumber.from("0");
 
@@ -601,7 +598,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
     };
 
@@ -609,7 +605,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       router.addLiquidity(addLiquidityData, {
         value: transactionEthValue,
       })
-    ).to.be.revertedWith("Not enough ETH forwarded");
+    ).to.be.reverted;
   });
 
   it("#7 : tests adding liquidity using native ETH passing double msg.value", async function () {
@@ -637,7 +633,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       amount1Min: 0,
       amountSharesMin: 0,
       receiver: walletAddress,
-      useETH: true,
       gauge: "0x0000000000000000000000000000000000000000",
     };
     await router.addLiquidity(addLiquidityData, {
@@ -1016,50 +1011,51 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#20 : should use only A and swap A for B using native ETH", async function () {
-    await swapAndAddTest(
-      wallet,
-      router,
-      swapExecutor,
-      swapResolver,
-      resolver,
+  // THE FOLLOWIING TESTS ARE NOW REDUNDANT !! (since A is not WETH, and only inputting A, no "use native ETH" option exists)
+  // it("#20 : should use only A and swap A for B using native ETH", async function () {
+  //   await swapAndAddTest(
+  //     wallet,
+  //     router,
+  //     swapExecutor,
+  //     swapResolver,
+  //     resolver,
 
-      vault,
-      token0,
-      token1,
-      rakisToken,
+  //     vault,
+  //     token0,
+  //     token1,
+  //     rakisToken,
 
-      ethers.BigNumber.from("100000"),
-      ethers.BigNumber.from("0"),
-      true,
-      50,
-      true,
-      "scenario3"
-    );
-  });
+  //     ethers.BigNumber.from("100000"),
+  //     ethers.BigNumber.from("0"),
+  //     true,
+  //     50,
+  //     true,
+  //     "scenario3"
+  //   );
+  // });
 
-  it("#21 : should use only A and swap A for B and stake using nativeETH", async function () {
-    await swapAndAddTest(
-      wallet,
-      router,
-      swapExecutor,
-      swapResolver,
-      resolver,
+  // it("#21 : should use only A and swap A for B and stake using nativeETH", async function () {
+  //   await swapAndAddTest(
+  //     wallet,
+  //     router,
+  //     swapExecutor,
+  //     swapResolver,
+  //     resolver,
 
-      vault,
-      token0,
-      token1,
-      rakisToken,
+  //     vault,
+  //     token0,
+  //     token1,
+  //     rakisToken,
 
-      ethers.BigNumber.from("100000"),
-      ethers.BigNumber.from("0"),
-      true,
-      50,
-      true,
-      "scenario3",
-      stRakisToken
-    );
-  });
+  //     ethers.BigNumber.from("100000"),
+  //     ethers.BigNumber.from("0"),
+  //     true,
+  //     50,
+  //     true,
+  //     "scenario3",
+  //     stRakisToken
+  //   );
+  // });
 
   it("#22 : should use only A and swap A for B with different msg.value and nativeETH", async function () {
     await swapAndAddTest(

@@ -26,7 +26,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       addresses.UniswapV3Factory,
       addresses.ArrakisV2Factory,
       (await deployments.get("ArrakisV2GaugeFactory")).address,
-      (await deployments.get("StaticManager")).address,
+      (await deployments.get("ArrakisV2StaticManager")).address,
     ],
     log: hre.network.name !== "hardhat",
   });
@@ -43,5 +43,5 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ["ArrakisV2StaticDeployer"];
-func.dependencies = ["ArrakisV2GaugeFactory", "StaticManager"];
+func.dependencies = ["ArrakisV2GaugeFactory", "ArrakisV2StaticManager"];
 export default func;
