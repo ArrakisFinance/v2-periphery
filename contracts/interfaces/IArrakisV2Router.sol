@@ -8,12 +8,15 @@ import {
 
 import {
     AddLiquidityData,
+    AddLiquidityPermit2Data,
     RemoveLiquidityData,
-    SwapAndAddData
+    RemoveLiquidityPermit2Data,
+    SwapAndAddData,
+    SwapAndAddPermit2Data
 } from "../structs/SArrakisV2Router.sol";
 
 interface IArrakisV2Router {
-    function addLiquidity(AddLiquidityData memory _addData)
+    function addLiquidity(AddLiquidityData memory params_)
         external
         payable
         returns (
@@ -22,11 +25,35 @@ interface IArrakisV2Router {
             uint256 sharesReceived
         );
 
-    function removeLiquidity(RemoveLiquidityData memory _removeData)
+    function removeLiquidity(RemoveLiquidityData memory params_)
         external
         returns (uint256 amount0, uint256 amount1);
 
-    function swapAndAddLiquidity(SwapAndAddData memory _swapData)
+    function swapAndAddLiquidity(SwapAndAddData memory params_)
+        external
+        payable
+        returns (
+            uint256 amount0,
+            uint256 amount1,
+            uint256 sharesReceived,
+            uint256 amount0Diff,
+            uint256 amount1Diff
+        );
+
+    function addLiquidityPermit2(AddLiquidityPermit2Data memory params_)
+        external
+        payable
+        returns (
+            uint256 amount0,
+            uint256 amount1,
+            uint256 sharesReceived
+        );
+
+    function removeLiquidityPermit2(RemoveLiquidityPermit2Data memory params_)
+        external
+        returns (uint256 amount0, uint256 amount1);
+
+    function swapAndAddLiquidityPermit2(SwapAndAddPermit2Data memory params_)
         external
         payable
         returns (
@@ -38,6 +65,4 @@ interface IArrakisV2Router {
         );
 
     function updateSwapExecutor(address swapper_) external;
-
-    function updateFeeCollector(address feeCollector_) external;
 }

@@ -1,96 +1,78 @@
-# Vault V2 Router Spec
-
-TODO: refactor spec to latest. Leaving here as is for now.
+# Arrakis V2 Router Spec
 
 ## Router & Swap Executor
 
-**ArrakisV2Router** (aka router contract) receives the approval from the users, validate input data, stake/unstake, wrap eth into weth and transfer funds from user to RouterSwapExecutor.
+**ArrakisV2Router** (aka router contract) receives the approval from the users, transfers funds from users to itself, validate input data, wrap/unwrap eth, deposit/withdraw, stake/unstake, returns funds to users.
 
-**RouterSwapExecutor** (aka executor contract) is responsible for executing swap payloads (prepared off-chain) and interacting with vaults (ArrakisV2Vault).
-
-External functions in the executor contract can only be called by the generic contract. For this, the generic contract has a function `updateRouter` to set the executor address to be used. The executor contract receives the generic address to validate on deployment (constructor).
+**RouterSwapExecutor** (aka executor contract) is responsible for executing swap payloads (prepared off-chain) passed to Router's swapAndAddLiquidity methods. This separation of contracts allows swap payloads to tap "arbitrary" liquidity sources and still be safe.
 
 ## Parameter structs
 
-- AddLiquidityData is used by `addLiquidity` function on both generic and executor contracts.
+### AddLiquiditData
 
 ```
 struct AddLiquidityData {
-    // Arrakis vault
-    IVaultV2 vault;
-    // maximum amount of token0 to forward on mint
+    address vault;
     uint256 amount0Max;
-    // maximum amount of token1 to forward on mint
     uint256 amount1Max;
-    // the minimum amount of token0 actually deposited (slippage protection)
     uint256 amount0Min;
-    // the minimum amount of token1 actually deposited (slippage protection)
     uint256 amount1Min;
-    // account to receive minted tokens
+    uint256 amountSharesMin;
     address receiver;
-    // address of gauge to stake tokens in
     address gauge;
 }
 ```
 
-- MintData is created by `ArrakisV2Router.addLiquidity` and passed as parameter to `RouterSwapExecutor.addLiquidity`.
+- vault : Arrakis Vault addres
+- amount0Max : Maximum amount of token0 to forward on mint
+- amount1Max : Maximum amount of token1 to forward on mint
+- amount0Min : Minimum amount of token0 actually deposited (slippage protection)
+- amount1Min : Minimum amount of token1 actually deposited (slippage protection)
+- amountSharesMin : Minimum amount of shares to mint (slippage protection)
+- receiver : Address to receive minted LP tokens
+- gauge : Address of gauge to stake tokens in (ignore with address(0))
 
-```
-struct MintData {
-    // Arrakis vault
-    IVaultV2 vault;
-    // amount of token0 to deposit
-    uint256 amount0In;
-    // amount of token1 to deposit
-    uint256 amount1In;
-    // amount of LP tokens to mint
-    uint256 mintAmount;
-    // account to receive minted tokens
-    address receiver;
-    // address of gauge to stake tokens in
-    address gauge;
-}
-```
-
-- RemoveLiquidityData is used `removeLiquidity` function on both generic and executor contracts.
+### RemoveLiquiditData
 
 ```
 struct RemoveLiquidityData {
-    // Arrakis vault
-    IVaultV2 vault;
-    // amount of LP tokens to burn
+    address vault;
     uint256 burnAmount;
-    // minimum amount of token0 to receive
     uint256 amount0Min;
-    // minimum amount of token1 to receive
     uint256 amount1Min;
-    // address to receive underlying tokens
     address payable receiver;
-    // bool indicating if user wants to receive in native ETH
     bool receiveETH;
-    // address of gauge to unstake from
     address gauge;
 }
 ```
 
-- SwapData is used by `swapAndAddLiquidity` function
+- vault : Arrakis Vault address
+- burnAmount : Amount of LP tokens to burn
+- amount0Min : Minimum amount of token0 to receive
+- amount1Min : Minimum amount of token1 to receive
+- receiver : Address to receive underlying tokens
+- receiveETH : Bool indicating if user wants to receive in native ETH
+- gauge : Address of gauge to unstake from (ignore with address(0))
+
+### SwapData
 
 ```
 struct SwapData {
-    // max amount being swapped
     uint256 amountInSwap;
-    // min amount received on swap
     uint256 amountOutSwap;
-    // bool indicating swap direction
     bool zeroForOne;
-    // address for swap calls
     address swapRouter;
-    // payload for swap call
     bytes swapPayload;
 }
 ```
 
-- SwapAndAddData struct contains all data needed for Swap and AddLiquidity
+- amountInSwap : Max amount being swapped
+- amountOutSwap : Min amount received on swap (slippage protection)
+- zeroForOne : Bool indicating swap direction
+- swapRouter : Address for swap call
+- swapPayload : Payload for swap call
+
+### SwapAndAddData
 
 ```
 struct SwapAndAddData {
@@ -99,9 +81,14 @@ struct SwapAndAddData {
 }
 ```
 
+- swapData : SwapData struct
+- addData : AddLiquidityData struct
+
 ## ArrakisV2Router
 
 ### addLiquidity
+
+deposits into an ArrakisV2 vault
 
 ```
 function addLiquidity(
@@ -121,6 +108,8 @@ function addLiquidity(
 
 ## removeLiquidity
 
+withdraws from an ArrakisV2 vault
+
 ```
 function removeLiquidity(
     RemoveLiquidityData memory _removeData
@@ -134,8 +123,11 @@ function removeLiquidity(
 ```
 
 - if RemoveLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address, claim rewards for the user and unstake.
+- if RemoveLiquidityData.receiveETH is true, then after withdrawing from the vault this function will unwrap WETH into ETH and before transfering to the user.
 
 ## swapAndAddLiquidity
+
+performs a token0/token1 swap, then deposits into ArrakisV2 vault
 
 ```
 function swapAndAddLiquidity(
@@ -152,69 +144,21 @@ function swapAndAddLiquidity(
     );
 ```
 
-- if msg.value is larger than 0, this function will wrap ETH into WETH and send non-used ether back to the user.
+- if msg.value is larger than 0, this function will wrap ETH into WETH and after deposit send non-used ether back to the user.
 - if AddLiquidityData.gauge is filled, this function will validate if the gauge's `staking_token()` matches the vault address.
+- if AddLiquidityData.gauge is filled, this function will stake the LP tokens in the gauge after depositing to the vault.
 - if the user is depositing 2 tokens and doing a swap => if token0 is being swapped for token1, AddLiquidityData.amount0Max should be the amount of token0 being deposited "normally" plus the amount to be swapped (SwapData.amountInSwap). (same applies for amount1Max on the inverse swap scenario)
 
-### RouterSwapExecutor
+### Permit2 Routes
 
-**Important:** Functions below can only be called by ArrakisV2Router.
+Note that ...
 
-## addLiquidity
+- `addLiquidityPermit2`
+- `swapAndAddLiquidityPermit2`
+- `removeLiquidityPermit2`
 
-```
-function addLiquidity(
-    MintData memory _mintData,
-)
-    external
-    payable
-    returns (
-        uint256 amount0,
-        uint256 amount1,
-        uint256 mintAmount
-    )
-```
+... are all identical in core functionality to their "classical" counterpart, the only difference is in how the `Permit2` function transfers tokens from the msg.sender into the router contract, by using the permit2 contract and off-chain signature patterns rather than separate approval transactions (slow and gas intensive).
 
-- if AddLiquidityData.gauge is filled, this function will stake the LP tokens in the gauge after depositing to the vault.
+Note that if depositing ETH (not WETH) on `addLiquidityPermit2` or `swapAndAddLiquidityPermit2` then only one permit approval is needed (sign a PermitTransferFrom struct not a PermitBatchTransferFrom struct) since ETH needs no approval and goes in `msg.value`. If using ONLY ETH (passing 0 for other token) than NO permit signature necessary. However, if not using ETH than a PermitBatchTransferFrom is always necessary with both token0 and token1 transfers filled in EVEN if one of the inputs is 0.
 
-## removeLiquidity
-
-```
-function removeLiquidity(
-    RemoveLiquidityData memory _removeData
-)
-    external
-    returns (
-        uint256 amount0,
-        uint256 amount1,
-        uint128 liquidityBurned
-    )
-```
-
-- if RemoveLiquidityData.receiveETH is true, this function will unwrap WETH into ETH before transfering to the user.
-
-## swapAndAddLiquidity
-
-```
-function swapAndAddLiquidity(
-    SwapAndAddData memory _swapData,
-)
-    external
-    payable
-    returns (
-        uint256 amount0,
-        uint256 amount1,
-        uint256 mintAmount,
-        uint256 amount0Diff,
-        uint256 amount1Diff
-    )
-```
-
-- if AddLiquidityData.gauge is filled, this function will stake LP tokens in the gauge after deposit.
-- if msg.value is greater than 0, this function will send unused ETH back to the user.
-
-### Updates for additional security on swaps:
-
-- on `RouterSwapExecutor.swapAndAddLiquidity` only 1 swap action is allowed. The executor will increase the allowance of the `swapRouter` for the amount being swapped.
-
-- Validate amount post-swap. Added parameter `_amountOutSwap` to `swapAndAddLiquidity` for validating the amount received after a swap. This parameter should consider price impact/slippage when being passed and the transaction should revert if balance difference pre/post swap is less than `_amountOutSwap`.
+See the [repo](https://github.com/Uniswap/Permit2) to learn more about Permit2.
