@@ -210,15 +210,15 @@ export const swapAndAddTest = async (
 
   // preparing parameter structs for swapAndAddLiquidity()
   const addData = {
-    vault: vault.address,
-
     amount0Max: amount0Max,
     amount1Max: amount1Max,
-    amount0Min: 0,
-    amount1Min: 0,
+    sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+    sqrtPriceThresholdBPS: 10000,
     amountSharesMin: 0,
+    vault: vault.address,
     receiver: signerAddress,
     gauge: stRakisToken ? stRakisToken.address : ethers.constants.AddressZero,
+    vaultMintProxy: ethers.constants.AddressZero,
   };
   const swapData = {
     amountInSwap: swapAmountIn.toString(),

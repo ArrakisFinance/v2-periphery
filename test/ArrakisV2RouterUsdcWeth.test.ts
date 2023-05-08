@@ -130,14 +130,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     await token1.allowance(wallet.address, router.address);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -198,14 +199,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     });
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -334,14 +336,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     let balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData, {
@@ -448,14 +451,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     let balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -589,14 +593,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     const transactionEthValue = ethers.BigNumber.from("0");
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
-      gauge: "0x0000000000000000000000000000000000000000",
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await expect(
@@ -626,14 +631,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
 
     const transactionEthValue = amount1In.mul(2);
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
-      gauge: "0x0000000000000000000000000000000000000000",
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: transactionEthValue,
@@ -1238,14 +1244,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     const finalSig = encodedSig + sig.v.toString(16);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: randomWallet.address,
       gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1359,14 +1366,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     const finalSig = encodedSig + sig.v.toString(16);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: randomWallet.address,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1651,14 +1659,15 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
     const finalSig = encodedSig + sig.v.toString(16);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: randomWallet.address,
       gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1815,16 +1824,19 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       .div(ethers.BigNumber.from((100).toString()));
 
     // preparing parameter structs for swapAndAddLiquidity()
+
     const addData = {
-      vault: vault.address,
       amount0Max: amount0Max,
       amount1Max: amount1Max,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: randomWallet.address,
       gauge: stRakisToken.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
+
     const swapData = {
       amountInSwap: swapAmountIn.toString(),
       amountOutSwap: amountOut,
@@ -2109,15 +2121,17 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       .div(ethers.BigNumber.from((100).toString()));
 
     // preparing parameter structs for swapAndAddLiquidity()
+
     const addData = {
-      vault: vault.address,
       amount0Max: amount0Max,
       amount1Max: amount1Max,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: randomWallet.address,
       gauge: stRakisToken.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
     const swapData = {
       amountInSwap: swapAmountIn.toString(),

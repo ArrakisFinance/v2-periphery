@@ -318,14 +318,15 @@ describe("ArrakisV2 Periphery integration test", function () {
     await token1.connect(wallet).transfer(admin.address, amount1In);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
-      amount0Min: 0,
-      amount1Min: 0,
+      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
+      sqrtPriceThresholdBPS: 10000,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: admin.address,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await token0.connect(admin).approve(router.address, amount0In);
