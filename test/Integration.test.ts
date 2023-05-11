@@ -320,8 +320,8 @@ describe("ArrakisV2 Periphery integration test", function () {
     const addLiquidityData = {
       amount0Max: amount0In,
       amount1Max: amount1In,
-      sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
-      sqrtPriceThresholdBPS: 10000,
+      amount0Min: 0,
+      amount1Min: 0,
       amountSharesMin: 0,
       vault: vault.address,
       receiver: admin.address,

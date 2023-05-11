@@ -212,8 +212,8 @@ export const swapAndAddTest = async (
   const addData = {
     amount0Max: amount0Max,
     amount1Max: amount1Max,
-    sqrtPriceX96: ethers.utils.parseUnits("10", "45"),
-    sqrtPriceThresholdBPS: 10000,
+    amount0Min: 0,
+    amount1Min: 0,
     amountSharesMin: 0,
     vault: vault.address,
     receiver: signerAddress,

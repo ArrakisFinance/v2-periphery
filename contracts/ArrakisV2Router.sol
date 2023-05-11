@@ -11,12 +11,6 @@ import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
-    IUniswapV3Pool
-} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {
-    hundredPercent
-} from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
-import {
     AddLiquidityData,
     AddLiquidityPermit2Data,
     PermitTransferFrom,
@@ -25,15 +19,19 @@ import {
     SwapAndAddData,
     SwapAndAddPermit2Data
 } from "./structs/SArrakisV2Router.sol";
-import {FullMath} from "@arrakisfi/v3-lib-0.8/contracts/FullMath.sol";
 import {SignatureTransferDetails} from "./structs/SPermit2.sol";
 import {ArrakisV2RouterStorage} from "./abstract/ArrakisV2RouterStorage.sol";
+import {MintRules} from "./structs/SArrakisV2Router.sol";
+import {
+    EnumerableSet
+} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @title ArrakisV2 Public Vault Router
 /// @notice Smart contract for adding and removing liquidity from Public ArrakisV2 vaults
 /// @author Arrakis Finance
 /// @dev DO NOT ADD STATE VARIABLES - APPEND THEM TO ArrakisV2RouterStorage
 contract ArrakisV2Router is ArrakisV2RouterStorage {
+    using EnumerableSet for EnumerableSet.AddressSet;
     using Address for address payable;
     using SafeERC20 for IERC20;
 
@@ -78,12 +76,11 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         );
 
         require(sharesReceived > 0, "nothing to mint");
-        require(sharesReceived >= params_.amountSharesMin, "below min amounts");
-
-        _checkSlippage(
-            IArrakisV2(params_.vault),
-            params_.sqrtPriceX96,
-            params_.sqrtPriceThresholdBPS
+        require(
+            amount0 >= params_.amount0Min &&
+                amount1 >= params_.amount1Min &&
+                sharesReceived >= params_.amountSharesMin,
+            "below min amounts"
         );
 
         IERC20 token0 = IArrakisV2(params_.vault).token0();
@@ -153,12 +150,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 "Incorrect gauge!"
             );
         }
-
-        _checkSlippage(
-            IArrakisV2(params_.addData.vault),
-            params_.addData.sqrtPriceX96,
-            params_.addData.sqrtPriceThresholdBPS
-        );
 
         IERC20 token0 = IArrakisV2(params_.addData.vault).token0();
         IERC20 token1 = IArrakisV2(params_.addData.vault).token1();
@@ -275,14 +266,10 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
         require(sharesReceived > 0, "nothing to mint");
         require(
-            sharesReceived >= params_.addData.amountSharesMin,
+            amount0 >= params_.addData.amount0Min &&
+                amount1 >= params_.addData.amount1Min &&
+                sharesReceived >= params_.addData.amountSharesMin,
             "below min amounts"
-        );
-
-        _checkSlippage(
-            IArrakisV2(params_.addData.vault),
-            params_.addData.sqrtPriceX96,
-            params_.addData.sqrtPriceThresholdBPS
         );
 
         IERC20 token0 = IArrakisV2(params_.addData.vault).token0();
@@ -345,12 +332,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 "Incorrect gauge!"
             );
         }
-
-        _checkSlippage(
-            IArrakisV2(params_.swapAndAddData.addData.vault),
-            params_.swapAndAddData.addData.sqrtPriceX96,
-            params_.swapAndAddData.addData.sqrtPriceThresholdBPS
-        );
 
         IERC20 token0 = IArrakisV2(params_.swapAndAddData.addData.vault)
             .token0();
@@ -427,6 +408,21 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         token0_.safeIncreaseAllowance(vault_, amount0In_);
         token1_.safeIncreaseAllowance(vault_, amount1In_);
 
+        MintRules memory mintRules = mintRestrictedVaults[vault_];
+        if (mintRules.supplyCap > 0) {
+            require(
+                IArrakisV2(vault_).totalSupply() + mintAmount_ <=
+                    mintRules.supplyCap,
+                "above supply cap"
+            );
+        }
+        if (mintRules.hasWhitelist) {
+            require(
+                _mintWhitelist[vault_].contains(msg.sender),
+                "not whitelisted"
+            );
+        }
+
         if (gauge_ == address(0)) {
             IArrakisV2(vault_).mint(mintAmount_, receiver_);
         } else {
@@ -488,7 +484,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
         require(sharesReceived > 0, "nothing to mint");
         require(
-            sharesReceived >= params_.addData.amountSharesMin,
+            amount0 >= params_.addData.amount0Min &&
+                amount1 >= params_.addData.amount1Min &&
+                sharesReceived >= params_.addData.amountSharesMin,
             "below min amounts"
         );
 
@@ -715,28 +713,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             }
             if (amount0_ > 0) {
                 token0.safeTransfer(receiver_, amount0_);
-            }
-        }
-    }
-
-    function _checkSlippage(
-        IArrakisV2 vault_,
-        uint160 sqrtPriceX96_,
-        uint16 thresholdBPS_
-    ) internal view {
-        address[] memory pools = vault_.getPools();
-        require(thresholdBPS_ <= hundredPercent, "bps overflow");
-        uint256 delta = FullMath.mulDiv(
-            sqrtPriceX96_,
-            thresholdBPS_,
-            hundredPercent
-        );
-        for (uint256 i = 0; i < pools.length; i++) {
-            (uint160 current, , , , , , ) = IUniswapV3Pool(pools[i]).slot0();
-            if (current > sqrtPriceX96_) {
-                require(sqrtPriceX96_ + delta >= current, "slippage");
-            } else {
-                require(sqrtPriceX96_ - delta <= current, "slippage");
             }
         }
     }

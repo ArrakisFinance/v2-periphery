@@ -7,13 +7,12 @@ import {PermitTransferFrom, PermitBatchTransferFrom} from "./SPermit2.sol";
 struct AddLiquidityData {
     uint256 amount0Max;
     uint256 amount1Max;
+    uint256 amount0Min;
+    uint256 amount1Min;
     uint256 amountSharesMin;
-    uint160 sqrtPriceX96;
-    uint16 sqrtPriceThresholdBPS;
     address vault;
     address receiver;
     address gauge;
-    address vaultMintProxy;
 }
 
 struct RemoveLiquidityData {
@@ -55,4 +54,9 @@ struct SwapAndAddPermit2Data {
     SwapAndAddData swapAndAddData;
     PermitBatchTransferFrom permit;
     bytes signature;
+}
+
+struct MintRules {
+    uint256 supplyCap;
+    bool hasWhitelist;
 }
