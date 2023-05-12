@@ -21,18 +21,14 @@ contract RouterSwapExecutor is IRouterSwapExecutor {
     using SafeERC20 for IERC20;
 
     address public immutable router;
-    EnumerableSet.AddressSet internal _whitelist;
 
     modifier onlyRouter() {
         require(msg.sender == router, "R");
         _;
     }
 
-    constructor(address router_, address[] memory whitelist_) {
+    constructor(address router_) {
         router = router_;
-        for (uint256 i = 0; i < whitelist_.length; i++) {
-            _whitelist.add(whitelist_[i]);
-        }
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
@@ -41,22 +37,18 @@ contract RouterSwapExecutor is IRouterSwapExecutor {
         onlyRouter
         returns (uint256 amount0Diff, uint256 amount1Diff)
     {
-        require(
-            _whitelist.contains(swapAndAddData_.swapData.swapRouter),
-            "swap: not whitelisted"
-        );
         IERC20 token0 = IArrakisV2(swapAndAddData_.addData.vault).token0();
         IERC20 token1 = IArrakisV2(swapAndAddData_.addData.vault).token1();
         uint256 balanceBefore;
         if (swapAndAddData_.swapData.zeroForOne) {
             balanceBefore = token0.balanceOf(address(this));
-            token0.safeApprove(
+            token0.safeIncreaseAllowance(
                 swapAndAddData_.swapData.swapRouter,
                 swapAndAddData_.swapData.amountInSwap
             );
         } else {
             balanceBefore = token1.balanceOf(address(this));
-            token1.safeApprove(
+            token1.safeIncreaseAllowance(
                 swapAndAddData_.swapData.swapRouter,
                 swapAndAddData_.swapData.amountInSwap
             );
