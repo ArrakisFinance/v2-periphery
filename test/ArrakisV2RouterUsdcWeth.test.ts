@@ -2339,4 +2339,79 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       resolver.getMintAmounts(vault.address, refund0, refund1)
     ).to.be.revertedWith("ArrakisVaultV2: mint 0");
   });
+  it("#33: adds liquidity with mint restrictions", async function () {
+    // formatting amounts
+    const decimalsToken0 = await token0.decimals();
+    const decimalsToken1 = await token1.decimals();
+    const amount0Max = ethers.utils.parseUnits("10", decimalsToken0);
+    const amount1Max = ethers.utils.parseUnits("5", decimalsToken1);
+
+    await token0.connect(wallet).approve(router.address, amount0Max);
+    await token1.connect(wallet).approve(router.address, amount1Max);
+
+    await vault.connect(wallet).setRestrictedMint(router.address);
+
+    const currentSupply = await vault.totalSupply();
+
+    await router
+      .connect(owner)
+      .setMintRules(
+        vault.address,
+        ethers.utils.parseEther("0.01").add(currentSupply),
+        true
+      );
+
+    const { mintAmount } = await resolver.getMintAmounts(
+      vault.address,
+      amount0Max,
+      amount1Max
+    );
+    expect(mintAmount).to.be.lte(ethers.utils.parseEther("0.01"));
+    const addLiquidityData = {
+      amount0Max: amount0Max,
+      amount1Max: amount1Max,
+      amount0Min: 0,
+      amount1Min: 0,
+      amountSharesMin: 0,
+      vault: vault.address,
+      receiver: walletAddress,
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
+    };
+
+    await expect(
+      router.connect(wallet).addLiquidity(addLiquidityData)
+    ).to.be.revertedWith("not whitelisted");
+
+    await router.connect(owner).whitelist(vault.address, [wallet.address]);
+
+    await router.connect(wallet).addLiquidity(addLiquidityData);
+
+    await token0.connect(wallet).approve(router.address, amount0Max);
+    await token1.connect(wallet).approve(router.address, amount1Max);
+
+    await router
+      .connect(owner)
+      .setMintRules(vault.address, currentSupply, true);
+
+    await expect(
+      router.connect(wallet).addLiquidity(addLiquidityData)
+    ).to.be.revertedWith("above supply cap");
+
+    await router
+      .connect(owner)
+      .setMintRules(
+        vault.address,
+        ethers.utils.parseEther("1").add(currentSupply),
+        false
+      );
+
+    await token0.connect(wallet).transfer(randomWallet.address, amount0Max);
+    await token1.connect(wallet).transfer(randomWallet.address, amount1Max);
+
+    await token0.connect(randomWallet).approve(router.address, amount0Max);
+    await token1.connect(randomWallet).approve(router.address, amount1Max);
+
+    await router.connect(randomWallet).addLiquidity(addLiquidityData);
+  });
 });

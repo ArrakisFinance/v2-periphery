@@ -65,4 +65,19 @@ interface IArrakisV2Router {
         );
 
     function updateSwapExecutor(address swapper_) external;
+
+    function whitelist(address vault_, address[] memory toWhitelist_) external;
+
+    function blacklist(address vault_, address[] memory toBlacklist_) external;
+
+    function setMintRules(
+        address vault_,
+        uint256 supplyCap_,
+        bool hasWhitelist_
+    ) external;
+
+    function getWhitelist(address vault_)
+        external
+        view
+        returns (address[] memory);
 }
