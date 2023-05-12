@@ -11,6 +11,9 @@ import {
     IArrakisV2Helper
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Helper.sol";
 import {StaticVaultInfo} from "../structs/SStaticManager.sol";
+import {
+    hundredPercent
+} from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 
 abstract contract ArrakisV2StaticManagerStorage is
     OwnableUpgradeable,
@@ -19,12 +22,19 @@ abstract contract ArrakisV2StaticManagerStorage is
     IArrakisV2Helper public immutable helper;
     uint16 public immutable managerFeeBPS;
 
+    address public deployer;
     mapping(address => StaticVaultInfo) public vaults;
 
     event Compound(address vault, address caller, uint256 growthBPS);
 
+    modifier onlyDeployer() {
+        require(msg.sender == deployer, "only deployer");
+        _;
+    }
+
     constructor(address helper_, uint16 managerFeeBPS_) {
         helper = IArrakisV2Helper(helper_);
+        require(managerFeeBPS_ <= hundredPercent, "bps");
         managerFeeBPS = managerFeeBPS_;
     }
 
@@ -39,5 +49,9 @@ abstract contract ArrakisV2StaticManagerStorage is
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function setDeployer(address deployer_) external onlyOwner {
+        deployer = deployer_;
     }
 }

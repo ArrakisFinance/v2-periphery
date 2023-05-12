@@ -21,12 +21,17 @@ import {
 } from "./structs/SArrakisV2Router.sol";
 import {SignatureTransferDetails} from "./structs/SPermit2.sol";
 import {ArrakisV2RouterStorage} from "./abstract/ArrakisV2RouterStorage.sol";
+import {MintRules} from "./structs/SArrakisV2Router.sol";
+import {
+    EnumerableSet
+} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @title ArrakisV2 Public Vault Router
 /// @notice Smart contract for adding and removing liquidity from Public ArrakisV2 vaults
 /// @author Arrakis Finance
 /// @dev DO NOT ADD STATE VARIABLES - APPEND THEM TO ArrakisV2RouterStorage
 contract ArrakisV2Router is ArrakisV2RouterStorage {
+    using EnumerableSet for EnumerableSet.AddressSet;
     using Address for address payable;
     using SafeERC20 for IERC20;
 
@@ -78,29 +83,19 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             "below min amounts"
         );
 
+        IERC20 token0 = IArrakisV2(params_.vault).token0();
+        IERC20 token1 = IArrakisV2(params_.vault).token1();
+
         bool isToken0Weth;
         if (msg.value > 0) {
-            isToken0Weth = _wrapETH(
-                IArrakisV2(params_.vault),
-                amount0,
-                amount1,
-                false
-            );
+            isToken0Weth = _wrapETH(amount0, amount1, false, token0, token1);
         }
 
         if (amount0 > 0 && (msg.value == 0 || !isToken0Weth)) {
-            IERC20(IArrakisV2(params_.vault).token0()).safeTransferFrom(
-                msg.sender,
-                address(this),
-                amount0
-            );
+            token0.safeTransferFrom(msg.sender, address(this), amount0);
         }
         if (amount1 > 0 && (msg.value == 0 || isToken0Weth)) {
-            IERC20(IArrakisV2(params_.vault).token1()).safeTransferFrom(
-                msg.sender,
-                address(this),
-                amount1
-            );
+            token1.safeTransferFrom(msg.sender, address(this), amount1);
         }
 
         _addLiquidity(
@@ -109,7 +104,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount1,
             sharesReceived,
             params_.gauge,
-            params_.receiver
+            params_.receiver,
+            token0,
+            token1
         );
 
         if (msg.value > 0) {
@@ -153,33 +150,38 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 "Incorrect gauge!"
             );
         }
+
+        IERC20 token0 = IArrakisV2(params_.addData.vault).token0();
+        IERC20 token1 = IArrakisV2(params_.addData.vault).token1();
+
         bool isToken0Weth;
         if (msg.value > 0) {
             isToken0Weth = _wrapETH(
-                IArrakisV2(params_.addData.vault),
                 params_.addData.amount0Max,
                 params_.addData.amount1Max,
-                true
+                true,
+                token0,
+                token1
             );
         }
 
         if (
             params_.addData.amount0Max > 0 && (msg.value == 0 || !isToken0Weth)
         ) {
-            IERC20(IArrakisV2(params_.addData.vault).token0()).safeTransferFrom(
-                    msg.sender,
-                    address(this),
-                    params_.addData.amount0Max
-                );
+            token0.safeTransferFrom(
+                msg.sender,
+                address(this),
+                params_.addData.amount0Max
+            );
         }
         if (
             params_.addData.amount1Max > 0 && (msg.value == 0 || isToken0Weth)
         ) {
-            IERC20(IArrakisV2(params_.addData.vault).token1()).safeTransferFrom(
-                    msg.sender,
-                    address(this),
-                    params_.addData.amount1Max
-                );
+            token1.safeTransferFrom(
+                msg.sender,
+                address(this),
+                params_.addData.amount1Max
+            );
         }
 
         (
@@ -188,7 +190,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             sharesReceived,
             amount0Diff,
             amount1Diff
-        ) = _swapAndAddLiquidity(params_);
+        ) = _swapAndAddLiquidity(params_, token0, token1);
     }
 
     /// @notice removeLiquidity removes liquidity from vault and burns LP tokens
@@ -270,53 +272,11 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             "below min amounts"
         );
 
+        IERC20 token0 = IArrakisV2(params_.addData.vault).token0();
+        IERC20 token1 = IArrakisV2(params_.addData.vault).token1();
+
         bool isToken0Weth;
-        if (msg.value > 0) {
-            require(params_.permit.permitted.length == 1, "length mismatch");
-            isToken0Weth = _wrapETH(
-                IArrakisV2(params_.addData.vault),
-                amount0,
-                amount1,
-                false
-            );
-            uint256 amount = isToken0Weth ? amount1 : amount0;
-            if (amount > 0) {
-                SignatureTransferDetails
-                    memory transferDetails = SignatureTransferDetails({
-                        to: address(this),
-                        requestedAmount: amount
-                    });
-                PermitTransferFrom memory permit = PermitTransferFrom({
-                    permitted: params_.permit.permitted[0],
-                    nonce: params_.permit.nonce,
-                    deadline: params_.permit.deadline
-                });
-                permit2.permitTransferFrom(
-                    permit,
-                    transferDetails,
-                    msg.sender,
-                    params_.signature
-                );
-            }
-        } else {
-            require(params_.permit.permitted.length == 2, "length mismatch");
-            SignatureTransferDetails[]
-                memory transfers = new SignatureTransferDetails[](2);
-            transfers[0] = SignatureTransferDetails({
-                to: address(this),
-                requestedAmount: amount0
-            });
-            transfers[1] = SignatureTransferDetails({
-                to: address(this),
-                requestedAmount: amount1
-            });
-            permit2.permitTransferFrom(
-                params_.permit,
-                transfers,
-                msg.sender,
-                params_.signature
-            );
-        }
+        _permit2Add(params_, amount0, amount1, token0, token1);
 
         _addLiquidity(
             params_.addData.vault,
@@ -324,7 +284,9 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount1,
             sharesReceived,
             params_.addData.gauge,
-            params_.addData.receiver
+            params_.addData.receiver,
+            token0,
+            token1
         );
 
         if (msg.value > 0) {
@@ -370,55 +332,13 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
                 "Incorrect gauge!"
             );
         }
-        bool isToken0Weth;
-        if (msg.value > 0) {
-            require(params_.permit.permitted.length == 1, "length mismatch");
-            isToken0Weth = _wrapETH(
-                IArrakisV2(params_.swapAndAddData.addData.vault),
-                params_.swapAndAddData.addData.amount0Max,
-                params_.swapAndAddData.addData.amount1Max,
-                true
-            );
-            uint256 amount = isToken0Weth
-                ? params_.swapAndAddData.addData.amount1Max
-                : params_.swapAndAddData.addData.amount0Max;
-            if (amount > 0) {
-                SignatureTransferDetails
-                    memory transferDetails = SignatureTransferDetails({
-                        to: address(this),
-                        requestedAmount: amount
-                    });
-                PermitTransferFrom memory permit = PermitTransferFrom({
-                    permitted: params_.permit.permitted[0],
-                    nonce: params_.permit.nonce,
-                    deadline: params_.permit.deadline
-                });
-                permit2.permitTransferFrom(
-                    permit,
-                    transferDetails,
-                    msg.sender,
-                    params_.signature
-                );
-            }
-        } else {
-            require(params_.permit.permitted.length == 2, "length mismatch");
-            SignatureTransferDetails[]
-                memory transfers = new SignatureTransferDetails[](2);
-            transfers[0] = SignatureTransferDetails({
-                to: address(this),
-                requestedAmount: params_.swapAndAddData.addData.amount0Max
-            });
-            transfers[1] = SignatureTransferDetails({
-                to: address(this),
-                requestedAmount: params_.swapAndAddData.addData.amount1Max
-            });
-            permit2.permitTransferFrom(
-                params_.permit,
-                transfers,
-                msg.sender,
-                params_.signature
-            );
-        }
+
+        IERC20 token0 = IArrakisV2(params_.swapAndAddData.addData.vault)
+            .token0();
+        IERC20 token1 = IArrakisV2(params_.swapAndAddData.addData.vault)
+            .token1();
+
+        _permit2SwapAndAdd(params_, token0, token1);
 
         (
             amount0,
@@ -426,7 +346,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             sharesReceived,
             amount0Diff,
             amount1Diff
-        ) = _swapAndAddLiquidity(params_.swapAndAddData);
+        ) = _swapAndAddLiquidity(params_.swapAndAddData, token0, token1);
     }
 
     /// @notice removeLiquidityPermit2 removes liquidity from vault and burns LP tokens
@@ -475,23 +395,39 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         (amount0, amount1) = _removeLiquidity(params_.removeData);
     }
 
+    // solhint-disable-next-line function-max-lines
     function _addLiquidity(
         address vault_,
         uint256 amount0In_,
         uint256 amount1In_,
         uint256 mintAmount_,
         address gauge_,
-        address receiver_
+        address receiver_,
+        IERC20 token0_,
+        IERC20 token1_
     ) internal {
-        IERC20(IArrakisV2(vault_).token0()).safeIncreaseAllowance(
-            vault_,
-            amount0In_
-        );
-        IERC20(IArrakisV2(vault_).token1()).safeIncreaseAllowance(
-            vault_,
-            amount1In_
-        );
+        token0_.safeIncreaseAllowance(vault_, amount0In_);
+        token1_.safeIncreaseAllowance(vault_, amount1In_);
 
+        {
+            MintRules memory mintRules = mintRestrictedVaults[vault_];
+            if (mintRules.supplyCap > 0) {
+                require(
+                    IArrakisV2(vault_).totalSupply() + mintAmount_ <=
+                        mintRules.supplyCap,
+                    "above supply cap"
+                );
+            }
+            if (mintRules.hasWhitelist) {
+                require(
+                    _mintWhitelist[vault_].contains(msg.sender),
+                    "not whitelisted"
+                );
+            }
+        }
+
+        uint256 balance0 = token0_.balanceOf(address(this));
+        uint256 balance1 = token1_.balanceOf(address(this));
         if (gauge_ == address(0)) {
             IArrakisV2(vault_).mint(mintAmount_, receiver_);
         } else {
@@ -500,10 +436,26 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
             IGauge(gauge_).deposit(mintAmount_, receiver_);
         }
+
+        require(
+            balance0 - amount0In_ == token0_.balanceOf(address(this)),
+            "deposit0"
+        );
+        require(
+            balance1 - amount1In_ == token1_.balanceOf(address(this)),
+            "deposit1"
+        );
+
+        token0_.safeApprove(vault_, 0);
+        token1_.safeApprove(vault_, 0);
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
-    function _swapAndAddLiquidity(SwapAndAddData memory params_)
+    function _swapAndAddLiquidity(
+        SwapAndAddData memory params_,
+        IERC20 token0_,
+        IERC20 token1_
+    )
         internal
         returns (
             uint256 amount0,
@@ -514,12 +466,12 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         )
     {
         if (params_.swapData.zeroForOne) {
-            IArrakisV2(params_.addData.vault).token0().safeTransfer(
+            token0_.safeTransfer(
                 address(swapper),
                 params_.swapData.amountInSwap
             );
         } else {
-            IArrakisV2(params_.addData.vault).token1().safeTransfer(
+            token1_.safeTransfer(
                 address(swapper),
                 params_.swapData.amountInSwap
             );
@@ -561,15 +513,14 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             amount1,
             sharesReceived,
             params_.addData.gauge,
-            params_.addData.receiver
+            params_.addData.receiver,
+            token0_,
+            token1_
         );
 
         bool isToken0Weth;
         if (msg.value > 0) {
-            isToken0Weth = _isToken0Weth(
-                address(IArrakisV2(params_.addData.vault).token0()),
-                address(IArrakisV2(params_.addData.vault).token1())
-            );
+            isToken0Weth = _isToken0Weth(address(token0_), address(token1_));
             if (isToken0Weth && amount0Use > amount0) {
                 _unwrapRefundETH(msg.sender, amount0Use - amount0);
             } else if (!isToken0Weth && amount1Use > amount1) {
@@ -578,16 +529,10 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         }
 
         if (amount0Use > amount0 && (msg.value == 0 || !isToken0Weth)) {
-            IERC20(IArrakisV2(params_.addData.vault).token0()).safeTransfer(
-                msg.sender,
-                amount0Use - amount0
-            );
+            token0_.safeTransfer(msg.sender, amount0Use - amount0);
         }
         if (amount1Use > amount1 && (msg.value == 0 || isToken0Weth)) {
-            IERC20(IArrakisV2(params_.addData.vault).token1()).safeTransfer(
-                msg.sender,
-                amount1Use - amount1
-            );
+            token1_.safeTransfer(msg.sender, amount1Use - amount1);
         }
     }
 
@@ -623,22 +568,128 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         }
     }
 
-    /// @notice _wrapETH wrap ETH into WETH
-    /// @param vault_ The ArrakisV2 vault
-    /// @param amount0In_ amount of token1 to be wrapped (if isToken0Weth)
-    /// @param amount1In_ amount of token1 to be wrapped (if !isToken0Weth)
-    /// @param matchAmount_ bool indicating if msg.value should match amount in
-    /// @return isToken0Weth bool indicating which token is WETH
+    // solhint-disable-next-line function-max-lines
+    function _permit2Add(
+        AddLiquidityPermit2Data memory params_,
+        uint256 amount0_,
+        uint256 amount1_,
+        IERC20 token0_,
+        IERC20 token1_
+    ) internal {
+        if (msg.value > 0) {
+            require(params_.permit.permitted.length == 1, "length mismatch");
+            bool isToken0Weth = _wrapETH(
+                amount0_,
+                amount1_,
+                false,
+                token0_,
+                token1_
+            );
+            uint256 amount = isToken0Weth ? amount1_ : amount0_;
+            if (amount > 0) {
+                SignatureTransferDetails
+                    memory transferDetails = SignatureTransferDetails({
+                        to: address(this),
+                        requestedAmount: amount
+                    });
+                PermitTransferFrom memory permit = PermitTransferFrom({
+                    permitted: params_.permit.permitted[0],
+                    nonce: params_.permit.nonce,
+                    deadline: params_.permit.deadline
+                });
+                permit2.permitTransferFrom(
+                    permit,
+                    transferDetails,
+                    msg.sender,
+                    params_.signature
+                );
+            }
+        } else {
+            require(params_.permit.permitted.length == 2, "length mismatch");
+            SignatureTransferDetails[]
+                memory transfers = new SignatureTransferDetails[](2);
+            transfers[0] = SignatureTransferDetails({
+                to: address(this),
+                requestedAmount: amount0_
+            });
+            transfers[1] = SignatureTransferDetails({
+                to: address(this),
+                requestedAmount: amount1_
+            });
+            permit2.permitTransferFrom(
+                params_.permit,
+                transfers,
+                msg.sender,
+                params_.signature
+            );
+        }
+    }
+
+    // solhint-disable-next-line function-max-lines
+    function _permit2SwapAndAdd(
+        SwapAndAddPermit2Data memory params_,
+        IERC20 token0_,
+        IERC20 token1_
+    ) internal {
+        if (msg.value > 0) {
+            require(params_.permit.permitted.length == 1, "length mismatch");
+            bool isToken0Weth = _wrapETH(
+                params_.swapAndAddData.addData.amount0Max,
+                params_.swapAndAddData.addData.amount1Max,
+                true,
+                token0_,
+                token1_
+            );
+            uint256 amount = isToken0Weth
+                ? params_.swapAndAddData.addData.amount1Max
+                : params_.swapAndAddData.addData.amount0Max;
+            if (amount > 0) {
+                SignatureTransferDetails
+                    memory transferDetails = SignatureTransferDetails({
+                        to: address(this),
+                        requestedAmount: amount
+                    });
+                PermitTransferFrom memory permit = PermitTransferFrom({
+                    permitted: params_.permit.permitted[0],
+                    nonce: params_.permit.nonce,
+                    deadline: params_.permit.deadline
+                });
+                permit2.permitTransferFrom(
+                    permit,
+                    transferDetails,
+                    msg.sender,
+                    params_.signature
+                );
+            }
+        } else {
+            require(params_.permit.permitted.length == 2, "length mismatch");
+            SignatureTransferDetails[]
+                memory transfers = new SignatureTransferDetails[](2);
+            transfers[0] = SignatureTransferDetails({
+                to: address(this),
+                requestedAmount: params_.swapAndAddData.addData.amount0Max
+            });
+            transfers[1] = SignatureTransferDetails({
+                to: address(this),
+                requestedAmount: params_.swapAndAddData.addData.amount1Max
+            });
+            permit2.permitTransferFrom(
+                params_.permit,
+                transfers,
+                msg.sender,
+                params_.signature
+            );
+        }
+    }
+
     function _wrapETH(
-        IArrakisV2 vault_,
         uint256 amount0In_,
         uint256 amount1In_,
-        bool matchAmount_
+        bool matchAmount_,
+        IERC20 token0_,
+        IERC20 token1_
     ) internal returns (bool isToken0Weth) {
-        isToken0Weth = _isToken0Weth(
-            address(vault_.token0()),
-            address(vault_.token1())
-        );
+        isToken0Weth = _isToken0Weth(address(token0_), address(token1_));
         uint256 wethAmount = isToken0Weth ? amount0In_ : amount1In_;
         if (matchAmount_) {
             require(wethAmount == msg.value, "Invalid amount of ETH forwarded");

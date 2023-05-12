@@ -1,7 +1,6 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -13,26 +12,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "binance"
   ) {
     console.log(
-      `Deploying ArrakisV2GaugeBeacon to ${hre.network.name}. Hit ctrl + c to abort`
+      `Deploying ArrakisV2Beacon to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
   const { deployer, arrakisMultiSig } = await getNamedAccounts();
-  const addresses = getAddresses(hre.network.name);
-
   if (hre.network.name == "hardhat")
-    await deploy("ArrakisV2GaugeBeacon", {
+    await deploy("ArrakisV2Beacon", {
       from: deployer,
-      args: [addresses.GaugeImplementation, deployer],
-      log: false,
+      args: [(await deployments.get("ArrakisV2")).address, deployer],
+      log: hre.network.name != "hardhat" ? true : false,
     });
   else
-    await deploy("ArrakisV2GaugeBeacon", {
+    await deploy("ArrakisV2Beacon", {
       from: deployer,
-      args: [addresses.GaugeImplementation, arrakisMultiSig],
-      log: true,
+      args: [(await deployments.get("ArrakisV2")).address, arrakisMultiSig],
+      log: hre.network.name != "hardhat" ? true : false,
     });
 };
 
@@ -48,5 +45,5 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "binance";
   return shouldSkip ? true : false;
 };
-
-func.tags = ["ArrakisV2GaugeBeacon"];
+func.tags = ["ArrakisV2Beacon"];
+func.dependencies = ["ArrakisV2"];

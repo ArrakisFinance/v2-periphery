@@ -50,9 +50,10 @@ export const getPeripheryContracts = async (
 export const getArrakisResolver = async (
   signer: SignerWithAddress
 ): Promise<Contract> => {
+  const resolverAddress = (await deployments.get("ArrakisV2Resolver")).address;
   const resolver = await ethers.getContractAt(
     "IArrakisV2Resolver",
-    addresses.ArrakisV2Resolver,
+    resolverAddress,
     signer
   );
   return resolver;
@@ -67,11 +68,11 @@ export const deployArrakisV2 = async (
   managerAddress: string
 ): Promise<[IArrakisV2]> => {
   const signerAddress = await signer.getAddress();
-
+  const factoryAddress = (await deployments.get("ArrakisV2Factory")).address;
   // getting vault factory
   const vaultV2Factory = await ethers.getContractAt(
     "IArrakisV2Factory",
-    addresses.ArrakisV2Factory,
+    factoryAddress,
     signer
   );
 
@@ -104,7 +105,7 @@ export const deployArrakisV2 = async (
 
   // get initial amounts
   const res = await resolver.getAmountsForLiquidity(
-    slot0.tick,
+    slot0.sqrtPriceX96,
     lowerTick,
     upperTick,
     ethers.utils.parseUnits("1", 18)

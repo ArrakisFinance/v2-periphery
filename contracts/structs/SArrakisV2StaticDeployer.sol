@@ -15,6 +15,8 @@ struct InitializeStatic {
     address receiver;
     uint256 minDeposit0;
     uint256 minDeposit1;
+    uint256 maxDeposit0;
+    uint256 maxDeposit1;
     StaticVaultInfo vaultInfo;
     address rewardToken;
     address rewardDistributor;

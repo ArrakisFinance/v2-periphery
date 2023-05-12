@@ -13,20 +13,25 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "goerli"
   ) {
     console.log(
-      `!! Deploying RouterSwapExecutor to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying SimpleManager to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
-
-  const arrakisV2Router = await deployments.get("ArrakisV2Router");
+  const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
-
-  await deploy("RouterSwapExecutor", {
+  await deploy("SimpleManager", {
     from: deployer,
-    args: [arrakisV2Router.address, [addresses.OneInchRouter]],
+    proxy: {
+      proxyContract: "OpenZeppelinTransparentProxy",
+      owner: arrakisMultiSig,
+      execute: {
+        methodName: "initialize",
+        args: [owner],
+      },
+    },
+    args: [addresses.UniswapV3Factory],
     log: hre.network.name !== "hardhat",
   });
 };
@@ -39,11 +44,8 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "arbitrum" ||
     hre.network.name === "binance" ||
     hre.network.name === "goerli";
-  return shouldSkip ? true : false;
+  return shouldSkip;
 };
 
-func.tags = ["RouterSwapExecutor"];
-
-func.dependencies = ["ArrakisV2Router"];
-
+func.tags = ["SimpleManager"];
 export default func;

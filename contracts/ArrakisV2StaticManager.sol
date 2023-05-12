@@ -29,7 +29,10 @@ contract ArrakisV2StaticManager is ArrakisV2StaticManagerStorage {
         ArrakisV2StaticManagerStorage(helper_, managerFeeBPS_)
     {} // solhint-disable-line no-empty-blocks
 
-    function setStaticVault(SetStaticVault calldata params_) external {
+    function setStaticVault(SetStaticVault calldata params_)
+        external
+        onlyDeployer
+    {
         if (params_.vaultInfo.compoundEnabled) {
             // must have non-zero deviation and duration
             require(
@@ -66,21 +69,35 @@ contract ArrakisV2StaticManager is ArrakisV2StaticManagerStorage {
             "vault empty"
         );
 
+        uint16 managerBPS = vault_.managerFeeBPS();
+
+        uint256 fixedFee0 = FullMath.mulDiv(
+            underlying.fee0,
+            hundredPercent - managerBPS,
+            hundredPercent
+        );
+
+        uint256 fixedFee1 = FullMath.mulDiv(
+            underlying.fee1,
+            hundredPercent - managerBPS,
+            hundredPercent
+        );
+
         // compute growth factor
         uint256 liquidity0 = underlying.amount0 -
-            (underlying.leftOver0 + underlying.fee0);
+            (underlying.leftOver0 + fixedFee0);
         uint256 liquidity1 = underlying.amount1 -
-            (underlying.leftOver1 + underlying.fee1);
+            (underlying.leftOver1 + fixedFee1);
         uint256 proportion0 = liquidity0 > 0
             ? FullMath.mulDiv(
-                underlying.leftOver0 + underlying.fee0,
+                underlying.leftOver0 + fixedFee0,
                 hundredPercent,
                 liquidity0
             )
             : type(uint256).max;
         uint256 proportion1 = liquidity1 > 0
             ? FullMath.mulDiv(
-                underlying.leftOver1 + underlying.fee1,
+                underlying.leftOver1 + fixedFee1,
                 hundredPercent,
                 liquidity1
             )

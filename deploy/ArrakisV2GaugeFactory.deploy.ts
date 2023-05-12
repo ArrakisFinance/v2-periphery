@@ -8,7 +8,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "mainnet" ||
     hre.network.name === "optimism" ||
     hre.network.name === "polygon" ||
-    hre.network.name === "arbitrum"
+    hre.network.name === "arbitrum" ||
+    hre.network.name === "binance" ||
+    hre.network.name === "goerli"
   ) {
     console.log(
       `!! Deploying ArrakisV2GaugeFactory to ${hre.network.name}. Hit ctrl + c to abort`
@@ -19,7 +21,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
-
   await deploy("ArrakisV2GaugeFactory", {
     from: deployer,
     proxy: {
@@ -41,6 +42,7 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "arbitrum" ||
+    hre.network.name === "binance" ||
     hre.network.name === "goerli";
   return shouldSkip;
 };

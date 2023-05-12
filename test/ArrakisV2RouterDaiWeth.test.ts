@@ -104,14 +104,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     const balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -169,14 +170,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     });
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -340,14 +342,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     let balanceArrakisV2Before = await rakisToken.balanceOf(walletAddress);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
-      gauge: "0x0000000000000000000000000000000000000000",
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData, {
@@ -452,14 +455,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     let balanceStakedBefore = await stRakisToken.balanceOf(walletAddress);
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -591,14 +595,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     const transactionEthValue = ethers.BigNumber.from("0");
 
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
-      gauge: "0x0000000000000000000000000000000000000000",
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await expect(
@@ -626,14 +631,15 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
     const transactionEthValue = amount1In.mul(2);
     const addLiquidityData = {
-      vault: vault.address,
       amount0Max: amount0In,
       amount1Max: amount1In,
       amount0Min: 0,
       amount1Min: 0,
       amountSharesMin: 0,
+      vault: vault.address,
       receiver: walletAddress,
-      gauge: "0x0000000000000000000000000000000000000000",
+      gauge: ethers.constants.AddressZero,
+      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: transactionEthValue,

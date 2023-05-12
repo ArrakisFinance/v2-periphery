@@ -19,6 +19,7 @@ export interface Addresses {
   veCRV: string;
   veCRVBoost: string;
   Permit2: string;
+  ChainLinkUsdcEth: string;
 }
 
 export const getAddresses = (network: string): Addresses => {
@@ -46,6 +47,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
         veCRVBoost: "0x8E0c00ed546602fD9927DF742bbAbF726D5B0d16",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4",
       };
     case "mainnet":
       return {
@@ -66,6 +68,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
         veCRVBoost: "0x8E0c00ed546602fD9927DF742bbAbF726D5B0d16",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4",
       };
     case "polygon":
       return {
@@ -86,6 +89,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0x9d9208c87dc9b3a458Af62f510fdEC401a08DDc0",
         veCRVBoost: "0x9a1cF3931e682C32acF35b1D238090560B4815E5",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "",
       };
     case "optimism":
       return {
@@ -106,6 +110,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0xd158CCfabef917ae2f01E454D07E1F2055e44c79",
         veCRVBoost: "0x336649aEb266f3182d63f4FAD7B3cF0dBa15f4c8",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "",
       };
     case "arbitrum":
       return {
@@ -126,6 +131,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0x0bF220343ba29a422db1577eD2DdA173c39A42DE",
         veCRVBoost: "0x31a38B9B9E4b134bDF2559605EB6FC30F24a47D5",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "",
       };
     case "local":
       return {
@@ -146,6 +152,7 @@ export const getAddresses = (network: string): Addresses => {
         veCRV: "0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2",
         veCRVBoost: "0x8E0c00ed546602fD9927DF742bbAbF726D5B0d16",
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4",
       };
     default:
       throw new Error(`No addresses for Network: ${network}`);

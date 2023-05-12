@@ -77,14 +77,18 @@ contract RouterSwapResolver is IRouterSwapResolver {
             proportionX18 + 1 ether
         );
 
-        if (amount0Left > amount1Left) {
+        uint256 value0To1Left = (amount0Left * factor0 * price18Decimals) /
+            1 ether;
+        uint256 value1To0Left = amount1Left * factor1;
+
+        if (value0To1Left > value1To0Left) {
             zeroForOne = true;
             swapAmount = FullMath.mulDiv(
                 amount0Left,
                 1 ether - factorX18,
                 1 ether
             );
-        } else if (amount1Left > amount0Left) {
+        } else if (value0To1Left < value1To0Left) {
             swapAmount = FullMath.mulDiv(amount1Left, factorX18, 1 ether);
         }
     }
