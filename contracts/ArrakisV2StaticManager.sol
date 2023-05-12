@@ -29,7 +29,10 @@ contract ArrakisV2StaticManager is ArrakisV2StaticManagerStorage {
         ArrakisV2StaticManagerStorage(helper_, managerFeeBPS_)
     {} // solhint-disable-line no-empty-blocks
 
-    function setStaticVault(SetStaticVault calldata params_) external {
+    function setStaticVault(SetStaticVault calldata params_)
+        external
+        onlyDeployer
+    {
         if (params_.vaultInfo.compoundEnabled) {
             // must have non-zero deviation and duration
             require(
@@ -68,9 +71,9 @@ contract ArrakisV2StaticManager is ArrakisV2StaticManagerStorage {
 
         // compute growth factor
         uint256 liquidity0 = underlying.amount0 -
-            (underlying.leftOver0 + underlying.fee0);
+            (underlying.leftOver0 + underlying.fee0 + vault_.managerBalance0());
         uint256 liquidity1 = underlying.amount1 -
-            (underlying.leftOver1 + underlying.fee1);
+            (underlying.leftOver1 + underlying.fee1 + vault_.managerBalance1());
         uint256 proportion0 = liquidity0 > 0
             ? FullMath.mulDiv(
                 underlying.leftOver0 + underlying.fee0,

@@ -395,6 +395,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         (amount0, amount1) = _removeLiquidity(params_.removeData);
     }
 
+    // solhint-disable-next-line function-max-lines
     function _addLiquidity(
         address vault_,
         uint256 amount0In_,
@@ -408,21 +409,25 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         token0_.safeIncreaseAllowance(vault_, amount0In_);
         token1_.safeIncreaseAllowance(vault_, amount1In_);
 
-        MintRules memory mintRules = mintRestrictedVaults[vault_];
-        if (mintRules.supplyCap > 0) {
-            require(
-                IArrakisV2(vault_).totalSupply() + mintAmount_ <=
-                    mintRules.supplyCap,
-                "above supply cap"
-            );
-        }
-        if (mintRules.hasWhitelist) {
-            require(
-                _mintWhitelist[vault_].contains(msg.sender),
-                "not whitelisted"
-            );
+        {
+            MintRules memory mintRules = mintRestrictedVaults[vault_];
+            if (mintRules.supplyCap > 0) {
+                require(
+                    IArrakisV2(vault_).totalSupply() + mintAmount_ <=
+                        mintRules.supplyCap,
+                    "above supply cap"
+                );
+            }
+            if (mintRules.hasWhitelist) {
+                require(
+                    _mintWhitelist[vault_].contains(msg.sender),
+                    "not whitelisted"
+                );
+            }
         }
 
+        uint256 balance0 = token0_.balanceOf(address(this));
+        uint256 balance1 = token1_.balanceOf(address(this));
         if (gauge_ == address(0)) {
             IArrakisV2(vault_).mint(mintAmount_, receiver_);
         } else {
@@ -431,6 +436,18 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             IERC20(vault_).safeIncreaseAllowance(gauge_, mintAmount_);
             IGauge(gauge_).deposit(mintAmount_, receiver_);
         }
+
+        require(
+            balance0 - amount0In_ == token0_.balanceOf(address(this)),
+            "deposit0"
+        );
+        require(
+            balance1 - amount1In_ == token1_.balanceOf(address(this)),
+            "deposit1"
+        );
+
+        token0_.safeApprove(vault_, 0);
+        token1_.safeApprove(vault_, 0);
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity

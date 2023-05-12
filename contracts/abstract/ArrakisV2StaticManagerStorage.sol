@@ -19,12 +19,19 @@ abstract contract ArrakisV2StaticManagerStorage is
     IArrakisV2Helper public immutable helper;
     uint16 public immutable managerFeeBPS;
 
+    address public deployer;
     mapping(address => StaticVaultInfo) public vaults;
 
     event Compound(address vault, address caller, uint256 growthBPS);
 
+    modifier onlyDeployer() {
+        require(msg.sender == deployer, "only deployer");
+        _;
+    }
+
     constructor(address helper_, uint16 managerFeeBPS_) {
         helper = IArrakisV2Helper(helper_);
+        require(managerFeeBPS_ <= 10000, "bps");
         managerFeeBPS = managerFeeBPS_;
     }
 
@@ -39,5 +46,9 @@ abstract contract ArrakisV2StaticManagerStorage is
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function setDeployer(address deployer_) external onlyOwner {
+        deployer = deployer_;
     }
 }

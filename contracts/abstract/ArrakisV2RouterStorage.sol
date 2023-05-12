@@ -127,12 +127,6 @@ abstract contract ArrakisV2RouterStorage is
         view
         returns (address[] memory)
     {
-        uint256 len = _mintWhitelist[vault_].length();
-        address[] memory output = new address[](len);
-        for (uint256 i; i < len; i++) {
-            output[i] = _mintWhitelist[vault_].at(i);
-        }
-
-        return output;
+        return _mintWhitelist[vault_].values();
     }
 }

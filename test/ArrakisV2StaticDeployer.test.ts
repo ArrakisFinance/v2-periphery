@@ -4,6 +4,7 @@ import {
   ArrakisV2GaugeBeacon,
   ArrakisV2GaugeFactory,
   ArrakisV2StaticDeployer,
+  ArrakisV2StaticManager,
   ERC20,
   IArrakisV2,
   IArrakisV2Factory,
@@ -102,6 +103,15 @@ describe("ArrakisV2StaticDeployer tests", function () {
       ).address
     )) as ArrakisV2StaticDeployer;
 
+    const manager = (await ethers.getContractAt(
+      "ArrakisV2StaticManager",
+      (
+        await deployments.get("ArrakisV2StaticManager")
+      ).address
+    )) as ArrakisV2StaticManager;
+
+    await manager.connect(owner).setDeployer(staticDeployer.address);
+
     arrakisFactory = (await ethers.getContractAt(
       "IArrakisV2Factory",
       await staticDeployer.arrakisFactory()
@@ -117,8 +127,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
     await getFundsFromFaucet(addresses.faucetUSDC, tokenUSDC, walletAddress);
   });
   it("#0 : deploy static vault (small value)", async function () {
-    const { tick: tick05 } = await pool05.slot0();
-    const { tick: tick3 } = await pool3.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
+    const { tick: tick3, sqrtPriceX96: sqrtPrice3 } = await pool3.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) - 2500;
     const upperTick05 = tick05 - (tick05 % 10) + 10 + 2500;
@@ -127,13 +137,13 @@ describe("ArrakisV2StaticDeployer tests", function () {
     const upperTick3 = tick3 - (tick3 % 60) + 60 + 12000;
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "5")
     );
     const res3 = await resolver.getAmountsForLiquidity(
-      tick3,
+      sqrtPrice3,
       lowerTick3,
       upperTick3,
       ethers.utils.parseUnits("1", "5")
@@ -190,6 +200,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -265,8 +277,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
     );
   });
   it("#1 : deploy static vault (large value)", async function () {
-    const { tick: tick05 } = await pool05.slot0();
-    const { tick: tick3 } = await pool3.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
+    const { tick: tick3, sqrtPriceX96: sqrtPrice3 } = await pool3.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) - 2500;
     const upperTick05 = tick05 - (tick05 % 10) + 10 + 2500;
@@ -275,13 +287,13 @@ describe("ArrakisV2StaticDeployer tests", function () {
     const upperTick3 = tick3 - (tick3 % 60) + 60 + 12000;
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "22")
     );
     const res3 = await resolver.getAmountsForLiquidity(
-      tick3,
+      sqrtPrice3,
       lowerTick3,
       upperTick3,
       ethers.utils.parseUnits("1", "22")
@@ -337,6 +349,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -407,8 +421,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       await pool3.token1()
     )) as ERC20;
 
-    const { tick: tick05 } = await pool05.slot0();
-    const { tick: tick3 } = await pool3.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
+    const { tick: tick3, sqrtPriceX96: sqrtPrice3 } = await pool3.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) - 2500;
     const upperTick05 = tick05 - (tick05 % 10) + 10 + 2500;
@@ -417,13 +431,13 @@ describe("ArrakisV2StaticDeployer tests", function () {
     const upperTick3 = tick3 - (tick3 % 60) + 60 + 12000;
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "18")
     );
     const res3 = await resolver.getAmountsForLiquidity(
-      tick3,
+      sqrtPrice3,
       lowerTick3,
       upperTick3,
       ethers.utils.parseUnits("1", "18")
@@ -479,6 +493,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -530,13 +546,13 @@ describe("ArrakisV2StaticDeployer tests", function () {
     expect(balanceBefore).to.be.gt(0);
   });
   it("#3 : deploy static vault (one sided)", async function () {
-    const { tick: tick05 } = await pool05.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) + 10;
     const upperTick05 = tick05 - (tick05 % 10) + 510;
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "18")
@@ -584,6 +600,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -635,13 +653,13 @@ describe("ArrakisV2StaticDeployer tests", function () {
     expect(balanceBefore).to.be.gt(0);
   });
   it("#4 : deploy static vault (one sided, other side)", async function () {
-    const { tick: tick05 } = await pool05.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) - 2000;
     const upperTick05 = tick05 - (tick05 % 10);
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "18")
@@ -689,6 +707,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -764,9 +784,9 @@ describe("ArrakisV2StaticDeployer tests", function () {
       await pool3.token1()
     )) as ERC20;
 
-    const { tick: tick01 } = await pool01.slot0();
-    const { tick: tick05 } = await pool05.slot0();
-    const { tick: tick3 } = await pool3.slot0();
+    const { tick: tick01, sqrtPriceX96: sqrtPrice01 } = await pool01.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
+    const { tick: tick3, sqrtPriceX96: sqrtPrice3 } = await pool3.slot0();
 
     const lower0 = tick01 - 2;
     const upper0 = tick01 + 2;
@@ -791,14 +811,21 @@ describe("ArrakisV2StaticDeployer tests", function () {
 
     const lowers = [lower0, lower1, lower2, lower3, lower4, lower5];
     const uppers = [upper0, upper1, upper2, upper3, upper4, upper5];
-    const ticks = [tick01, tick05, tick05, tick3, tick3, tick3];
+    const prices = [
+      sqrtPrice01,
+      sqrtPrice05,
+      sqrtPrice05,
+      sqrtPrice3,
+      sqrtPrice3,
+      sqrtPrice3,
+    ];
     const tiers = [100, 500, 500, 3000, 3000, 3000];
 
     const positions: any[] = [];
 
     for (let i = 0; i < lowers.length; i++) {
       const res = await resolver.getAmountsForLiquidity(
-        ticks[i],
+        prices[i],
         lowers[i],
         uppers[i],
         ethers.utils.parseUnits("1", "15")
@@ -845,6 +872,8 @@ describe("ArrakisV2StaticDeployer tests", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,

@@ -19,6 +19,9 @@ import {
     IArrakisV2
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2.sol";
 import {
+    IArrakisV2Resolver
+} from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Resolver.sol";
+import {
     IArrakisV2Factory
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Factory.sol";
 import {IArrakisV2GaugeFactory} from "./interfaces/IArrakisV2GaugeFactory.sol";
@@ -40,6 +43,7 @@ contract ArrakisV2StaticDeployer {
     IArrakisV2Factory public immutable arrakisFactory;
     IArrakisV2GaugeFactory public immutable gaugeFactory;
     IArrakisV2StaticManager public immutable staticManager;
+    IArrakisV2Resolver public immutable resolver;
 
     event CreateStaticVault(
         address vault,
@@ -53,12 +57,14 @@ contract ArrakisV2StaticDeployer {
         address uniswapFactory_,
         address arrakisFactory_,
         address gaugeFactory_,
-        address staticManager_
+        address staticManager_,
+        address resolver_
     ) {
         uniswapFactory = IUniswapV3Factory(uniswapFactory_);
         arrakisFactory = IArrakisV2Factory(arrakisFactory_);
         gaugeFactory = IArrakisV2GaugeFactory(gaugeFactory_);
         staticManager = IArrakisV2StaticManager(staticManager_);
+        resolver = IArrakisV2Resolver(resolver_);
     }
 
     // solhint-disable-next-line function-max-lines
@@ -73,7 +79,10 @@ contract ArrakisV2StaticDeployer {
         );
 
         require(
-            init0 >= params_.minDeposit0 && init1 >= params_.minDeposit1,
+            init0 >= params_.minDeposit0 &&
+                init1 >= params_.minDeposit1 &&
+                init0 <= params_.maxDeposit0 &&
+                init1 <= params_.maxDeposit1,
             "slippage"
         );
 
@@ -149,15 +158,19 @@ contract ArrakisV2StaticDeployer {
                 positions_[i].range.feeTier
             );
             (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
-            (uint256 in0, uint256 in1) = LiquidityAmounts
-                .getAmountsForLiquidity(
-                    sqrtPriceX96,
-                    TickMath.getSqrtRatioAtTick(positions_[i].range.lowerTick),
-                    TickMath.getSqrtRatioAtTick(positions_[i].range.upperTick),
-                    positions_[i].liquidity
-                );
-            if (in0 > 0) init0 += in0 + 1;
-            if (in1 > 0) init1 += in1 + 1;
+            /// @dev casting uint128 -> int128 is only safe in the lower half
+            require(
+                positions_[i].liquidity < type(uint128).max / 2,
+                "overflow"
+            );
+            (uint256 in0, uint256 in1) = resolver.getAmountsForLiquidity(
+                sqrtPriceX96,
+                positions_[i].range.lowerTick,
+                positions_[i].range.upperTick,
+                int128(positions_[i].liquidity)
+            );
+            init0 += in0;
+            init1 += in1;
         }
     }
 }

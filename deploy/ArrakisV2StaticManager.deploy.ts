@@ -8,7 +8,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "mainnet" ||
     hre.network.name === "optimism" ||
     hre.network.name === "polygon" ||
-    hre.network.name === "arbitrum"
+    hre.network.name === "arbitrum" ||
+    hre.network.name === "binance" ||
+    hre.network.name === "goerli"
   ) {
     console.log(
       `!! Deploying ArrakisV2StaticManager to ${hre.network.name}. Hit ctrl + c to abort`
@@ -19,20 +21,35 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
-
-  await deploy("ArrakisV2StaticManager", {
-    from: deployer,
-    proxy: {
-      proxyContract: "OpenZeppelinTransparentProxy",
-      owner: arrakisMultiSig,
-      execute: {
-        methodName: "initialize",
-        args: [owner],
+  if (hre.network.name == "hardhat") {
+    await deploy("ArrakisV2StaticManager", {
+      from: deployer,
+      proxy: {
+        proxyContract: "OpenZeppelinTransparentProxy",
+        owner: arrakisMultiSig,
+        execute: {
+          methodName: "initialize",
+          args: [owner],
+        },
       },
-    },
-    args: [addresses.ArrakisV2Helper, 500],
-    log: hre.network.name !== "hardhat",
-  });
+      args: [(await deployments.get("ArrakisV2Helper")).address, 500],
+      log: false,
+    });
+  } else {
+    await deploy("ArrakisV2StaticManager", {
+      from: deployer,
+      proxy: {
+        proxyContract: "OpenZeppelinTransparentProxy",
+        owner: arrakisMultiSig,
+        execute: {
+          methodName: "initialize",
+          args: [owner],
+        },
+      },
+      args: [addresses.ArrakisV2Helper, 500],
+      log: true,
+    });
+  }
 };
 
 func.skip = async (hre: HardhatRuntimeEnvironment) => {
@@ -41,9 +58,12 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "polygon" ||
     hre.network.name === "optimism" ||
     hre.network.name === "arbitrum" ||
+    hre.network.name === "binance" ||
     hre.network.name === "goerli";
   return shouldSkip;
 };
 
 func.tags = ["ArrakisV2StaticManager"];
+// !!! comment out ArrakisV2Helper dependency for mainnets
+func.dependencies = ["ArrakisV2Helper"];
 export default func;

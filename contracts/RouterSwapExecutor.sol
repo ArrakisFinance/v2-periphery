@@ -10,21 +10,29 @@ import {
     IERC20,
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    EnumerableSet
+} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @notice External function of this contract can only be called by ArrakisV2Router
 /// @notice do not give approvals to this contract's address
 contract RouterSwapExecutor is IRouterSwapExecutor {
+    using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
 
     address public immutable router;
+    EnumerableSet.AddressSet internal _whitelist;
 
     modifier onlyRouter() {
         require(msg.sender == router, "R");
         _;
     }
 
-    constructor(address _router) {
-        router = _router;
+    constructor(address router_, address[] memory whitelist_) {
+        router = router_;
+        for (uint256 i = 0; i < whitelist_.length; i++) {
+            _whitelist.add(whitelist_[i]);
+        }
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
@@ -33,6 +41,10 @@ contract RouterSwapExecutor is IRouterSwapExecutor {
         onlyRouter
         returns (uint256 amount0Diff, uint256 amount1Diff)
     {
+        require(
+            _whitelist.contains(swapAndAddData_.swapData.swapRouter),
+            "swap: not whitelisted"
+        );
         IERC20 token0 = IArrakisV2(swapAndAddData_.addData.vault).token0();
         IERC20 token1 = IArrakisV2(swapAndAddData_.addData.vault).token1();
         uint256 balanceBefore;

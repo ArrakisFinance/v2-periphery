@@ -67,7 +67,6 @@ describe("ArrakisV2 Periphery integration test", function () {
 
   before(async function () {
     await deployments.fixture();
-
     addresses = getAddresses(network.name);
     [wallet, admin, owner] = await ethers.getSigners();
     walletAddress = await wallet.getAddress();
@@ -131,7 +130,9 @@ describe("ArrakisV2 Periphery integration test", function () {
 
     arrakisFactory = (await ethers.getContractAt(
       "IArrakisV2Factory",
-      await staticDeployer.arrakisFactory()
+      (
+        await deployments.get("ArrakisV2Factory")
+      ).address
     )) as IArrakisV2Factory;
 
     const swapperFactory = await ethers.getContractFactory("SwapMock", wallet);
@@ -145,9 +146,13 @@ describe("ArrakisV2 Periphery integration test", function () {
       ).address
     )) as ArrakisV2StaticManager;
 
+    await manager.connect(owner).setDeployer(staticDeployer.address);
+
     helper = (await ethers.getContractAt(
       "IArrakisV2Helper",
-      addresses.ArrakisV2Helper
+      (
+        await deployments.get("ArrakisV2Helper")
+      ).address
     )) as IArrakisV2Helper;
 
     const tokenUSDC = (await ethers.getContractAt(
@@ -162,8 +167,8 @@ describe("ArrakisV2 Periphery integration test", function () {
     rewardToken = tokenUSDC;
   });
   it("static public vault integration test", async function () {
-    const { tick: tick05 } = await pool05.slot0();
-    const { tick: tick3 } = await pool3.slot0();
+    const { tick: tick05, sqrtPriceX96: sqrtPrice05 } = await pool05.slot0();
+    const { tick: tick3, sqrtPriceX96: sqrtPrice3 } = await pool3.slot0();
 
     const lowerTick05 = tick05 - (tick05 % 10) - 4000;
     const upperTick05 = tick05 - (tick05 % 10) + 10 + 4000;
@@ -172,13 +177,13 @@ describe("ArrakisV2 Periphery integration test", function () {
     const upperTick3 = tick3 - (tick3 % 60) + 60 + 14040;
 
     const res05 = await resolver.getAmountsForLiquidity(
-      tick05,
+      sqrtPrice05,
       lowerTick05,
       upperTick05,
       ethers.utils.parseUnits("1", "12")
     );
     const res3 = await resolver.getAmountsForLiquidity(
-      tick3,
+      sqrtPrice3,
       lowerTick3,
       upperTick3,
       ethers.utils.parseUnits("1", "12")
@@ -235,6 +240,8 @@ describe("ArrakisV2 Periphery integration test", function () {
       receiver: wallet.address,
       minDeposit0: amount0Expected.sub(buffer0),
       minDeposit1: amount1Expected.sub(buffer1),
+      maxDeposit0: amount0Expected.add(buffer0),
+      maxDeposit1: amount1Expected.add(buffer1),
       vaultInfo: {
         twapDeviation: 250,
         twapDuration: 2000,
@@ -311,7 +318,7 @@ describe("ArrakisV2 Periphery integration test", function () {
 
     // add liquidity
 
-    const amount0In = ethers.utils.parseEther("20000");
+    const amount0In = ethers.utils.parseEther("1000");
     const amount1In = ethers.utils.parseEther("10");
 
     await token0.connect(wallet).transfer(admin.address, amount0In);
@@ -332,26 +339,26 @@ describe("ArrakisV2 Periphery integration test", function () {
     await token0.connect(admin).approve(router.address, amount0In);
     await token1.connect(admin).approve(router.address, amount1In);
 
-    await expect(router.connect(admin).addLiquidity(addLiquidityData)).to.be
-      .reverted;
-
-    await token0.connect(admin).approve(vault.address, amount0In);
-    await token1.connect(admin).approve(vault.address, amount1In);
-
-    const { mintAmount } = await resolver.getMintAmounts(
-      vault.address,
-      amount0In,
-      amount1In
-    );
-
     // THIS SECTION IS BECAUSE OF AN ERROR I FOUND IN THE CORE AND
     // WONT BE NEEDED IF WE MAKE AN UPDATE TO CORE TO FIX ROUNDING ISSUES
     // START:
-    await expect(vault.connect(admin).mint(mintAmount, admin.address)).to.be
-      .reverted;
+    // await expect(router.connect(admin).addLiquidity(addLiquidityData)).to.be
+    //   .reverted;
 
-    await token0.connect(wallet).transfer(vault.address, 2);
-    await token1.connect(wallet).transfer(vault.address, 2);
+    // await token0.connect(admin).approve(vault.address, amount0In);
+    // await token1.connect(admin).approve(vault.address, amount1In);
+
+    // const { mintAmount } = await resolver.getMintAmounts(
+    //   vault.address,
+    //   amount0In,
+    //   amount1In
+    // );
+
+    // await expect(vault.connect(admin).mint(mintAmount, admin.address)).to.be
+    //   .reverted;
+
+    // await token0.connect(wallet).transfer(vault.address, 2);
+    // await token1.connect(wallet).transfer(vault.address, 2);
     // END
 
     const balanceGaugeBefore = await gauge.balanceOf(admin.address);
