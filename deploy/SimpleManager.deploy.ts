@@ -13,7 +13,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "goerli"
   ) {
     console.log(
-      `!! Deploying ArrakisV2GaugeFactory to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying SimpleManager to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
@@ -21,17 +21,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
   const addresses = getAddresses(hre.network.name);
-  await deploy("ArrakisV2GaugeFactory", {
+  await deploy("SimpleManager", {
     from: deployer,
     proxy: {
       proxyContract: "OpenZeppelinTransparentProxy",
       owner: arrakisMultiSig,
       execute: {
         methodName: "initialize",
-        args: [owner, addresses.CRV, addresses.veCRV, addresses.veCRVBoost],
+        args: [owner],
       },
     },
-    args: [(await deployments.get("ArrakisV2GaugeBeacon")).address],
+    args: [addresses.UniswapV3Factory],
     log: hre.network.name !== "hardhat",
   });
 };
@@ -47,6 +47,5 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
   return shouldSkip;
 };
 
-func.tags = ["ArrakisV2GaugeFactory"];
-func.dependencies = ["ArrakisV2GaugeBeacon"];
+func.tags = ["SimpleManager"];
 export default func;

@@ -11,6 +11,9 @@ import {
     IArrakisV2Helper
 } from "@arrakisfi/v2-core/contracts/interfaces/IArrakisV2Helper.sol";
 import {StaticVaultInfo} from "../structs/SStaticManager.sol";
+import {
+    hundredPercent
+} from "@arrakisfi/v2-core/contracts/constants/CArrakisV2.sol";
 
 abstract contract ArrakisV2StaticManagerStorage is
     OwnableUpgradeable,
@@ -31,7 +34,7 @@ abstract contract ArrakisV2StaticManagerStorage is
 
     constructor(address helper_, uint16 managerFeeBPS_) {
         helper = IArrakisV2Helper(helper_);
-        require(managerFeeBPS_ <= 10000, "bps");
+        require(managerFeeBPS_ <= hundredPercent, "bps");
         managerFeeBPS = managerFeeBPS_;
     }
 

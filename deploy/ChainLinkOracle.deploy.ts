@@ -13,25 +13,19 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "goerli"
   ) {
     console.log(
-      `!! Deploying ArrakisV2GaugeFactory to ${hre.network.name}. Hit ctrl + c to abort`
+      `!! Deploying ChainLinkOracle to ${hre.network.name}. Hit ctrl + c to abort`
     );
     await new Promise((r) => setTimeout(r, 20000));
   }
 
   const { deploy } = deployments;
-  const { deployer, owner, arrakisMultiSig } = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
+
   const addresses = getAddresses(hre.network.name);
-  await deploy("ArrakisV2GaugeFactory", {
+
+  await deploy("ChainLinkOracle", {
     from: deployer,
-    proxy: {
-      proxyContract: "OpenZeppelinTransparentProxy",
-      owner: arrakisMultiSig,
-      execute: {
-        methodName: "initialize",
-        args: [owner, addresses.CRV, addresses.veCRV, addresses.veCRVBoost],
-      },
-    },
-    args: [(await deployments.get("ArrakisV2GaugeBeacon")).address],
+    args: [6, 18, addresses.ChainLinkUsdcEth, false],
     log: hre.network.name !== "hardhat",
   });
 };
@@ -44,9 +38,9 @@ func.skip = async (hre: HardhatRuntimeEnvironment) => {
     hre.network.name === "arbitrum" ||
     hre.network.name === "binance" ||
     hre.network.name === "goerli";
-  return shouldSkip;
+  return shouldSkip ? true : false;
 };
 
-func.tags = ["ArrakisV2GaugeFactory"];
-func.dependencies = ["ArrakisV2GaugeBeacon"];
+func.tags = ["ChainLinkOracle"];
+
 export default func;
