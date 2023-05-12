@@ -1,7 +1,6 @@
 import { deployments, getNamedAccounts } from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { getAddresses } from "../src/addresses";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   if (
@@ -22,11 +21,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
 
   const arrakisV2Router = await deployments.get("ArrakisV2Router");
-  const addresses = getAddresses(hre.network.name);
 
   await deploy("RouterSwapExecutor", {
     from: deployer,
-    args: [arrakisV2Router.address, [addresses.OneInchRouter]],
+    args: [arrakisV2Router.address],
     log: hre.network.name !== "hardhat",
   });
 };
