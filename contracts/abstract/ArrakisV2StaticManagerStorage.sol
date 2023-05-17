@@ -33,12 +33,14 @@ abstract contract ArrakisV2StaticManagerStorage is
     }
 
     constructor(address helper_, uint16 managerFeeBPS_) {
+        require(helper_ != address(0), "Z");
         helper = IArrakisV2Helper(helper_);
         require(managerFeeBPS_ <= hundredPercent, "bps");
         managerFeeBPS = managerFeeBPS_;
     }
 
     function initialize(address owner_) external initializer {
+        require(owner_ != address(0), "Z");
         __Pausable_init();
         _transferOwnership(owner_);
     }

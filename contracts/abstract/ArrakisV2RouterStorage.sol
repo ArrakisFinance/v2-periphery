@@ -55,6 +55,12 @@ abstract contract ArrakisV2RouterStorage is
         address resolver_,
         address permit2_
     ) {
+        require(
+            weth_ != address(0) &&
+                resolver_ != address(0) &&
+                permit2_ != address(0),
+            "Z"
+        );
         weth = IWETH(weth_);
         resolver = IArrakisV2Resolver(resolver_);
         permit2 = IPermit2(permit2_);
@@ -63,6 +69,7 @@ abstract contract ArrakisV2RouterStorage is
     receive() external payable {} // solhint-disable-line no-empty-blocks
 
     function initialize(address owner_) external initializer {
+        require(owner_ != address(0), "Z");
         __Pausable_init();
         __ReentrancyGuard_init();
         _transferOwnership(owner_);
@@ -79,6 +86,7 @@ abstract contract ArrakisV2RouterStorage is
     /// @notice updates address of ArrakisV2SwaprExecutor used by this contract
     /// @param swapper_ the RouterSwapExecutor address
     function updateSwapExecutor(address swapper_) external onlyOwner {
+        require(swapper_ != address(0), "Z");
         swapper = IRouterSwapExecutor(swapper_);
     }
 
@@ -104,7 +112,7 @@ abstract contract ArrakisV2RouterStorage is
     {
         require(mintRestrictedVaults[vault_].supplyCap > 0, "vault not set");
         for (uint256 i; i < toWhitelist_.length; i++) {
-            _mintWhitelist[vault_].add(toWhitelist_[i]);
+            require(_mintWhitelist[vault_].add(toWhitelist_[i]), "add failed");
         }
 
         emit LogWhitelist(vault_, toWhitelist_);
@@ -116,7 +124,10 @@ abstract contract ArrakisV2RouterStorage is
     {
         require(mintRestrictedVaults[vault_].supplyCap > 0, "vault not set");
         for (uint256 i; i < toBlacklist_.length; i++) {
-            _mintWhitelist[vault_].remove(toBlacklist_[i]);
+            require(
+                _mintWhitelist[vault_].remove(toBlacklist_[i]),
+                "remove failed"
+            );
         }
 
         emit LogBlacklist(vault_, toBlacklist_);

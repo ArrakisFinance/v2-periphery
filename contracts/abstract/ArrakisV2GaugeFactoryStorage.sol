@@ -29,6 +29,7 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
     // #region constructor.
 
     constructor(address gaugeBeacon_) {
+        require(gaugeBeacon_ != address(0), "Z");
         arrakisGaugeBeacon = IArrakisV2Beacon(gaugeBeacon_);
     }
 
@@ -41,9 +42,9 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
         address veBoost_
     ) external initializer {
         require(
-            owner_ != address(0) ||
-                rewardToken_ != address(0) ||
-                ve_ != address(0) ||
+            owner_ != address(0) &&
+                rewardToken_ != address(0) &&
+                ve_ != address(0) &&
                 veBoost_ != address(0),
             "address zero"
         );
@@ -61,8 +62,8 @@ abstract contract ArrakisV2GaugeFactoryStorage is OwnableUpgradeable {
         address veBoost_
     ) external onlyOwner {
         require(
-            rewardToken_ != address(0) ||
-                ve_ != address(0) ||
+            rewardToken_ != address(0) &&
+                ve_ != address(0) &&
                 veBoost_ != address(0),
             "address zero"
         );

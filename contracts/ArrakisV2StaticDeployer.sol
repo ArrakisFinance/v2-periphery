@@ -60,6 +60,14 @@ contract ArrakisV2StaticDeployer {
         address staticManager_,
         address resolver_
     ) {
+        require(
+            uniswapFactory_ != address(0) &&
+                arrakisFactory_ != address(0) &&
+                gaugeFactory_ != address(0) &&
+                staticManager_ != address(0) &&
+                resolver_ != address(0),
+            "Z"
+        );
         uniswapFactory = IUniswapV3Factory(uniswapFactory_);
         arrakisFactory = IArrakisV2Factory(arrakisFactory_);
         gaugeFactory = IArrakisV2GaugeFactory(gaugeFactory_);
@@ -160,7 +168,7 @@ contract ArrakisV2StaticDeployer {
             (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
             /// @dev casting uint128 -> int128 is only safe in the lower half
             require(
-                positions_[i].liquidity < type(uint128).max / 2,
+                positions_[i].liquidity <= type(uint128).max / 2,
                 "overflow"
             );
             (uint256 in0, uint256 in1) = resolver.getAmountsForLiquidity(
