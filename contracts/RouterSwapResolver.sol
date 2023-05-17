@@ -23,6 +23,10 @@ contract RouterSwapResolver is IRouterSwapResolver {
     IArrakisV2Resolver public immutable resolver;
 
     constructor(IArrakisV2Helper helper_, IArrakisV2Resolver resolver_) {
+        require(
+            address(helper_) != address(0) && address(resolver_) != address(0),
+            "Z"
+        );
         helper = helper_;
         resolver = resolver_;
     }

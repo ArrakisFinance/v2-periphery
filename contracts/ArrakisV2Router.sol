@@ -445,9 +445,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
             balance1 - amount1In_ == token1_.balanceOf(address(this)),
             "deposit1"
         );
-
-        token0_.safeApprove(vault_, 0);
-        token1_.safeApprove(vault_, 0);
     }
 
     // solhint-disable-next-line function-max-lines, code-complexity
