@@ -133,6 +133,27 @@ export const getAddresses = (network: string): Addresses => {
         Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
         ChainLinkUsdcEth: "",
       };
+    case "goerli":
+      return {
+        UniswapV3Factory: coreAddresses.UniswapV3Factory,
+        ArrakisV2Resolver: coreAddresses.ArrakisV2Resolver,
+        ArrakisV2Helper: coreAddresses.ArrakisV2Helper,
+        ArrakisV2Factory: coreAddresses.ArrakisV2Factory,
+        GaugeImplementation: "0xB82C4D83FA50bFA04E8778529d58305Cf3feE83e",
+        OneInchRouter: "",
+        SwapRouter: "",
+        WETH: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+        DAI: "",
+        USDC: "",
+        faucetDai: "",
+        faucetUSDC: "",
+        faucetWeth: "",
+        CRV: "0xc164893891d312876c8b0a59811db096f8a740cc",
+        veCRV: "0x654B32A1230A78cE2FeB4CC42952dC89C5f482C1",
+        veCRVBoost: "0x3025b46A9814a69EAf8699EDf905784Ee22C3ABB",
+        Permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        ChainLinkUsdcEth: "",
+      };
     case "local":
       return {
         UniswapV3Factory: coreAddresses.UniswapV3Factory,
