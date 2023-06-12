@@ -218,7 +218,6 @@ export const swapAndAddTest = async (
     vault: vault.address,
     receiver: signerAddress,
     gauge: stRakisToken ? stRakisToken.address : ethers.constants.AddressZero,
-    vaultMintProxy: ethers.constants.AddressZero,
   };
   const swapData = {
     amountInSwap: swapAmountIn.toString(),

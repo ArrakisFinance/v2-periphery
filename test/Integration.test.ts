@@ -333,7 +333,6 @@ describe("ArrakisV2 Periphery integration test", function () {
       vault: vault.address,
       receiver: admin.address,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await token0.connect(admin).approve(router.address, amount0In);
