@@ -138,7 +138,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -207,7 +206,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -344,7 +342,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData, {
@@ -459,7 +456,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -601,7 +597,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await expect(
@@ -639,7 +634,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: transactionEthValue,
@@ -1252,7 +1246,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: randomWallet.address,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1374,7 +1367,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: randomWallet.address,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1667,7 +1659,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: randomWallet.address,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const addLiquidityPermit2Data = {
@@ -1834,7 +1825,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: randomWallet.address,
       gauge: stRakisToken.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     const swapData = {
@@ -2131,7 +2121,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: randomWallet.address,
       gauge: stRakisToken.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
     const swapData = {
       amountInSwap: swapAmountIn.toString(),
@@ -2376,7 +2365,6 @@ describe("ArrakisV2Router tests on USDC/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await expect(

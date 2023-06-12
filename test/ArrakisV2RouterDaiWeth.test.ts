@@ -112,7 +112,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -178,7 +177,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData);
@@ -350,7 +348,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await router.addLiquidity(addLiquidityData, {
@@ -463,7 +460,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: gauge.address,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: amount1In,
@@ -603,7 +599,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
 
     await expect(
@@ -639,7 +634,6 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
       vault: vault.address,
       receiver: walletAddress,
       gauge: ethers.constants.AddressZero,
-      vaultMintProxy: ethers.constants.AddressZero,
     };
     await router.addLiquidity(addLiquidityData, {
       value: transactionEthValue,
