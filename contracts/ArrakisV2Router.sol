@@ -274,8 +274,6 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
 
         IERC20 token0 = IArrakisV2(params_.addData.vault).token0();
         IERC20 token1 = IArrakisV2(params_.addData.vault).token1();
-
-        bool isToken0Weth;
         _permit2Add(params_, amount0, amount1, token0, token1);
 
         _addLiquidity(
@@ -290,6 +288,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
         );
 
         if (msg.value > 0) {
+            bool isToken0Weth = _isToken0Weth(address(token0), address(token1));
             if (isToken0Weth && msg.value > amount0) {
                 payable(msg.sender).sendValue(msg.value - amount0);
             } else if (!isToken0Weth && msg.value > amount1) {
@@ -738,9 +737,7 @@ contract ArrakisV2Router is ArrakisV2RouterStorage {
     {
         if (token0_ == address(weth)) {
             wethToken0 = true;
-        } else if (token1_ == address(weth)) {
-            wethToken0 = false;
-        } else {
+        } else if (token1_ != address(weth)) {
             revert("one vault token must be WETH");
         }
     }
