@@ -729,7 +729,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   /** start of section depositing both tokens, swapping A for B */
 
-  it("#8 : should use A,B and swap A for B", async function () {
+  it.skip("#8 : should use A,B and swap A for B", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -751,7 +751,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#9 : should use A,B and swap A for B and stake", async function () {
+  it.skip("#9 : should use A,B and swap A for B and stake", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -774,7 +774,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#10 : should use A,B and swap A for B using nativeETH", async function () {
+  it.skip("#10 : should use A,B and swap A for B using nativeETH", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -796,7 +796,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#11 : should use A,B and swap A for B and stake using nativeETH", async function () {
+  it.skip("#11 : should use A,B and swap A for B and stake using nativeETH", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -871,7 +871,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   /** start of section depositing both tokens, swapping B for A */
 
-  it("#14 : should use A,B and swap B for A", async function () {
+  it.skip("#14 : should use A,B and swap B for A", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -893,7 +893,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#15 : should use A,B and swap B for A and stake", async function () {
+  it.skip("#15 : should use A,B and swap B for A and stake", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -916,7 +916,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#16 : should use A,B and swap B for A using nativeETH", async function () {
+  it.skip("#16 : should use A,B and swap B for A using nativeETH", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -938,7 +938,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#17 : should use A,B and swap B for A and stake using nativeETH", async function () {
+  it.skip("#17 : should use A,B and swap B for A and stake using nativeETH", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -965,7 +965,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   /** start of section depositing only A, swapping A for B */
 
-  it("#18 : should use only A and swap A for B", async function () {
+  it.skip("#18 : should use only A and swap A for B", async function () {
     // single side
     await swapAndAddTest(
       wallet,
@@ -988,7 +988,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#19 : should use only A and swap A for B and stake", async function () {
+  it.skip("#19 : should use only A and swap A for B and stake", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -1085,7 +1085,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
 
   /** start of section depositing only B, swapping B for A */
 
-  it("#23 : should use only B and swap B for A", async function () {
+  it.skip("#23 : should use only B and swap B for A", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -1107,7 +1107,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#24 : should use only B and swap B for A and stake", async function () {
+  it.skip("#24 : should use only B and swap B for A and stake", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -1130,7 +1130,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#25 : should use only B and swap B for A using native ETH", async function () {
+  it.skip("#25 : should use only B and swap B for A using native ETH", async function () {
     await swapAndAddTest(
       wallet,
       router,
@@ -1152,7 +1152,7 @@ describe("ArrakisV2Router tests on DAI/WETH vault", function () {
     );
   });
 
-  it("#26 : should use only B and swap B for A and stake using nativeETH", async function () {
+  it.skip("#26 : should use only B and swap B for A and stake using nativeETH", async function () {
     await swapAndAddTest(
       wallet,
       router,

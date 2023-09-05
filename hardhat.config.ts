@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
       // timeout: 150000,
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
-        blockNumber: 16585769,
+        blockNumber: 17990765,
       },
     },
     mainnet: {
@@ -100,7 +100,7 @@ const config: HardhatUserConfig = {
       url: "https://mainnet.base.org",
     },
     sepolia: {
-      accounts: PK ? [PK] : [],
+      accounts: PK_TEST ? [PK_TEST] : [],
       chainId: 11155111,
       url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_ID}`,
     },

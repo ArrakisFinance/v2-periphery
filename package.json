@@ -16,7 +16,7 @@
     "verify": "npx hardhat etherscan-verify"
   },
   "devDependencies": {
-    "@arrakisfi/v2-core": "1.1.10",
+    "@arrakisfi/v2-core": "1.2.0",
     "@arrakisfi/v3-lib-0.8": "^0.1.4",
     "@metamask/eth-sig-util": "^5.0.2",
     "@nomiclabs/hardhat-ethers": "2.1.1",
