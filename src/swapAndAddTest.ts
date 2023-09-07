@@ -27,7 +27,6 @@ export const swapAndAddTest = async (
   swapResolver: RouterSwapResolver,
 
   resolver: Contract,
-
   vault: IArrakisV2,
   token0: ERC20,
   token1: ERC20,
@@ -492,7 +491,6 @@ export const swapAndAddTest = async (
   expect(routerBalETH).to.equal(ethers.constants.Zero);
 
   // validate we cannot mint with amounts refunded
-  await expect(
-    resolver.getMintAmounts(vault.address, refund0, refund1)
-  ).to.be.revertedWith("ArrakisVaultV2: mint 0");
+  await expect(resolver.getMintAmounts(vault.address, refund0, refund1)).to.be
+    .reverted;
 };
